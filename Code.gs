@@ -553,42 +553,24 @@ function validarUsuario(rutInput, passwordInput) {
     const rutLimpioInput = cleanRut(rutInput);
     const COL = CONFIG.COLUMNAS.USUARIOS;
 
-    // ✅ DEBUG: Ver qué columnas estamos leyendo
-    Logger.log('=== DEBUG VALIDAR USUARIO ===');
-    Logger.log('Buscando RUT: ' + rutLimpioInput);
-    Logger.log('Índice columna ROL: ' + COL.ROL);
-    Logger.log('Índice columna ESTADO: ' + COL.ESTADO);
-    Logger.log('Índice columna ID_CREDENCIAL: ' + COL.ID_CREDENCIAL);
-
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
       
-      if (cleanRut(row[COL.RUT]) === rutLimpioInput) {
-        // ✅ DEBUG: Ver qué contiene cada columna
-        Logger.log('Usuario encontrado en fila: ' + (i + 1));
-        Logger.log('Nombre: ' + row[COL.NOMBRE]);
-        Logger.log('Columna ROL (índice ' + COL.ROL + '): "' + row[COL.ROL] + '"');
-        Logger.log('Columna ESTADO (índice ' + COL.ESTADO + '): "' + row[COL.ESTADO] + '"');
-        
+      if (cleanRut(row[COL.RUT]) === rutLimpioInput) {      
         const passDb = String(row[COL.ID_CREDENCIAL]);
         const nombreUsuario = row[COL.NOMBRE];
         const rolUsuario = String(row[COL.ROL]).trim().toUpperCase(); // ✅ Normalizar
         const estadoUsuario = String(row[COL.ESTADO]).toUpperCase();
        
         if (passDb === passwordInput) {
-          const resultado = {
-            success: true,
-            message: "Login exitoso",
-            user: nombreUsuario || "Socio",
-            role: rolUsuario || "SOCIO",
-            state: estadoUsuario || "ACTIVO"
-          };
-          
-          // ✅ DEBUG: Ver qué estamos retornando
-          Logger.log('Retornando resultado:');
-          Logger.log(JSON.stringify(resultado, null, 2));
-          Logger.log('==============================');
-          
+        const resultado = {
+          success: true,
+          message: "Login exitoso",
+          user: nombreUsuario || "Socio",
+          role: rolUsuario || "SOCIO",
+          state: estadoUsuario || "ACTIVO",
+          estadoNegColect: String(row[COL.ESTADO_NEG_COLECT] || "").trim()
+        };
           return resultado;
         } else {
           return { success: false, message: "Contraseña incorrecta." };
@@ -2603,7 +2585,7 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
           beneficiario.correo,
           "Solicitud Permiso Médico - Sindicato SLIM n°3",
           "Permiso Médico Solicitado",
-          `Hola ${beneficiario.nombre}, se ha registrado tu solicitud de permiso médico. <strong>IMPORTANTE:</strong> Debes adjuntar el documento de respaldo en el historial del módulo.`,
+          `Hola ${beneficiario.nombre}, se ha registrado tu solicitud de permiso médico. <strong>IMPORTANTE:</strong> Debes adjuntar el documento de respaldo en el historial del módulo a vez realizada la atención médica.`,
           { 
             "ID": idUnico,
             "Tipo": tipoPermiso,
@@ -2631,7 +2613,7 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
           "Motivo": motivo,
           "Fecha Solicitud": fechaHoy.toLocaleDateString()
         },
-        "#475569"
+        "##10b981"
       );
       
       if (gestion === "Dirigente" && correoDirigente && correoDirigente.includes("@") && correoDirigente !== beneficiario.correo) {
@@ -2862,7 +2844,7 @@ function eliminarPermisoMedico(idPermiso) {
   if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
     try {
       const sheet = getSheet('PERMISOS_MEDICOS', 'PERMISOS_MEDICOS');
-      const data = sheet.getDataRange().getValues();
+      const data = sheet.getDataRange().getDisplayValues();
       const COL = CONFIG.COLUMNAS.PERMISOS_MEDICOS;
       
       for (let i = 1; i < data.length; i++) {
