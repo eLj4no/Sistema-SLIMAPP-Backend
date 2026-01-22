@@ -1,46 +1,546 @@
 /**
- * Servir HTML - Modificado para soportar múltiples vistas
+ * Servir HTML
  */
 function doGet(e) {
-  const page = e.parameter.page;
-  const action = e.parameter.action;
-
-  // Si se solicita la página QR Access
-  if (page === "qr") {
-    const tpl = HtmlService.createTemplateFromFile("QR_Access");
-    tpl.data = e.parameter;
-    return tpl
-      .evaluate()
-      .setTitle("Control de Asistencia QR - SLIM N°3")
-      .addMetaTag(
-        "viewport",
-        "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-      )
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  // Verificar si viene de un QR (con parámetros action, rut o asamblea)
+  if (e.parameter.action || e.parameter.rut || e.parameter.asamblea) {
+    // Servir página QR con los parámetros
+    const template = HtmlService.createTemplateFromFile('QR_Access');
+    template.data = e.parameter; // Pasar parámetros a la página
+    return template.evaluate()
+        .setTitle('Control QR - Sindicato SLIM n°3')
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+        .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
   }
+  
+  // Si no hay parámetros QR, servir página principal
+  return HtmlService.createHtmlOutputFromFile('Index')
+      .setTitle('Sindicato SLIM n°3 - App Socios')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
+}
 
-  // Si viene action=register sin page=qr, redirigir a QR
-  if (action === "register" && !page) {
-    const tpl = HtmlService.createTemplateFromFile("QR_Access");
-    tpl.data = e.parameter;
-    return tpl
-      .evaluate()
-      .setTitle("Control de Asistencia QR - SLIM N°3")
-      .addMetaTag(
-        "viewport",
-        "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-      )
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+// ==========================================
+// CONFIGURACIÓN GLOBAL - IDs DE SPREADSHEETS Y CARPETAS
+// ==========================================
+const CONFIG = {
+  SPREADSHEETS: {
+    USUARIOS: "1m7KLd3b3BzKOAI10I5E32MVf_L34XWAGFonhTg37TVM",
+    JUSTIFICACIONES: "1Hwbly__MXjl9uwJb-spXdah-R3v9SAMOCFHem92uOUg",
+    APELACIONES: "11nrvVsf84THWQ7j6NfAr_unyIcBV7aykxACS8R27PwE",
+    PRESTAMOS: "1h-_sJD4rOCuMjlfSouP7a6gfoodHyzI4MOBRUyOW5XU",
+    PERMISOS_MEDICOS: "1VYfm7cOgL3mVfVoI8DubIm8WG2srzQw9a6DtIEs3UMM"
+  },
+  HOJAS: {
+    USUARIOS: "BD_SLIMAPP",
+    JUSTIFICACIONES: "BD_JUSTIFICACIONES",
+    CONFIG_JUSTIFICACIONES: "CONFIG_JUSTIFICACIONES",
+    APELACIONES: "BD_APELACIONES",
+    PRESTAMOS: "BD_PRESTAMOS",
+    VALIDACION_PRESTAMOS: "Validación-Prestamos",
+    PERMISOS_MEDICOS: "BD_Permisos medicos"
+  },
+  CARPETAS: {
+    JUSTIFICACIONES: "1UD9hQz1FuacSb3QYrahRl7IfvlpKn8v6",
+    APELACIONES_COMPROBANTES: "15BmK5pf5Txrxdzdrny23S5q35NDxLy4P",
+    APELACIONES_LIQUIDACIONES: "1dR7fM6TW99tunNaMZliyvXc-L23nHKVY",
+    APELACIONES_DEVOLUCIONES: "1LGLKA3fiCJXf2ouIqlxq3jk_ZSxI3IyM",
+    PERMISOS_MEDICOS: "1nCYxD5sJLszBBA6s2DquGW8vlKGZp4ty"
+  },
+  CORREOS: {
+    REPRESENTANTE_LEGAL: "penailillo.fetrasiss@gmail.com"
+  },
+  COLUMNAS: {
+    USUARIOS: {
+      RUT: 0,
+      RUT_VALIDADO: 1,
+      FECHA_INGRESO: 2,
+      NOMBRE: 3,
+      CARGO: 4,
+      CORREO: 5,
+      SITE: 6,
+      REGION: 7,
+      SEXO: 8,
+      ESTADO: 9,
+      DETALLE_DESVINCULACION: 10,
+      ID_CREDENCIAL: 11,
+      CORREO_REGISTRADO: 12,
+      CONTACTO: 13,
+      ROL: 14,
+      LINK_REGISTRO: 15,
+      QR_REGISTRO: 16,
+      BANCO: 17,
+      TIPO_CUENTA: 18,
+      NUMERO_CUENTA: 19,
+      ESTADO_NEG_COLECT: 20
+    },
+    JUSTIFICACIONES: {
+      ID: 0,
+      FECHA: 1,
+      RUT: 2,
+      NOMBRE: 3,
+      REGION: 4,
+      MOTIVO: 5,
+      ARGUMENTO: 6,
+      RESPALDO: 7,
+      ESTADO: 8,
+      OBSERVACION: 9,
+      NOTIFICACION: 10,
+      ASAMBLEA: 11,
+      GESTION: 12,
+      DIRIGENTE: 13,
+      CORREO_DIRIGENTE: 14
+    },
+    APELACIONES: {
+      ID: 0,
+      FECHA_SOLICITUD: 1,
+      RUT: 2,
+      NOMBRE: 3,
+      CORREO: 4,
+      MES_APELACION: 5,
+      TIPO_MOTIVO: 6,
+      DETALLE_MOTIVO: 7,
+      URL_COMPROBANTE: 8,
+      URL_LIQUIDACION: 9,
+      ESTADO: 10,
+      OBSERVACION: 11,
+      NOTIFICADO: 12,
+      GESTION: 13,
+      NOMBRE_DIRIGENTE: 14,
+      CORREO_DIRIGENTE: 15,
+      URL_COMPROBANTE_DEVOLUCION: 16
+    },
+    PRESTAMOS: {
+      ID: 0,
+      FECHA: 1,
+      RUT: 2,
+      NOMBRE: 3,
+      CORREO: 4,
+      TIPO: 5,
+      MONTO: 6,
+      CUOTAS: 7,
+      MEDIO_PAGO: 8,
+      ESTADO: 9,
+      FECHA_TERMINO: 10,
+      GESTION: 11,
+      NOMBRE_DIRIGENTE: 12,
+      CORREO_DIRIGENTE: 13,
+      INFORME: 14,
+      OBSERVACION: 15
+    },
+    PERMISOS_MEDICOS: {
+      ID: 0,
+      FECHA_SOLICITUD: 1,
+      RUT: 2,
+      NOMBRE: 3,
+      CORREO: 4,
+      TIPO_PERMISO: 5,
+      FECHA_INICIO: 6,
+      MOTIVO_DETALLE: 7,
+      URL_DOCUMENTO: 8,
+      ESTADO: 9,
+      FECHA_SUBIDA: 10,
+      NOTIFICADO_REP_LEGAL: 11,
+      GESTION: 12,
+      NOMBRE_DIRIGENTE: 13,
+      CORREO_DIRIGENTE: 14
+    }
   }
+};
 
-  // Vista principal (Dashboard)
-  return HtmlService.createHtmlOutputFromFile("Index")
-    .setTitle("Sindicato SLIM n°3 - App Socios")
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-    .addMetaTag(
-      "viewport",
-      "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+/**
+ * Función helper para obtener un spreadsheet específico
+ * @param {string} spreadsheetKey - Clave del spreadsheet en CONFIG.SPREADSHEETS
+ * @returns {Spreadsheet} - Objeto Spreadsheet
+ */
+function getSpreadsheet(spreadsheetKey) {
+  const spreadsheetId = CONFIG.SPREADSHEETS[spreadsheetKey];
+  if (!spreadsheetId) {
+    throw new Error(`Spreadsheet key "${spreadsheetKey}" no encontrado en CONFIG`);
+  }
+  return SpreadsheetApp.openById(spreadsheetId);
+}
+
+// ==========================================
+// SISTEMA CENTRALIZADO DE PERMISOS DE ARCHIVOS
+// Agregar DESPUÉS de la sección CONFIG
+// ==========================================
+
+/**
+ * Valida si un correo electrónico es válido para otorgar permisos
+ * @param {string} correo - Correo a validar
+ * @returns {boolean} true si es válido
+ */
+function esCorreoValido(correo) {
+  if (!correo || typeof correo !== 'string') return false;
+  const correoLimpio = correo.trim().toLowerCase();
+  const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regexCorreo.test(correoLimpio);
+}
+
+/**
+ * Valida los correos de los usuarios involucrados antes de procesar archivos
+ * @param {Object} beneficiario - Objeto con datos del beneficiario {rut, nombre, correo}
+ * @param {Object} gestor - Objeto con datos del gestor (puede ser null si es el mismo)
+ * @param {boolean} esGestionDirigente - true si la gestión es realizada por un dirigente/admin
+ * @returns {Object} {valido: boolean, alertas: [], correosParaPermisos: []}
+ */
+function validarCorreosParaPermisos(beneficiario, gestor, esGestionDirigente) {
+  const resultado = {
+    valido: true,
+    alertas: [],
+    correosParaPermisos: [],
+    alertaBeneficiario: false,
+    alertaGestor: false
+  };
+  
+  // Validar correo del beneficiario
+  const correoBeneficiarioValido = esCorreoValido(beneficiario.correo);
+  
+  if (correoBeneficiarioValido) {
+    resultado.correosParaPermisos.push({
+      correo: beneficiario.correo.trim().toLowerCase(),
+      tipo: 'beneficiario',
+      nombre: beneficiario.nombre
+    });
+  } else {
+    resultado.alertaBeneficiario = true;
+    if (esGestionDirigente) {
+      resultado.alertas.push({
+        tipo: 'warning',
+        mensaje: `El socio ${beneficiario.nombre} no tiene un correo electrónico válido registrado. No podrá acceder al archivo adjunto. Infórmele que debe actualizar sus datos en "Mis Datos".`
+      });
+    } else {
+      resultado.alertas.push({
+        tipo: 'warning',
+        mensaje: `No tienes un correo electrónico válido registrado. No podrás acceder al archivo adjunto desde tu correo. Por favor, actualiza tus datos en el módulo "Mis Datos".`
+      });
+    }
+  }
+  
+  // Validar correo del gestor (solo si es gestión de dirigente y es diferente al beneficiario)
+  if (esGestionDirigente && gestor) {
+    const correoGestorValido = esCorreoValido(gestor.correo);
+    
+    if (correoGestorValido) {
+      const yaExiste = resultado.correosParaPermisos.some(
+        c => c.correo === gestor.correo.trim().toLowerCase()
+      );
+      
+      if (!yaExiste) {
+        resultado.correosParaPermisos.push({
+          correo: gestor.correo.trim().toLowerCase(),
+          tipo: 'gestor',
+          nombre: gestor.nombre
+        });
+      }
+    } else {
+      resultado.alertaGestor = true;
+      resultado.alertas.push({
+        tipo: 'info',
+        mensaje: `Tu correo electrónico no está registrado correctamente. El archivo se procesará, pero no recibirás acceso directo. Actualiza tus datos en "Mis Datos".`
+      });
+    }
+  }
+  
+  return resultado;
+}
+
+/**
+ * Sube un archivo a Google Drive y otorga permisos de lectura
+ * @param {Object} archivoData - {base64, mimeType, fileName}
+ * @param {string} carpetaId - ID de la carpeta de destino
+ * @param {string} nombreArchivo - Nombre personalizado para el archivo
+ * @param {Array} correosParaPermisos - [{correo, tipo, nombre}, ...]
+ * @param {Array} correosAdicionales - Correos adicionales (ej: representante legal)
+ * @returns {Object} {success, url, permisosOtorgados: [], permisosError: []}
+ */
+function subirArchivoConPermisos(archivoData, carpetaId, nombreArchivo, correosParaPermisos, correosAdicionales) {
+  correosAdicionales = correosAdicionales || [];
+  
+  const resultado = {
+    success: false,
+    url: '',
+    permisosOtorgados: [],
+    permisosError: [],
+    mensajeError: ''
+  };
+  
+  try {
+    // Validar tamaño del archivo
+    const sizeInBytes = (archivoData.base64.length * 3) / 4;
+    if (sizeInBytes > 5 * 1024 * 1024) {
+      resultado.mensajeError = "El archivo es demasiado grande (máximo 5MB).";
+      return resultado;
+    }
+    
+    // Obtener carpeta
+    const folder = DriveApp.getFolderById(carpetaId);
+    
+    // Crear blob
+    const blob = Utilities.newBlob(
+      Utilities.base64Decode(archivoData.base64),
+      archivoData.mimeType,
+      archivoData.fileName
     );
+    
+    // Obtener extensión original
+    let extension = "";
+    const nameParts = archivoData.fileName.split('.');
+    if (nameParts.length > 1) {
+      extension = "." + nameParts.pop();
+    }
+    
+    // Establecer nombre del archivo
+    blob.setName(nombreArchivo + extension);
+    
+    // Crear archivo
+    const file = folder.createFile(blob);
+    
+    // Esperar a que Drive procese el archivo
+    Utilities.sleep(1500);
+    
+    // Configurar como privado primero
+    file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
+    
+    // Esperar un poco más
+    Utilities.sleep(1000);
+    
+    // Combinar correos para permisos
+    const todosLosCorreos = [...correosParaPermisos];
+    
+    // Agregar correos adicionales
+    if (correosAdicionales && correosAdicionales.length > 0) {
+      correosAdicionales.forEach(function(correo) {
+        if (esCorreoValido(correo)) {
+          const yaExiste = todosLosCorreos.some(function(c) {
+            return c.correo === correo.trim().toLowerCase();
+          });
+          if (!yaExiste) {
+            todosLosCorreos.push({
+              correo: correo.trim().toLowerCase(),
+              tipo: 'adicional',
+              nombre: 'Usuario adicional'
+            });
+          }
+        }
+      });
+    }
+    
+    // Otorgar permisos SILENCIOSOS a cada correo usando Drive API Avanzada
+    var fileId = file.getId(); // Obtenemos el ID para usar la API avanzada
+
+    todosLosCorreos.forEach(function(item) {
+      try {
+        // CAMBIO PRINCIPAL: Usamos Drive.Permissions en lugar de file.addViewer
+        var recursoPermiso = {
+          'role': 'reader',
+          'type': 'user',
+          'value': item.correo
+        };
+        
+        // El segundo parámetro (fileId) es obligatorio.
+        // El tercer parámetro desactiva el correo automático de Google.
+        Drive.Permissions.insert(recursoPermiso, fileId, {
+          sendNotificationEmails: false
+        });
+
+        resultado.permisosOtorgados.push({
+          correo: item.correo,
+          tipo: item.tipo,
+          nombre: item.nombre
+        });
+        Logger.log("✅ Permiso silencioso otorgado a " + item.tipo + ": " + item.correo);
+        
+      } catch (permError) {
+        // Fallback: Si falla la API avanzada, intentamos con el método tradicional (aunque envíe correo)
+        try {
+           console.warn("Fallo API Avanzada, usando método tradicional para: " + item.correo);
+           file.addViewer(item.correo);
+           resultado.permisosOtorgados.push({
+              correo: item.correo,
+              tipo: item.tipo,
+              nombre: item.nombre
+           });
+        } catch (finalError) {
+           resultado.permisosError.push({
+             correo: item.correo,
+             tipo: item.tipo,
+             nombre: item.nombre,
+             error: finalError.toString()
+           });
+           Logger.log("⚠️ Error fatal al otorgar permiso a " + item.tipo + " (" + item.correo + "): " + finalError);
+        }
+      }
+    });
+    
+    resultado.success = true;
+    resultado.url = file.getUrl();
+    
+    Logger.log("📊 Archivo subido: " + nombreArchivo);
+    Logger.log("   - URL: " + resultado.url);
+    Logger.log("   - Permisos exitosos: " + resultado.permisosOtorgados.length);
+    Logger.log("   - Permisos fallidos: " + resultado.permisosError.length);
+    
+    return resultado;
+    
+  } catch (error) {
+    Logger.log("❌ Error al subir archivo: " + error.toString());
+    resultado.mensajeError = "Error al subir el archivo: " + error.toString();
+    return resultado;
+  }
+}
+
+/**
+ * Genera el mensaje de alerta para mostrar al usuario sobre permisos
+ */
+function generarAlertaPermisos(validacionCorreos, resultadoSubida) {
+  const alerta = {
+    mostrarAlerta: false,
+    tipoAlerta: 'info',
+    mensajeAlerta: '',
+    detalles: []
+  };
+  
+  // Agregar alertas de validación de correos
+  if (validacionCorreos.alertas && validacionCorreos.alertas.length > 0) {
+    alerta.mostrarAlerta = true;
+    validacionCorreos.alertas.forEach(function(a) {
+      alerta.detalles.push(a.mensaje);
+    });
+    
+    if (validacionCorreos.alertaBeneficiario) {
+      alerta.tipoAlerta = 'warning';
+    }
+  }
+  
+  // Agregar errores de permisos si los hay
+  if (resultadoSubida && resultadoSubida.permisosError && resultadoSubida.permisosError.length > 0) {
+    alerta.mostrarAlerta = true;
+    alerta.tipoAlerta = 'warning';
+    resultadoSubida.permisosError.forEach(function(err) {
+      alerta.detalles.push("No se pudo otorgar acceso a " + err.nombre + " (" + err.correo + ")");
+    });
+  }
+  
+  // Construir mensaje final
+  if (alerta.mostrarAlerta) {
+    alerta.mensajeAlerta = alerta.detalles.join('\n\n');
+  }
+  
+  return alerta;
+}
+
+/**
+ * Obtener datos de usuario por RUT - Función auxiliar centralizada
+ */
+function obtenerUsuarioPorRut(rutInput) {
+  var cache = CacheService.getScriptCache();
+  var rutLimpio = cleanRut(rutInput);
+  var cacheKey = 'user_' + rutLimpio;
+  
+  var cached = cache.get(cacheKey);
+  if (cached) {
+    try {
+      return JSON.parse(cached);
+    } catch (e) {
+      Logger.log('Error parsing cache: ' + e);
+    }
+  }
+  
+  var sheet = getSheet('USUARIOS', 'USUARIOS');
+  var COL = CONFIG.COLUMNAS.USUARIOS;
+  
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return { encontrado: false };
+  
+  var data = sheet.getRange(2, 1, lastRow - 1, COL.ESTADO_NEG_COLECT + 1).getDisplayValues();  // ← MODIFICADO
+  
+  for (var i = 0; i < data.length; i++) {
+    if (cleanRut(data[i][COL.RUT]) === rutLimpio) {
+      var usuario = {
+        encontrado: true,
+        rut: data[i][COL.RUT],
+        nombre: data[i][COL.NOMBRE],
+        correo: data[i][COL.CORREO],
+        region: data[i][COL.REGION],
+        cargo: data[i][COL.CARGO],
+        site: data[i][COL.SITE],
+        estado: data[i][COL.ESTADO],
+        rol: data[i][COL.ROL],
+        contacto: data[i][COL.CONTACTO],
+        estadoNegColect: data[i][COL.ESTADO_NEG_COLECT] || "",
+        banco: data[i][COL.BANCO] || "",
+        tipoCuenta: data[i][COL.TIPO_CUENTA] || "",
+        numeroCuenta: data[i][COL.NUMERO_CUENTA] || ""
+      };
+      
+      try {
+        cache.put(cacheKey, JSON.stringify(usuario), 600);
+      } catch (e) {
+        Logger.log('Error guardando en cache: ' + e);
+      }
+      
+      return usuario;
+    }
+  }
+  
+  return { encontrado: false };
+}
+
+/**
+ * Genera el código de asamblea en formato YYYY_MM
+ * @param {Date} fecha - Fecha de la solicitud
+ * @return {string} Código de asamblea (ejemplo: "2026_01")
+ */
+function generarCodigoAsamblea(fecha) {
+  if (!fecha || !(fecha instanceof Date)) {
+    fecha = new Date(); // Si no hay fecha, usa la actual
+  }
+  
+  const year = fecha.getFullYear();
+  const month = String(fecha.getMonth() + 1).padStart(2, '0'); // Mes con 2 dígitos
+  
+  return `${year}_${month}`;
+}
+
+/**
+ * Función helper mejorada para obtener hoja específica con manejo de errores
+ * @param {string} spreadsheetKey - Clave del spreadsheet en CONFIG.SPREADSHEETS
+ * @param {string} sheetKey - Clave de la hoja en CONFIG.HOJAS
+ * @param {boolean} createIfNotExists - Si true, crea la hoja si no existe (default: false)
+ * @returns {Sheet|null} - Objeto Sheet o null si no existe
+ */
+function getSheet(spreadsheetKey, sheetKey, createIfNotExists = false) {
+  try {
+    const ss = getSpreadsheet(spreadsheetKey);
+    const sheetName = CONFIG.HOJAS[sheetKey];
+    
+    if (!sheetName) {
+      console.error(`❌ Clave de hoja "${sheetKey}" no encontrada en CONFIG.HOJAS`);
+      return null;
+    }
+    
+    let sheet = ss.getSheetByName(sheetName);
+    
+    // Si no existe y se solicita creación automática
+    if (!sheet && createIfNotExists) {
+      console.warn(`⚠️ Hoja "${sheetName}" no existe. Creándola...`);
+      sheet = ss.insertSheet(sheetName);
+      console.log(`✅ Hoja "${sheetName}" creada exitosamente`);
+    }
+    
+    if (!sheet) {
+      console.error(`❌ Hoja "${sheetName}" no encontrada en spreadsheet ${spreadsheetKey}`);
+      return null;
+    }
+    
+    return sheet;
+    
+  } catch (e) {
+    console.error(`❌ Error obteniendo hoja ${sheetKey} de ${spreadsheetKey}: ${e.toString()}`);
+    return null;
+  }
 }
 
 /**
@@ -48,30 +548,48 @@ function doGet(e) {
  */
 function validarUsuario(rutInput, passwordInput) {
   try {
-    const sheet =
-      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("BD_USUARIOS");
-    if (!sheet)
-      return { success: false, message: "Error: Falta hoja BD_USUARIOS" };
-
+    const sheet = getSheet('USUARIOS', 'USUARIOS');
     const data = sheet.getDataRange().getDisplayValues();
     const rutLimpioInput = cleanRut(rutInput);
+    const COL = CONFIG.COLUMNAS.USUARIOS;
+
+    // ✅ DEBUG: Ver qué columnas estamos leyendo
+    Logger.log('=== DEBUG VALIDAR USUARIO ===');
+    Logger.log('Buscando RUT: ' + rutLimpioInput);
+    Logger.log('Índice columna ROL: ' + COL.ROL);
+    Logger.log('Índice columna ESTADO: ' + COL.ESTADO);
+    Logger.log('Índice columna ID_CREDENCIAL: ' + COL.ID_CREDENCIAL);
 
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      if (cleanRut(row[0]) === rutLimpioInput) {
-        const passDb = String(row[11]);
-        const nombreUsuario = row[3];
-        const rolUsuario = row[14];
-        const estadoUsuario = String(row[9]).toUpperCase();
-
+      
+      if (cleanRut(row[COL.RUT]) === rutLimpioInput) {
+        // ✅ DEBUG: Ver qué contiene cada columna
+        Logger.log('Usuario encontrado en fila: ' + (i + 1));
+        Logger.log('Nombre: ' + row[COL.NOMBRE]);
+        Logger.log('Columna ROL (índice ' + COL.ROL + '): "' + row[COL.ROL] + '"');
+        Logger.log('Columna ESTADO (índice ' + COL.ESTADO + '): "' + row[COL.ESTADO] + '"');
+        
+        const passDb = String(row[COL.ID_CREDENCIAL]);
+        const nombreUsuario = row[COL.NOMBRE];
+        const rolUsuario = String(row[COL.ROL]).trim().toUpperCase(); // ✅ Normalizar
+        const estadoUsuario = String(row[COL.ESTADO]).toUpperCase();
+       
         if (passDb === passwordInput) {
-          return {
+          const resultado = {
             success: true,
             message: "Login exitoso",
             user: nombreUsuario || "Socio",
             role: rolUsuario || "SOCIO",
-            state: estadoUsuario || "ACTIVO",
+            state: estadoUsuario || "ACTIVO"
           };
+          
+          // ✅ DEBUG: Ver qué estamos retornando
+          Logger.log('Retornando resultado:');
+          Logger.log(JSON.stringify(resultado, null, 2));
+          Logger.log('==============================');
+          
+          return resultado;
         } else {
           return { success: false, message: "Contraseña incorrecta." };
         }
@@ -79,6 +597,7 @@ function validarUsuario(rutInput, passwordInput) {
     }
     return { success: false, message: "RUT no encontrado." };
   } catch (e) {
+    Logger.log('ERROR en validarUsuario: ' + e.toString());
     return { success: false, message: "Error Servidor: " + e.toString() };
   }
 }
@@ -88,26 +607,30 @@ function validarUsuario(rutInput, passwordInput) {
  */
 function obtenerDatosUsuario(rutInput) {
   try {
-    const sheet =
-      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("BD_USUARIOS");
+    const sheet = getSheet('USUARIOS', 'USUARIOS');
     const data = sheet.getDataRange().getDisplayValues();
     const rutLimpioInput = cleanRut(rutInput);
+    const COL = CONFIG.COLUMNAS.USUARIOS;
 
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      if (cleanRut(row[0]) === rutLimpioInput) {
+      if (cleanRut(row[COL.RUT]) === rutLimpioInput) {
         return {
           success: true,
           datos: {
-            rut: row[0] || "---",
-            nombre: row[3] || "Sin Nombre",
-            cargo: row[4] || "---",
-            site: row[6] || "---",
-            region: row[7],
-            estado: String(row[9]).toUpperCase(),
-            correo: row[5],
-            contacto: row[13],
-          },
+            rut: row[COL.RUT] || "---",          
+            nombre: row[COL.NOMBRE] || "Sin Nombre",
+            cargo: row[COL.CARGO] || "---",        
+            site: row[COL.SITE] || "---",          
+            region: row[COL.REGION],                
+            estado: String(row[COL.ESTADO]).toUpperCase(),
+            correo: row[COL.CORREO],
+            contacto: row[COL.CONTACTO],
+            estadoNegColect: row[COL.ESTADO_NEG_COLECT] || "",
+            banco: row[COL.BANCO] || "",
+            tipoCuenta: row[COL.TIPO_CUENTA] || "",
+            numeroCuenta: row[COL.NUMERO_CUENTA] || ""
+          }
         };
       }
     }
@@ -121,24 +644,32 @@ function obtenerDatosUsuario(rutInput) {
  * Actualizar Dato Usuario
  */
 function actualizarDatoUsuario(rutInput, campo, valor) {
-  const lock = LockService.getScriptLock();
-  if (lock.tryLock(10000)) {
+  var lock = LockService.getScriptLock();
+  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
     try {
-      const sheet =
-        SpreadsheetApp.getActiveSpreadsheet().getSheetByName("BD_USUARIOS");
+      const sheet = getSheet('USUARIOS', 'USUARIOS');
       const data = sheet.getDataRange().getValues();
       const rutLimpioInput = cleanRut(rutInput);
-
+      const COL = CONFIG.COLUMNAS.USUARIOS;
+     
       let colIndex = -1;
-      if (campo === "region") colIndex = 7;
-      else if (campo === "correo") colIndex = 5;
-      else if (campo === "contacto") colIndex = 13;
-
+      if (campo === 'region') colIndex = COL.REGION;        
+      else if (campo === 'correo') colIndex = COL.CORREO;
+      else if (campo === 'contacto') colIndex = COL.CONTACTO;
+      else if (campo === 'banco') colIndex = COL.BANCO;
+      else if (campo === 'tipoCuenta') colIndex = COL.TIPO_CUENTA;
+      else if (campo === 'numeroCuenta') colIndex = COL.NUMERO_CUENTA;
+     
       if (colIndex === -1) return { success: false, message: "Campo inválido" };
 
       for (let i = 1; i < data.length; i++) {
-        if (cleanRut(String(data[i][0])) === rutLimpioInput) {
+        if (cleanRut(String(data[i][COL.RUT])) === rutLimpioInput) {
           sheet.getRange(i + 1, colIndex + 1).setValue(valor);
+          
+          // ✅ NUEVO: Invalidar caché del usuario
+          var cache = CacheService.getScriptCache();
+          cache.remove('user_' + rutLimpioInput);
+          
           return { success: true, message: "OK" };
         }
       }
@@ -158,19 +689,19 @@ function actualizarDatoUsuario(rutInput, campo, valor) {
  */
 function recuperarContrasena(rutInput) {
   try {
-    const sheet =
-      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("BD_USUARIOS");
+    const sheet = getSheet('USUARIOS', 'USUARIOS');
     const data = sheet.getDataRange().getDisplayValues();
     const rutLimpio = cleanRut(rutInput);
-
+    const COL = CONFIG.COLUMNAS.USUARIOS;
+    
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      if (cleanRut(row[0]) === rutLimpio) {
-        const correo = row[5];
+      if (cleanRut(row[COL.RUT]) === rutLimpio) {
+        const correo = row[COL.CORREO];
         return { success: true, correo: correo || "No registrado" };
       }
     }
-
+    
     return { success: false, message: "Usuario no encontrado." };
   } catch (e) {
     return { success: false, message: "Error: " + e.toString() };
@@ -179,26 +710,22 @@ function recuperarContrasena(rutInput) {
 
 function enviarContrasenaCorreo(rutInput) {
   try {
-    const sheet =
-      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("BD_USUARIOS");
+    const sheet = getSheet('USUARIOS', 'USUARIOS');
     const data = sheet.getDataRange().getDisplayValues();
     const rutLimpio = cleanRut(rutInput);
-
+    const COL = CONFIG.COLUMNAS.USUARIOS;
+    
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      if (cleanRut(row[0]) === rutLimpio) {
-        const nombre = row[3];
-        const correo = row[5];
-        const password = row[11];
-
+      if (cleanRut(row[COL.RUT]) === rutLimpio) {
+        const nombre = row[COL.NOMBRE];
+        const correo = row[COL.CORREO];
+        const password = row[COL.ID_CREDENCIAL];
+        
         if (!correo || !correo.includes("@")) {
-          return {
-            success: false,
-            message:
-              "No tienes un correo registrado. Contacta con la directiva.",
-          };
+          return { success: false, message: "No tienes un correo registrado. Contacta con la directiva." };
         }
-
+        
         enviarCorreoEstilizado(
           correo,
           "Recuperación de Contraseña - Sindicato SLIM n°3",
@@ -206,15 +733,15 @@ function enviarContrasenaCorreo(rutInput) {
           `Hola ${nombre}, has solicitado recuperar tu contraseña de acceso al portal.`,
           {
             "Tu contraseña es": password,
-            RUT: row[0],
+            "RUT": row[COL.RUT]
           },
           "#3b82f6"
         );
-
+        
         return { success: true, message: "Contraseña enviada exitosamente." };
       }
     }
-
+    
     return { success: false, message: "Usuario no encontrado." };
   } catch (e) {
     return { success: false, message: "Error: " + e.toString() };
@@ -225,168 +752,168 @@ function enviarContrasenaCorreo(rutInput) {
 // LÓGICA DE PRÉSTAMOS
 // ==========================================
 
-function crearSolicitudPrestamo(
-  rutGestor,
-  tipo,
-  cuotas,
-  medioPago,
-  rutBeneficiario
-) {
-  const lock = LockService.getScriptLock();
-  if (lock.tryLock(10000)) {
+function crearSolicitudPrestamo(rutGestor, tipo, cuotas, medioPago, rutBeneficiario) {
+  var lock = LockService.getScriptLock();
+  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
     try {
-      const ss = SpreadsheetApp.getActiveSpreadsheet();
-      const sheetUsers = ss.getSheetByName("BD_USUARIOS");
-      let sheetLoans = ss.getSheetByName("PRESTAMOS");
-
-      if (!sheetLoans) {
-        sheetLoans = ss.insertSheet("PRESTAMOS");
-        sheetLoans.appendRow([
-          "ID",
-          "Fecha",
-          "Rut",
-          "Nombre",
-          "Correo",
-          "Tipo Préstamo",
-          "Cuotas",
-          "Medio Pago",
-          "Estado",
-          "Fecha Termino",
-          "Gestión",
-          "Nombre Dirigente",
-          "Correo Dirigente",
-        ]);
-      }
+      const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
+      const sheetPrestamos = getSheet('PRESTAMOS', 'PRESTAMOS');
+      const COL_USER = CONFIG.COLUMNAS.USUARIOS;
+      const COL_PRES = CONFIG.COLUMNAS.PRESTAMOS;
 
       const dataUsers = sheetUsers.getDataRange().getDisplayValues();
-
+      
+      // 1. Identificar al Gestor
       let gestor = null;
       const rutLimpioGestor = cleanRut(rutGestor);
       for (let i = 1; i < dataUsers.length; i++) {
-        if (cleanRut(dataUsers[i][0]) === rutLimpioGestor) {
+        if (cleanRut(dataUsers[i][COL_USER.RUT]) === rutLimpioGestor) {
           gestor = {
-            rut: dataUsers[i][0],
-            nombre: dataUsers[i][3],
-            correo: dataUsers[i][5],
+             rut: dataUsers[i][COL_USER.RUT],
+             nombre: dataUsers[i][COL_USER.NOMBRE],
+             correo: dataUsers[i][COL_USER.CORREO]
           };
           break;
         }
       }
       if (!gestor) return { success: false, message: "Error de sesión." };
 
-      let rutTarget = rutBeneficiario
-        ? cleanRut(rutBeneficiario)
-        : rutLimpioGestor;
+      // 2. Identificar al Beneficiario
+      let rutTarget = rutBeneficiario ? cleanRut(rutBeneficiario) : rutLimpioGestor;
       let beneficiario = null;
+      let esGestionDirigente = (rutTarget !== rutLimpioGestor);
 
-      if (rutTarget === rutLimpioGestor) {
-        beneficiario = gestor;
+      if (!esGestionDirigente) {
+         beneficiario = gestor;
       } else {
-        for (let i = 1; i < dataUsers.length; i++) {
-          if (cleanRut(dataUsers[i][0]) === rutTarget) {
-            beneficiario = {
-              rut: dataUsers[i][0],
-              nombre: dataUsers[i][3],
-              correo: dataUsers[i][5],
-            };
-            break;
-          }
-        }
-        if (!beneficiario)
-          return { success: false, message: "RUT del socio no encontrado." };
+         for (let i = 1; i < dataUsers.length; i++) {
+            if (cleanRut(dataUsers[i][COL_USER.RUT]) === rutTarget) {
+               beneficiario = {
+                  rut: dataUsers[i][COL_USER.RUT],
+                  nombre: dataUsers[i][COL_USER.NOMBRE],
+                  correo: dataUsers[i][COL_USER.CORREO]
+               };
+               break;
+            }
+         }
+         if (!beneficiario) return { success: false, message: "RUT del socio no encontrado." };
       }
 
-      const dataLoans = sheetLoans.getDataRange().getDisplayValues();
-      for (let i = 1; i < dataLoans.length; i++) {
-        const row = dataLoans[i];
-        const rowRut = cleanRut(row[2]);
-        const rowTipo = row[5];
-        const rowEstado = row[8];
+      // 3. Validar préstamos activos (LÓGICA NUEVA: Por Tipo)
+      const dataPrestamos = sheetPrestamos.getDataRange().getDisplayValues();
+      for (let i = 1; i < dataPrestamos.length; i++) {
+        const row = dataPrestamos[i];
+        const rowRut = cleanRut(row[COL_PRES.RUT]);
+        const rowEstado = row[COL_PRES.ESTADO];
+        const rowTipo = row[COL_PRES.TIPO]; // Leemos el tipo de la fila
+        
         const estadosActivos = ["Solicitado", "Enviado", "Vigente"];
-
-        if (
-          rowRut === cleanRut(beneficiario.rut) &&
-          rowTipo === tipo &&
-          estadosActivos.includes(rowEstado)
-        ) {
-          return {
-            success: false,
-            message: `El socio ${beneficiario.nombre} ya tiene un ${tipo} en estado "${rowEstado}".`,
-          };
+        
+        // CAMBIO AQUI: Validamos RUT + ESTADO + TIPO IGUAL
+        // Usamos .includes() para ser flexibles (ej: "Préstamo de Emergencia" vs "Emergencia")
+        if (rowRut === cleanRut(beneficiario.rut) && 
+            estadosActivos.includes(rowEstado) && 
+            rowTipo.includes(tipo)) {
+              
+          return { success: false, message: `El socio ${beneficiario.nombre} ya tiene un préstamo de tipo "${tipo}" en estado "${rowEstado}".` };
         }
       }
 
-      const fechaSolicitud = new Date();
-      const fechaTermino = new Date(fechaSolicitud);
-      fechaTermino.setMonth(fechaTermino.getMonth() + parseInt(cuotas));
-      const idUnico = Utilities.getUuid();
-      const estadoInicial = "Solicitado";
-
-      let gestion = "Socio";
-      let nomDirigente = "";
-      let correoDirigente = "";
-
-      if (rutTarget !== rutLimpioGestor) {
-        gestion = "Dirigente";
-        nomDirigente = gestor.nombre;
-        correoDirigente = gestor.correo;
+      // --- LOGICA DEL MONTO ---
+      let montoTexto = "$0";
+      if (tipo.includes('Emergencia')) {
+        montoTexto = "$200.000";
+      } else { 
+        montoTexto = "$150.000";
       }
 
-      sheetLoans.appendRow([
-        idUnico,
-        fechaSolicitud,
-        beneficiario.rut,
-        beneficiario.nombre,
-        beneficiario.correo,
-        tipo,
-        cuotas,
-        medioPago,
-        estadoInicial,
-        fechaTermino,
-        gestion,
-        nomDirigente,
-        correoDirigente,
-      ]);
+      // 4. Preparar Datos y CALCULAR FECHA TÉRMINO (Lógica Contable)
+      const fechaSolicitud = new Date();
+      const diaSolicitud = fechaSolicitud.getDate();
+      const idUnico = Utilities.getUuid();
+      
+      let fechaInicioPago = new Date(fechaSolicitud);
+      
+      if (diaSolicitud > 24) {
+        fechaInicioPago.setMonth(fechaInicioPago.getMonth() + 1);
+      }
+      
+      let fechaTermino = new Date(fechaInicioPago);
+      let numCuotas = parseInt(cuotas);
+      
+      if (!isNaN(numCuotas)) {
+        fechaTermino.setMonth(fechaTermino.getMonth() + numCuotas);
+        fechaTermino = new Date(fechaTermino.getFullYear(), fechaTermino.getMonth() + 1, 0);
+      }
 
-      if (beneficiario.correo && beneficiario.correo.includes("@")) {
-        let mensajeExtra =
-          gestion === "Dirigente"
-            ? `<br><em>(Ingresado por: ${nomDirigente})</em>`
-            : "";
+      let gestion = esGestionDirigente ? "Dirigente" : "Socio";
+      let nomDirigente = esGestionDirigente ? gestor.nombre : "";
+      let correoDirigente = esGestionDirigente ? gestor.correo : "";
+
+      // 5. Guardar en Base de Datos
+      const newRow = [];
+      newRow[COL_PRES.ID] = idUnico;
+      newRow[COL_PRES.FECHA] = fechaSolicitud;
+      newRow[COL_PRES.RUT] = beneficiario.rut;
+      newRow[COL_PRES.NOMBRE] = beneficiario.nombre;
+      newRow[COL_PRES.CORREO] = beneficiario.correo;
+      newRow[COL_PRES.TIPO] = tipo;
+      newRow[COL_PRES.MONTO] = "'" + montoTexto; 
+      newRow[COL_PRES.CUOTAS] = cuotas;
+      newRow[COL_PRES.MEDIO_PAGO] = medioPago;
+      newRow[COL_PRES.ESTADO] = "Solicitado";
+      newRow[COL_PRES.FECHA_TERMINO] = fechaTermino;
+      newRow[COL_PRES.GESTION] = gestion;
+      newRow[COL_PRES.NOMBRE_DIRIGENTE] = nomDirigente;
+      newRow[COL_PRES.CORREO_DIRIGENTE] = correoDirigente;
+      newRow[COL_PRES.INFORME] = ""; 
+
+      sheetPrestamos.appendRow(newRow);
+
+      // 6. Enviar Correos
+      if (esCorreoValido(beneficiario.correo)) {
+        var datosCorreoSocio = {
+            "FECHA SOLICITUD": Utilities.formatDate(fechaSolicitud, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm"),
+            "RUT": formatRutServer(beneficiario.rut),
+            "NOMBRE": beneficiario.nombre,
+            "TIPO PRÉSTAMO": tipo,
+            "MONTO": montoTexto,
+            "CUOTAS": cuotas,
+            "MEDIO PAGO": medioPago,
+            "FECHA TÉRMINO": Utilities.formatDate(fechaTermino, Session.getScriptTimeZone(), "dd/MM/yyyy"), 
+            "GESTION": gestion,
+            "NOMBRE DIRIGENTE": nomDirigente || ""
+        };
+
         enviarCorreoEstilizado(
           beneficiario.correo,
-          "Confirmación de Solicitud - Sindicato SLIM n°3",
-          "¡Solicitud Recibida!",
-          `Hola ${beneficiario.nombre}, se ha ingresado una solicitud de préstamo a tu nombre.`,
-          {
-            ID: idUnico,
-            Tipo: tipo,
-            Cuotas: cuotas,
-            Gestión: gestion + mensajeExtra,
-            Fecha: fechaSolicitud.toLocaleDateString(),
-          },
+          "Solicitud de Préstamo - Sindicato SLIM n°3",
+          "Solicitud de Préstamo Ingresada",
+          `Hola <strong>${beneficiario.nombre}</strong>, se ha ingresado exitosamente una solicitud de préstamo a tu nombre.`,
+          datosCorreoSocio,
           "#2563eb"
         );
       }
 
-      if (
-        gestion === "Dirigente" &&
-        correoDirigente &&
-        correoDirigente.includes("@") &&
-        correoDirigente !== beneficiario.correo
-      ) {
+      // Correo Dirigente
+      if (esGestionDirigente && esCorreoValido(correoDirigente) && correoDirigente !== beneficiario.correo) {
+        var datosCorreoDirigente = {
+            "FECHA SOLICITUD": Utilities.formatDate(fechaSolicitud, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm"),
+            "RUT SOCIO": formatRutServer(beneficiario.rut),
+            "NOMBRE SOCIO": beneficiario.nombre,
+            "TIPO PRÉSTAMO": tipo,
+            "MONTO": montoTexto,
+            "CUOTAS": cuotas,
+            "FECHA TÉRMINO": Utilities.formatDate(fechaTermino, Session.getScriptTimeZone(), "dd/MM/yyyy"),
+            "GESTION": "Dirigente"
+        };
+
         enviarCorreoEstilizado(
-          correoDirigente,
-          "Respaldo de Gestión - Sindicato SLIM n°3",
-          "Solicitud Ingresada",
-          `Has ingresado exitosamente una solicitud para el socio <strong>${beneficiario.nombre}</strong>.`,
-          {
-            ID: idUnico,
-            Socio: beneficiario.nombre,
-            RUT: beneficiario.rut,
-            Tipo: tipo,
-            Cuotas: cuotas,
-          },
+          gestor.correo,
+          "Respaldo Gestión Préstamo - Sindicato SLIM n°3",
+          "Solicitud de Préstamo Creada",
+          `Has ingresado una solicitud de préstamo para el socio <strong>${beneficiario.nombre}</strong>.`,
+          datosCorreoDirigente,
           "#475569"
         );
       }
@@ -402,111 +929,436 @@ function crearSolicitudPrestamo(
   }
 }
 
-function obtenerHistorialPrestamos(rutInput) {
-  try {
-    const sheet =
-      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("PRESTAMOS");
-    if (!sheet) return { success: true, registros: [] };
+// ==========================================
+// SINCRONIZACIÓN AUTOMÁTICA (Validación -> BD -> Notificación)
+// VERSIÓN ACTUALIZADA: Incluye MONTO en el correo + Corrección columna OK
+// ==========================================
 
-    const data = sheet.getDataRange().getDisplayValues();
-    const rutLimpio = cleanRut(rutInput);
-    const registros = [];
-
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      if (cleanRut(row[2]) === rutLimpio) {
-        registros.push({
-          id: row[0],
-          fecha: row[1],
-          tipo: row[5],
-          cuotas: row[6],
-          medio: row[7],
-          estado: row[8],
-          fechaTermino: row[9],
-          gestion: row[10],
-          nomDirigente: row[11],
-        });
-      }
-    }
-    registros.reverse();
-    return { success: true, registros: registros };
-  } catch (e) {
-    return { success: false, message: "Error: " + e.toString() };
-  }
-}
-
-function eliminarSolicitud(idSolicitud) {
+function procesarValidacionPrestamos() {
   const lock = LockService.getScriptLock();
-  if (lock.tryLock(10000)) {
+  if (lock.tryLock(60000)) {
     try {
-      const sheet =
-        SpreadsheetApp.getActiveSpreadsheet().getSheetByName("PRESTAMOS");
-      const data = sheet.getDataRange().getValues();
-      for (let i = 1; i < data.length; i++) {
-        if (String(data[i][0]) === String(idSolicitud)) {
-          const estado = String(data[i][8]);
-          const estadosPermitidos = ["Solicitado", "Pagado", "Rechazado"];
-          if (!estadosPermitidos.includes(estado)) {
-            return {
-              success: false,
-              message: "No se puede eliminar un préstamo activo.",
-            };
+      const ss = getSpreadsheet('PRESTAMOS');
+      const sheetValidacion = ss.getSheetByName(CONFIG.HOJAS.VALIDACION_PRESTAMOS);
+      const sheetBD = getSheet('PRESTAMOS', 'PRESTAMOS');
+      
+      if (!sheetValidacion) {
+        console.warn("⚠️ La hoja 'Validación-Prestamos' no existe. Creándola...");
+        const nuevaHoja = ss.insertSheet(CONFIG.HOJAS.VALIDACION_PRESTAMOS);
+        nuevaHoja.appendRow(["ID", "Fecha", "RUT", "Nombre", "Validación", "Observación", "Nombre Informe"]);
+        console.log("✅ Hoja 'Validación-Prestamos' creada exitosamente");
+        return;
+      }
+      
+      if (!sheetBD) {
+        console.error("❌ No se encontró la hoja BD_PRESTAMOS.");
+        return;
+      }
+
+      const dataValidacion = sheetValidacion.getDataRange().getValues();
+      const dataBD = sheetBD.getDataRange().getValues();
+      const COL_BD = CONFIG.COLUMNAS.PRESTAMOS;
+      
+      // MAPEO DE COLUMNAS HOJA VALIDACIÓN:
+      // A(0): ID | B(1): Fecha | C(2): RUT | D(3): Nombre | E(4): Validación | F(5): Observación | G(6): Nombre Informe
+      const VAL_COL = { ID: 0, VALIDACION: 4, OBS: 5 }; 
+      
+      // ⭐ CORRECCIÓN: Columna O (índice 14) para marcar "OK" - NO la columna N
+      const COL_INFORME = 14; // ← CAMBIO AQUÍ (antes era 13)
+
+      let procesadosCount = 0;
+
+      // Recorrer hoja de Validación (saltando cabecera)
+      for (let i = 1; i < dataValidacion.length; i++) {
+        const idSolicitud = String(dataValidacion[i][VAL_COL.ID]).trim();
+        const resultadoValidacion = String(dataValidacion[i][VAL_COL.VALIDACION]).toUpperCase().trim();
+        const observacionAdmin = String(dataValidacion[i][VAL_COL.OBS]);
+
+        // Solo procesamos si hay ID y una decisión clara (ACEPTADO o RECHAZADO)
+        if (!idSolicitud || (resultadoValidacion !== "ACEPTADO" && resultadoValidacion !== "RECHAZADO")) {
+          continue;
+        }
+
+        // Buscar coincidencia en BD_PRESTAMOS
+        for (let j = 1; j < dataBD.length; j++) {
+          const idBD = String(dataBD[j][COL_BD.ID]).trim();
+          
+          // ⭐ Verificar columna O (Informe) para ver si ya fue procesado antes
+          const informeEnviado = String(dataBD[j][COL_INFORME]); 
+
+          if (idBD === idSolicitud) {
+            
+            // SI YA DICE "OK", SALTAMOS (Ya fue procesado históricamente)
+            if (informeEnviado === "OK") {
+               console.log(`ℹ️ ID ${idSolicitud}: Ya procesado anteriormente (OK en columna O)`);
+               continue; 
+            }
+
+            // Si llegamos aquí, es una solicitud nueva validada que requiere acción
+            let nuevoEstado = "";
+            let tituloCorreo = "";
+            let colorCorreo = "";
+            let mensajeIntro = "";
+
+            if (resultadoValidacion === "ACEPTADO") {
+              nuevoEstado = "Vigente"; 
+              tituloCorreo = "Solicitud Aprobada";
+              colorCorreo = "#15803d"; // Verde
+              mensajeIntro = `Nos complace informarte que tu solicitud de préstamo ha sido <strong>APROBADA</strong> por la empresa.`;
+            } else {
+              nuevoEstado = "Rechazado";
+              tituloCorreo = "Solicitud Rechazada";
+              colorCorreo = "#b91c1c"; // Rojo
+              mensajeIntro = `Te informamos que tu solicitud de préstamo ha sido <strong>RECHAZADA</strong> por la empresa.`;
+            }
+
+            // 1. Actualizar estado en BD_PRESTAMOS
+            sheetBD.getRange(j + 1, COL_BD.ESTADO + 1).setValue(nuevoEstado);
+            
+            // 2. Enviar Correo con MONTO incluido
+            const correoUsuario = dataBD[j][COL_BD.CORREO];
+            const nombreUsuario = dataBD[j][COL_BD.NOMBRE];
+            
+            if (esCorreoValido(correoUsuario)) {
+              // ⭐ PREPARAR FECHA TÉRMINO FORMATEADA
+              let fechaTerminoStr = "S/D";
+              const fechaTerminoRaw = dataBD[j][COL_BD.FECHA_TERMINO];
+              
+              if (fechaTerminoRaw) {
+                try {
+                  const fechaTermino = new Date(fechaTerminoRaw);
+                  if (!isNaN(fechaTermino.getTime())) {
+                    fechaTerminoStr = Utilities.formatDate(fechaTermino, Session.getScriptTimeZone(), "dd/MM/yyyy");
+                  }
+                } catch (e) {
+                  console.warn(`⚠️ Error formateando fecha término para ID ${idSolicitud}: ${e}`);
+                }
+              }
+              
+              // ⭐ AGREGAR FECHA TÉRMINO AL CORREO
+              const datosCorreo = {
+                "FECHA SOLICITUD": Utilities.formatDate(new Date(dataBD[j][COL_BD.FECHA]), Session.getScriptTimeZone(), "dd/MM/yyyy"),
+                "RUT": formatRutServer(dataBD[j][COL_BD.RUT]),
+                "NOMBRE": nombreUsuario,
+                "TIPO PRÉSTAMO": dataBD[j][COL_BD.TIPO],
+                "MONTO": dataBD[j][COL_BD.MONTO] || "$0",
+                "ESTADO": nuevoEstado.toUpperCase(),
+                "FECHA TÉRMINO": fechaTerminoStr, // ← NUEVO CAMPO
+                "OBSERVACIÓN": observacionAdmin || "Sin observaciones",
+                "RESULTADO": resultadoValidacion
+              };
+
+              enviarCorreoEstilizado(
+                correoUsuario,
+                `Resultado Solicitud Préstamo - Sindicato SLIM n°3`,
+                tituloCorreo,
+                `Hola <strong>${nombreUsuario}</strong>, ${mensajeIntro}`,
+                datosCorreo,
+                colorCorreo
+              );
+              
+              // ⭐ 3. MARCAR COMO PROCESADO en Columna O (índice 14)
+              sheetBD.getRange(j + 1, COL_INFORME + 1).setValue("OK");
+              console.log(`✅ ID ${idSolicitud}: Procesado como ${nuevoEstado}, notificado y marcado OK en columna O.`);
+              procesadosCount++;
+              
+            } else {
+              sheetBD.getRange(j + 1, COL_INFORME + 1).setValue("ERROR_NO_MAIL");
+              console.warn(`⚠️ ID ${idSolicitud}: Procesado sin correo válido.`);
+            }
+            
+            break; // Terminar búsqueda en BD para este ID específico
           }
-          sheet.deleteRow(i + 1);
-          return {
-            success: true,
-            message: "Registro eliminado correctamente.",
-          };
         }
       }
-      return { success: false, message: "No encontrado." };
+      
+      if (procesadosCount > 0) {
+         console.log(`✅ Resumen final: ${procesadosCount} solicitudes nuevas procesadas correctamente.`);
+      } else {
+         console.log("ℹ️ No hay solicitudes nuevas para procesar en este momento.");
+      }
+
     } catch (e) {
-      return { success: false, message: "Error: " + e.toString() };
+      console.error("❌ Error en sincronización de validación de préstamos: " + e.toString());
     } finally {
       lock.releaseLock();
     }
   } else {
-    return { success: false, message: "Servidor ocupado." };
+    console.warn("⚠️ No se pudo obtener el lock del script. Servidor ocupado.");
   }
 }
 
-function modificarSolicitud(idSolicitud, nuevasCuotas, nuevoMedio) {
-  const lock = LockService.getScriptLock();
-  if (lock.tryLock(10000)) {
+function obtenerHistorialPrestamos(rutInput) {
+  try {
+    var sheet = getSheet('PRESTAMOS', 'PRESTAMOS');
+    var COL = CONFIG.COLUMNAS.PRESTAMOS;
+    
+    // ✅ VALIDACIÓN 1: Verificar que la hoja existe
+    if (!sheet) {
+      Logger.log('❌ Hoja PRESTAMOS no encontrada');
+      return { success: false, message: "Hoja no encontrada" };
+    }
+    
+    var lastRow = sheet.getLastRow();
+    Logger.log('📊 Préstamos - Total de filas: ' + lastRow);
+    
+    if (lastRow < 2) return { success: true, registros: [] };
+    
+    // ✅ CORRECCIÓN 2: Leer TODAS las columnas que existen en la hoja
+    var lastCol = sheet.getLastColumn();
+    Logger.log('📊 Préstamos - Total de columnas: ' + lastCol);
+    
+    var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getDisplayValues();
+    Logger.log('📊 Datos leídos: ' + data.length + ' filas');
+    
+    var rutLimpio = cleanRut(rutInput);
+    Logger.log('🔍 Buscando préstamos para RUT: ' + rutLimpio);
+    
+    var registros = [];
+
+    // ✅ CORRECCIÓN 3: Empezar desde índice 0 (data ya no incluye header)
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      
+      // ✅ VALIDACIÓN 4: Verificar que la fila tiene datos
+      if (!row[COL.RUT]) {
+        Logger.log('⚠️ Fila ' + (i + 2) + ' sin RUT, saltando...');
+        continue;
+      }
+      
+      const rutFila = cleanRut(row[COL.RUT]);
+      
+      // ✅ LOGGING para debugging
+      if (i < 5) { // Solo loguear las primeras 5 para no saturar
+        Logger.log('Fila ' + (i + 2) + ' - RUT: ' + rutFila + ' | Buscado: ' + rutLimpio + ' | Coincide: ' + (rutFila === rutLimpio));
+      }
+      
+      if (rutFila !== rutLimpio) continue;
+      
+      // ✅ EXTRACCIÓN de datos con valores por defecto
+      const tipo = row[COL.TIPO] || "Préstamo";
+      const cuotas = row[COL.CUOTAS] || "S/D";
+      const medio = row[COL.MEDIO_PAGO] || "S/D";
+      const monto = row[COL.MONTO] || "$0";
+      const observacion = row[COL.OBSERVACION] || "";
+      
+      // ✅ FORMATEO de fecha de término
+      let fechaTerminoStr = "S/D";
+      const ftRaw = row[COL.FECHA_TERMINO];
+      if (ftRaw) {
+         try {
+           const d = new Date(ftRaw);
+           if (!isNaN(d.getTime())) {
+             fechaTerminoStr = Utilities.formatDate(d, Session.getScriptTimeZone(), "dd/MM/yyyy");
+           } else {
+             fechaTerminoStr = String(ftRaw).split(' ')[0]; 
+           }
+         } catch(e) { 
+           fechaTerminoStr = String(ftRaw).split(' ')[0]; 
+         }
+      }
+
+      registros.push({
+        id: row[COL.ID] || "",
+        fecha: row[COL.FECHA] || "",
+        tipo: tipo,
+        monto: monto,
+        cuotas: cuotas,
+        medio: medio,
+        estado: row[COL.ESTADO] || "Solicitado",
+        observacion: observacion,
+        fechaTermino: fechaTerminoStr,
+        gestion: row[COL.GESTION] || "Socio",
+        nomDirigente: row[COL.NOMBRE_DIRIGENTE] || ""
+      });
+      
+      Logger.log('✅ Préstamo agregado: ' + row[COL.ID] + ' - ' + tipo);
+    }
+    
+    Logger.log('📦 Total de préstamos encontrados: ' + registros.length);
+    
+    registros.reverse();
+    return { success: true, registros: registros };
+
+  } catch (e) {
+    Logger.log('❌ ERROR en obtenerHistorialPrestamos: ' + e.toString());
+    Logger.log('Stack: ' + e.stack);
+    return { success: false, message: "Error: " + e.toString() };
+  }
+}
+
+// ==========================================
+// FUNCIÓN ELIMINAR PRÉSTAMO (Con Respaldo Histórico)
+// ==========================================
+
+function eliminarSolicitud(idSolicitud) {
+  var lock = LockService.getScriptLock();
+  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
     try {
-      const sheet =
-        SpreadsheetApp.getActiveSpreadsheet().getSheetByName("PRESTAMOS");
+      const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEETS.PRESTAMOS);
+      const sheet = ss.getSheetByName("BD_PRESTAMOS");
       const data = sheet.getDataRange().getValues();
+      const COL = CONFIG.COLUMNAS.PRESTAMOS;
+      
       for (let i = 1; i < data.length; i++) {
-        if (String(data[i][0]) === String(idSolicitud)) {
-          const estado = String(data[i][8]);
-          if (estado !== "Solicitado")
-            return {
-              success: false,
-              message: "No se puede editar. Estado: " + estado,
-            };
+        if (String(data[i][COL.ID]) === String(idSolicitud)) {
+          
+          // RESPALDO: Guardamos copia SIEMPRE antes de borrar
+          const sheetEliminados = ss.getSheetByName("Registros-eliminados");
+          if (sheetEliminados) {
+            sheetEliminados.appendRow(data[i]);
+          } else {
+            return { success: false, message: "Error crítico: No existe la hoja de respaldo." };
+          }
+          
+          // Eliminar fila
+          sheet.deleteRow(i + 1);
+          return { success: true, message: "Registro eliminado y respaldado correctamente." };
+        }
+      }
+      return { success: false, message: "No encontrado." };
+    } catch (e) { return { success: false, message: "Error: " + e.toString() }; }
+    finally { lock.releaseLock(); }
+  } else { return { success: false, message: "Servidor ocupado." }; }
+}
 
-          sheet.getRange(i + 1, 7).setValue(nuevasCuotas);
-          sheet.getRange(i + 1, 8).setValue(nuevoMedio);
-
-          const fechaSolicitud = new Date(data[i][1]);
-          const nuevaFechaTermino = new Date(fechaSolicitud);
-          nuevaFechaTermino.setMonth(
-            nuevaFechaTermino.getMonth() + parseInt(nuevasCuotas)
-          );
-          sheet.getRange(i + 1, 10).setValue(nuevaFechaTermino);
+function modificarSolicitud(idSolicitud, nuevasCuotas, nuevoMedio) {
+  var lock = LockService.getScriptLock();
+  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
+    try {
+      const sheet = getSheet('PRESTAMOS', 'PRESTAMOS');
+      const data = sheet.getDataRange().getValues();
+      const COL = CONFIG.COLUMNAS.PRESTAMOS;
+      
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][COL.ID]) === String(idSolicitud)) {
+          const estado = String(data[i][COL.ESTADO]);
+          if (estado !== "Solicitado") return { success: false, message: "No se puede editar. Estado: " + estado };
+          
+          // Recalcular Fecha Término con lógica financiera
+          const fechaSolicitud = new Date(data[i][COL.FECHA]);
+          const diaSolicitud = fechaSolicitud.getDate();
+          
+          let fechaInicioPago = new Date(fechaSolicitud);
+          if (diaSolicitud > 24) {
+             fechaInicioPago.setMonth(fechaInicioPago.getMonth() + 1);
+          }
+          
+          let fechaTermino = new Date(fechaInicioPago);
+          fechaTermino.setMonth(fechaTermino.getMonth() + parseInt(nuevasCuotas));
+          
+          // Ajustar al último día del mes
+          fechaTermino = new Date(fechaTermino.getFullYear(), fechaTermino.getMonth() + 1, 0);
+          
+          sheet.getRange(i + 1, COL.FECHA_TERMINO + 1).setValue(fechaTermino);
 
           return { success: true, message: "Modificado correctamente." };
         }
       }
       return { success: false, message: "No encontrado." };
-    } catch (e) {
-      return { success: false, message: "Error: " + e.toString() };
-    } finally {
-      lock.releaseLock();
+    } catch (e) { return { success: false, message: "Error: " + e.toString() }; }
+    finally { lock.releaseLock(); }
+  } else { return { success: false, message: "Servidor ocupado." }; }
+}
+
+/**
+ * Verificar y actualizar préstamos que ya cumplieron su fecha de término
+ * Cambia de "Vigente" → "Pagado" automáticamente
+ */
+function verificarCambiosPrestamos() {
+  try {
+    // ⭐ CORRECCIÓN: Usar getSheet() en lugar de getActiveSpreadsheet()
+    const sheet = getSheet('PRESTAMOS', 'PRESTAMOS');
+    
+    if (!sheet) {
+      console.error("❌ No se pudo acceder a la hoja BD_PRESTAMOS");
+      return { success: false, error: "Hoja no encontrada" };
     }
-  } else {
-    return { success: false, message: "Servidor ocupado." };
+    
+    const data = sheet.getDataRange().getValues();
+    const COL = CONFIG.COLUMNAS.PRESTAMOS;
+    
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    
+    let prestamosActualizados = 0;
+    
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const estado = String(row[COL.ESTADO]).trim();
+      const fechaTerminoRaw = row[COL.FECHA_TERMINO];
+      
+      if (estado !== "Vigente") continue;
+      
+      if (!fechaTerminoRaw) {
+        console.warn(`⚠️ Fila ${i + 1}: Préstamo vigente sin fecha de término`);
+        continue;
+      }
+      
+      let fechaTermino;
+      try {
+        fechaTermino = new Date(fechaTerminoRaw);
+        fechaTermino.setHours(0, 0, 0, 0);
+      } catch (e) {
+        console.error(`❌ Fila ${i + 1}: Error al convertir fecha: ${fechaTerminoRaw}`);
+        continue;
+      }
+      
+      if (isNaN(fechaTermino.getTime())) {
+        console.error(`❌ Fila ${i + 1}: Fecha de término inválida: ${fechaTerminoRaw}`);
+        continue;
+      }
+      
+      if (hoy > fechaTermino) {
+        sheet.getRange(i + 1, COL.ESTADO + 1).setValue("Pagado");
+        
+        const correo = row[COL.CORREO];
+        const nombre = row[COL.NOMBRE];
+        const tipo = row[COL.TIPO];
+        const monto = row[COL.MONTO];
+        const cuotas = row[COL.CUOTAS];
+        const idPrestamo = row[COL.ID];
+        
+        console.log(`✅ Fila ${i + 1}: Préstamo ID ${idPrestamo} cambiado a "Pagado"`);
+        
+        if (esCorreoValido(correo)) {
+          try {
+            enviarCorreoEstilizado(
+              correo,
+              "Préstamo Completado - Sindicato SLIM n°3",
+              "Préstamo Finalizado",
+              `Hola <strong>${nombre}</strong>, tu préstamo ha sido completado exitosamente.`,
+              { 
+                "ID": idPrestamo,
+                "TIPO PRÉSTAMO": tipo,
+                "MONTO": monto,
+                "CUOTAS": cuotas,
+                "ESTADO": "PAGADO",
+                "FECHA TÉRMINO": Utilities.formatDate(fechaTermino, Session.getScriptTimeZone(), 'dd/MM/yyyy'),
+                "FECHA FINALIZACIÓN": Utilities.formatDate(hoy, Session.getScriptTimeZone(), 'dd/MM/yyyy')
+              },
+              "#10b981"
+            );
+          } catch (mailError) {
+            console.error(`⚠️ Error enviando correo: ${mailError}`);
+          }
+        }
+        
+        prestamosActualizados++;
+      }
+    }
+    
+    if (prestamosActualizados > 0) {
+      console.log(`📊 RESUMEN: ${prestamosActualizados} préstamo(s) actualizado(s) a "Pagado"`);
+    } else {
+      console.log("ℹ️ No hay préstamos que actualizar.");
+    }
+    
+    return { success: true, prestamosActualizados: prestamosActualizados };
+    
+  } catch (e) {
+    console.error("❌ Error verificando préstamos: " + e.toString());
+    return { success: false, error: e.toString() };
   }
 }
 
@@ -519,33 +1371,70 @@ function modificarSolicitud(idSolicitud, nuevasCuotas, nuevoMedio) {
  */
 function obtenerEstadoSwitchJustificaciones() {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheetConfig = ss.getSheetByName("CONFIG_JUSTIFICACIONES");
-
-    if (!sheetConfig) {
-      sheetConfig = ss.insertSheet("CONFIG_JUSTIFICACIONES");
-      sheetConfig.appendRow(["Habilitado", "Fecha Límite"]);
-      sheetConfig.appendRow([false, ""]);
-    }
-
-    const data = sheetConfig.getRange(2, 1, 1, 2).getValues();
-    const habilitado =
-      data[0][0] === true || data[0][0] === "TRUE" || data[0][0] === "true";
-    const fechaLimite = data[0][1];
-
-    if (habilitado && fechaLimite) {
-      const ahora = new Date();
-      const limite = new Date(fechaLimite);
-
-      if (ahora > limite) {
-        sheetConfig.getRange(2, 1).setValue(false);
-        return { habilitado: false, fechaLimite: fechaLimite };
+    var cache = CacheService.getScriptCache();
+    var cached = cache.get('justif_switch_state');
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch (e) {
+        Logger.log('Error parsing switch cache: ' + e);
       }
     }
 
-    return { habilitado: habilitado, fechaLimite: fechaLimite };
+    const ss = getSpreadsheet('JUSTIFICACIONES');
+    let sheetConfig = ss.getSheetByName(CONFIG.HOJAS.CONFIG_JUSTIFICACIONES);
+    
+    if (!sheetConfig) {
+      sheetConfig = ss.insertSheet(CONFIG.HOJAS.CONFIG_JUSTIFICACIONES);
+      sheetConfig.appendRow(["Habilitado", "Fecha Límite"]);
+      sheetConfig.appendRow([false, ""]);
+    }
+    
+    const data = sheetConfig.getRange(2, 1, 1, 2).getValues();
+    const habilitado = data[0][0] === true || data[0][0] === "TRUE" || data[0][0] === "true";
+    const fechaLimiteValue = data[0][1];
+    
+    if (habilitado && fechaLimiteValue) {
+      // Convertir ambas fechas a UTC para comparación justa
+      const ahora = new Date();
+      const limite = new Date(fechaLimiteValue);
+      
+      // Log para debug (puedes comentar después)
+      Logger.log("Fecha actual (UTC): " + ahora.toISOString());
+      Logger.log("Fecha límite (UTC): " + limite.toISOString());
+      Logger.log("Fecha actual > Fecha límite: " + (ahora > limite));
+      
+      if (ahora > limite) {
+        // Ya pasó la fecha límite, deshabilitar automáticamente
+        sheetConfig.getRange(2, 1).setValue(false);
+        var resultado = { 
+        habilitado: habilitado, 
+        fechaLimite: fechaLimiteValue 
+      };
+      
+      // ✅ Guardar en caché por 5 minutos
+      try {
+        cache.put('justif_switch_state', JSON.stringify(resultado), 300);
+      } catch (e) {
+        Logger.log('Error caching switch state: ' + e);
+      }
+      
+      return resultado;
+      }
+    }
+    
+    return { 
+      habilitado: habilitado, 
+      fechaLimite: fechaLimiteValue 
+    };
+    
   } catch (e) {
-    return { habilitado: false, fechaLimite: "", error: e.toString() };
+    Logger.error("Error en obtenerEstadoSwitchJustificaciones: " + e.toString());
+    return { 
+      habilitado: false, 
+      fechaLimite: "", 
+      error: e.toString() 
+    };
   }
 }
 
@@ -553,24 +1442,25 @@ function obtenerEstadoSwitchJustificaciones() {
  * Actualizar estado del switch de justificaciones
  */
 function actualizarSwitchJustificaciones(nuevoEstado, fechaLimite) {
-  const lock = LockService.getScriptLock();
-  if (lock.tryLock(10000)) {
+  var lock = LockService.getScriptLock();
+  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
     try {
-      const ss = SpreadsheetApp.getActiveSpreadsheet();
-      let sheetConfig = ss.getSheetByName("CONFIG_JUSTIFICACIONES");
-
+      const ss = getSpreadsheet('JUSTIFICACIONES');
+      let sheetConfig = ss.getSheetByName(CONFIG.HOJAS.CONFIG_JUSTIFICACIONES);
+      
       if (!sheetConfig) {
-        sheetConfig = ss.insertSheet("CONFIG_JUSTIFICACIONES");
+        sheetConfig = ss.insertSheet(CONFIG.HOJAS.CONFIG_JUSTIFICACIONES);
         sheetConfig.appendRow(["Habilitado", "Fecha Límite"]);
         sheetConfig.appendRow([false, ""]);
       }
-
+      
       sheetConfig.getRange(2, 1).setValue(nuevoEstado);
       if (fechaLimite) {
         sheetConfig.getRange(2, 2).setValue(fechaLimite);
       }
-
+      
       return { success: true, message: "Estado actualizado correctamente." };
+      
     } catch (e) {
       return { success: false, message: "Error: " + e.toString() };
     } finally {
@@ -583,241 +1473,336 @@ function actualizarSwitchJustificaciones(nuevoEstado, fechaLimite) {
 
 function verificarDisponibilidadJustificaciones() {
   const estadoSwitch = obtenerEstadoSwitchJustificaciones();
-
+  
   if (!estadoSwitch.habilitado) {
-    return {
-      habilitado: false,
-      mensaje:
-        "Módulo de justificaciones temporalmente deshabilitado.\nConsulte con la directiva.",
+    return { 
+      habilitado: false, 
+      mensaje: "Módulo de justificaciones temporalmente deshabilitado.\nConsulte con la directiva." 
     };
   }
-
+  
   return { habilitado: true };
 }
 
-function enviarJustificacion(
-  rutGestor,
-  tipo,
-  motivo,
-  archivoData,
-  rutBeneficiario
-) {
-  const CARPETA_ID = "1Tyx4RTAX59M01uk_zJhsJjyYMydtfH03";
+/**
+ * Valida si el usuario puede enviar una justificación para el mes actual
+ * @param {string} rut - RUT del usuario
+ * @returns {Object} {permitido: boolean, mensaje: string, justificacionExistente: Object|null}
+ */
+function validarJustificacionMesActual(rut) {
+  try {
+    const sheet = getSheet('JUSTIFICACIONES', 'JUSTIFICACIONES');
+    const data = sheet.getDataRange().getValues();
+    const COL = CONFIG.COLUMNAS.JUSTIFICACIONES;
+    
+    // Obtener mes y año actual
+    const hoy = new Date();
+    const mesActual = hoy.getMonth(); // 0-11
+    const yearActual = hoy.getFullYear();
+    
+    // Buscar justificaciones del mismo RUT en el mes actual
+    const justificacionesDelMes = [];
+    
+    for (let i = 1; i < data.length; i++) {
+      const filaRut = data[i][COL.RUT];
+      const filaFecha = new Date(data[i][COL.FECHA]);
+      const filaMes = filaFecha.getMonth();
+      const filaYear = filaFecha.getFullYear();
+      const filaEstado = data[i][COL.ESTADO];
+      const filaAsamblea = data[i][COL.ASAMBLEA];
+      
+      if (cleanRut(filaRut) === cleanRut(rut) && 
+          filaMes === mesActual && 
+          filaYear === yearActual) {
+        justificacionesDelMes.push({
+          id: data[i][COL.ID],
+          estado: filaEstado,
+          tipo: data[i][COL.MOTIVO],
+          fecha: Utilities.formatDate(filaFecha, Session.getScriptTimeZone(), "dd/MM/yyyy"),
+          asamblea: filaAsamblea || ""
+        });
+      }
+    }
+    
+    // Si no hay justificaciones para este mes, permitir
+    if (justificacionesDelMes.length === 0) {
+      return {
+        permitido: true,
+        mensaje: "Puede enviar la justificación",
+        justificacionExistente: null
+      };
+    }
+    
+    // Verificar el estado de las justificaciones existentes
+    const hayEnviada = justificacionesDelMes.some(j => j.estado === 'Enviado');
+    const hayAceptada = justificacionesDelMes.some(j => j.estado === 'Aceptado' || j.estado === 'Aceptado/Obs');
+    const todasRechazadas = justificacionesDelMes.every(j => j.estado === 'Rechazado');
+    
+    // Obtener nombre del mes actual
+    const nombreMes = hoy.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
+    
+    // Si hay una justificación Enviada, bloquear
+    if (hayEnviada) {
+      const justificacion = justificacionesDelMes.find(j => j.estado === 'Enviado');
+      return {
+        permitido: false,
+        mensaje: `Ya tienes una justificación pendiente para ${nombreMes}`,
+        justificacionExistente: justificacion,
+        tipoBloqueo: 'enviada'
+      };
+    }
+    
+    // Si hay una justificación Aceptada, bloquear
+    if (hayAceptada) {
+      const justificacion = justificacionesDelMes.find(j => j.estado === 'Aceptado' || j.estado === 'Aceptado/Obs');
+      return {
+        permitido: false,
+        mensaje: `Ya tienes una justificación aceptada para ${nombreMes}`,
+        justificacionExistente: justificacion,
+        tipoBloqueo: 'aceptada'
+      };
+    }
+    
+    // Si todas están rechazadas, permitir nuevo intento
+    if (todasRechazadas) {
+      return {
+        permitido: true,
+        mensaje: "Puede reintentar (anterior rechazada)",
+        justificacionExistente: justificacionesDelMes[0]
+      };
+    }
+    
+    // Caso por defecto (no debería llegar aquí)
+    return {
+      permitido: true,
+      mensaje: "Verificación completada",
+      justificacionExistente: null
+    };
+    
+  } catch (error) {
+    Logger.log('Error en validarJustificacionMesActual: ' + error.toString());
+    return {
+      permitido: false,
+      mensaje: "Error al validar: " + error.message,
+      justificacionExistente: null
+    };
+  }
+}
 
-  const disp = verificarDisponibilidadJustificaciones();
+// ==========================================
+// FUNCIÓN ENVIAR JUSTIFICACIÓN - VERSIÓN MEJORADA
+// Reemplazar la función existente completamente
+// ==========================================
+
+function enviarJustificacion(rutGestor, tipo, motivo, archivoData, rutBeneficiario) {
+  var CARPETA_ID = CONFIG.CARPETAS.JUSTIFICACIONES;
+  
+  // Verificar disponibilidad del módulo
+  var disp = verificarDisponibilidadJustificaciones();
   if (!disp.habilitado) return { success: false, message: disp.mensaje };
-
-  const lock = LockService.getScriptLock();
+  
+  var lock = LockService.getScriptLock();
   if (lock.tryLock(30000)) {
     try {
-      const ss = SpreadsheetApp.getActiveSpreadsheet();
-      const sheetUsers = ss.getSheetByName("BD_USUARIOS");
-      let sheetJustif = ss.getSheetByName("JUSTIFICACIONES");
-
-      if (!sheetJustif) {
-        sheetJustif = ss.insertSheet("JUSTIFICACIONES");
-        sheetJustif.appendRow([
-          "ID",
-          "Fecha",
-          "Rut",
-          "Nombre",
-          "Correo",
-          "Tipo",
-          "Motivo",
-          "URL Archivo",
-          "Estado",
-          "Observación",
-          "Notificado",
-          "ASAMBLEA",
-          "Gestión",
-          "Nombre Dirigente",
-          "Correo Dirigente",
-        ]);
-      }
-
-      const dataUsers = sheetUsers.getDataRange().getDisplayValues();
-
-      let gestor = null;
-      const rutLimpioGestor = cleanRut(rutGestor);
-      for (let i = 1; i < dataUsers.length; i++) {
-        if (cleanRut(dataUsers[i][0]) === rutLimpioGestor) {
-          gestor = {
-            rut: dataUsers[i][0],
-            nombre: dataUsers[i][3],
-            correo: dataUsers[i][5],
-          };
-          break;
-        }
-      }
-      if (!gestor) return { success: false, message: "Error de sesión." };
-
-      let rutTarget = rutBeneficiario
-        ? cleanRut(rutBeneficiario)
-        : rutLimpioGestor;
-      let beneficiario = null;
-
-      if (rutTarget === rutLimpioGestor) {
+      var sheetJustif = getSheet('JUSTIFICACIONES', 'JUSTIFICACIONES');
+      var COL_JUST = CONFIG.COLUMNAS.JUSTIFICACIONES;
+      
+      // Obtener datos del gestor
+      var gestor = obtenerUsuarioPorRut(rutGestor);
+      if (!gestor.encontrado) return { success: false, message: "Error de sesión." };
+      
+      // Determinar beneficiario
+      var beneficiario;
+      var rutTarget = rutBeneficiario ? cleanRut(rutBeneficiario) : cleanRut(rutGestor);
+      var esGestionDirigente = rutTarget !== cleanRut(rutGestor);
+      
+      if (!esGestionDirigente) {
         beneficiario = gestor;
       } else {
-        for (let i = 1; i < dataUsers.length; i++) {
-          if (cleanRut(dataUsers[i][0]) === rutTarget) {
-            beneficiario = {
-              rut: dataUsers[i][0],
-              nombre: dataUsers[i][3],
-              correo: dataUsers[i][5],
-            };
-            break;
-          }
-        }
-        if (!beneficiario)
-          return { success: false, message: "RUT del socio no encontrado." };
+        beneficiario = obtenerUsuarioPorRut(rutBeneficiario);
+        if (!beneficiario.encontrado) return { success: false, message: "RUT del socio no encontrado." };
       }
-
-      const dataJustif = sheetJustif.getDataRange().getDisplayValues();
-      for (let i = 1; i < dataJustif.length; i++) {
-        if (
-          cleanRut(dataJustif[i][2]) === cleanRut(beneficiario.rut) &&
-          dataJustif[i][8] === "Enviado"
-        ) {
-          return {
-            success: false,
-            message: "Ya tienes una justificación pendiente.",
-          };
-        }
+      
+      // Validar justificación del mes
+      var validacion = validarJustificacionMesActual(beneficiario.rut);
+      if (!validacion.permitido) {
+        return {
+          success: false,
+          message: validacion.mensaje,
+          tipoError: 'restriccion_mes',
+          justificacionExistente: validacion.justificacionExistente,
+          tipoBloqueo: validacion.tipoBloqueo
+        };
       }
-
-      const idUnico = Utilities.getUuid();
-      let fileUrl = "Sin archivo";
-
+      
+      // ========== VALIDAR CORREOS ANTES DE SUBIR ARCHIVO ==========
+      var validacionCorreos = validarCorreosParaPermisos(
+        { rut: beneficiario.rut, nombre: beneficiario.nombre, correo: beneficiario.correo },
+        esGestionDirigente ? { rut: gestor.rut, nombre: gestor.nombre, correo: gestor.correo } : null,
+        esGestionDirigente
+      );
+      
+      var idUnico = Utilities.getUuid();
+      var fileUrl = "Sin archivo";
+      var alertaPermisos = null;
+      
+      // ========== SUBIR ARCHIVO SI EXISTE ==========
       if (archivoData && archivoData.base64) {
-        const sizeInBytes = (archivoData.base64.length * 3) / 4;
-        if (sizeInBytes > 5 * 1024 * 1024) {
-          return {
-            success: false,
-            message: "El archivo es demasiado grande (máx 5MB).",
-          };
+        var nombreArchivo = "JUSTIF-" + idUnico + "-" + cleanRut(beneficiario.rut);
+        
+        var resultadoSubida = subirArchivoConPermisos(
+          archivoData,
+          CARPETA_ID,
+          nombreArchivo,
+          validacionCorreos.correosParaPermisos,
+          [] // Sin correos adicionales para justificaciones
+        );
+        
+        if (!resultadoSubida.success) {
+          return { success: false, message: resultadoSubida.mensajeError };
         }
-
-        try {
-          const folder = DriveApp.getFolderById(CARPETA_ID);
-          const blob = Utilities.newBlob(
-            Utilities.base64Decode(archivoData.base64),
-            archivoData.mimeType,
-            archivoData.fileName
-          );
-
-          let extension = "";
-          const nameParts = archivoData.fileName.split(".");
-          if (nameParts.length > 1) extension = "." + nameParts.pop();
-
-          blob.setName(
-            `${idUnico} - ${cleanRut(beneficiario.rut)}${extension}`
-          );
-
-          const file = folder.createFile(blob);
-          file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
-
-          if (beneficiario.correo && beneficiario.correo.includes("@")) {
-            try {
-              file.addViewer(beneficiario.correo);
-            } catch (permErr) {
-              console.log("Permiso drive error: " + permErr);
-            }
-          }
-          fileUrl = file.getUrl();
-        } catch (errDrive) {
-          console.error("Error Drive: " + errDrive);
-          fileUrl = "Error subida";
-        }
+        
+        fileUrl = resultadoSubida.url;
+        
+        // Generar alerta de permisos si hay problemas
+        alertaPermisos = generarAlertaPermisos(validacionCorreos, resultadoSubida);
+      } else {
+        // Si no hay archivo, igual verificar si hay alertas de correo
+        alertaPermisos = generarAlertaPermisos(validacionCorreos, null);
       }
-
-      const fechaHoy = new Date();
-      const estado = "Enviado";
-
-      let gestion = "Socio";
-      let nomDirigente = "";
-      let correoDirigente = "";
-
-      if (rutTarget !== rutLimpioGestor) {
+      
+      // ========== CREAR REGISTRO EN LA BASE DE DATOS ==========
+      var fechaHoy = new Date();
+      var estado = "Enviado";
+      var codigoAsamblea = generarCodigoAsamblea(fechaHoy);
+      
+      var gestion = "Socio";
+      var nomDirigente = "";
+      var correoDirigente = "";
+      
+      if (esGestionDirigente) {
         gestion = "Dirigente";
         nomDirigente = gestor.nombre;
         correoDirigente = gestor.correo;
       }
-
-      sheetJustif.appendRow([
-        idUnico,
-        fechaHoy,
-        beneficiario.rut,
-        beneficiario.nombre,
-        beneficiario.correo,
-        tipo,
-        motivo,
-        fileUrl,
-        estado,
-        "",
-        estado,
-        "",
-        gestion,
-        nomDirigente,
-        correoDirigente,
-      ]);
-
-      const lastRow = sheetJustif.getLastRow();
-      const cellEstado = sheetJustif.getRange(lastRow, 9);
-      const rule = SpreadsheetApp.newDataValidation()
-        .requireValueInList(
-          ["Enviado", "Aceptado", "Aceptado/Obs", "Rechazado"],
-          true
-        )
+      
+      var newRow = [];
+      newRow[COL_JUST.ID] = idUnico;
+      newRow[COL_JUST.FECHA] = fechaHoy;
+      newRow[COL_JUST.RUT] = beneficiario.rut;
+      newRow[COL_JUST.NOMBRE] = beneficiario.nombre;
+      newRow[COL_JUST.REGION] = beneficiario.region;
+      newRow[COL_JUST.MOTIVO] = tipo;
+      newRow[COL_JUST.ARGUMENTO] = motivo;
+      newRow[COL_JUST.RESPALDO] = fileUrl;
+      newRow[COL_JUST.ESTADO] = estado;
+      newRow[COL_JUST.OBSERVACION] = "";
+      newRow[COL_JUST.NOTIFICACION] = estado;
+      newRow[COL_JUST.ASAMBLEA] = codigoAsamblea;
+      newRow[COL_JUST.GESTION] = gestion;
+      newRow[COL_JUST.DIRIGENTE] = nomDirigente;
+      newRow[COL_JUST.CORREO_DIRIGENTE] = correoDirigente;
+      
+      sheetJustif.appendRow(newRow);
+      
+      // Agregar validación de datos
+      var lastRow = sheetJustif.getLastRow();
+      var cellEstado = sheetJustif.getRange(lastRow, COL_JUST.ESTADO + 1);
+      var rule = SpreadsheetApp.newDataValidation()
+        .requireValueInList(['Enviado', 'Aceptado', 'Aceptado/Obs', 'Rechazado'], true)
         .setAllowInvalid(false)
         .build();
       cellEstado.setDataValidation(rule);
+      
+      // ========== ENVIAR CORREOS ==========
+      if (esCorreoValido(beneficiario.correo)) {
+        
+        // Construimos el link del archivo o S/D si no hay URL válida
+        let respaldoDisplay = "";
+        if (fileUrl && fileUrl.includes("http")) {
+           respaldoDisplay = `<a href="${fileUrl}" style="color: ${'#ea580c'}; text-decoration: none; font-weight: bold;">Ver Documento Adjunto</a>`;
+        } else {
+           respaldoDisplay = ""; // Se convertirá en S/D automáticamente
+        }
 
-      if (beneficiario.correo && beneficiario.correo.includes("@")) {
-        let mensajeExtra =
-          gestion === "Dirigente"
-            ? `<br><em>(Ingresado por: ${nomDirigente})</em>`
-            : "";
+        // Datos formateados exactamente como se solicitaron
+        var datosCorreo = {
+            "FECHA": Utilities.formatDate(fechaHoy, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm"),
+            "RUT": formatRutServer(beneficiario.rut),
+            "NOMBRE": beneficiario.nombre,
+            "REGION": beneficiario.region, // Asegúrate que este dato venga de 'obtenerUsuarioPorRut'
+            "MOTIVO": tipo,
+            "ARGUMENTO": motivo,
+            "RESPALDO": respaldoDisplay,
+            "OBSERVACION": "", // Observación inicial suele estar vacía
+            "ASAMBLEA": codigoAsamblea,
+            "GESTION": gestion,
+            "DIRIGENTE": nomDirigente
+        };
+
         enviarCorreoEstilizado(
           beneficiario.correo,
-          "Justificación Recibida - Sindicato SLIM n°3",
-          "Justificación Enviada",
-          `Hola ${beneficiario.nombre}, hemos recibido tu justificación.`,
-          {
-            ID: idUnico,
-            Tipo: tipo,
-            Motivo: motivo,
-            Gestión: gestion + mensajeExtra,
-            Archivo: fileUrl.includes("http") ? "Adjuntado" : "No adjuntado",
-            Estado: estado,
-          },
-          "#ea580c"
+          "Justificación Ingresada - Sindicato SLIM n°3",
+          "Comprobante de Justificación",
+          `Hola <strong>${beneficiario.nombre}</strong>, tu justificación ha sido ingresada correctamente en el sistema. A continuación los detalles registrados:`,
+          datosCorreo,
+          "#ea580c" // Color naranja para justificaciones
         );
       }
+      
+      // Correo de respaldo al dirigente (si aplica)
+      if (esGestionDirigente && esCorreoValido(correoDirigente) && correoDirigente !== beneficiario.correo) {
+         
+         // 1. Construimos el enlace específicamente para el diseño del dirigente (color #475569)
+         let respaldoDisplayDirigente = "";
+         if (fileUrl && fileUrl.includes("http")) {
+            respaldoDisplayDirigente = `<a href="${fileUrl}" style="color: #475569; text-decoration: none; font-weight: bold;">Ver Documento Adjunto</a>`;
+         } else {
+            respaldoDisplayDirigente = ""; // Se convertirá en S/D automáticamente
+         }
 
-      if (
-        gestion === "Dirigente" &&
-        correoDirigente &&
-        correoDirigente.includes("@") &&
-        correoDirigente !== beneficiario.correo
-      ) {
+         // 2. Construimos el objeto de datos con el enlace incluido
+         var datosCorreoDirigente = {
+            "FECHA": Utilities.formatDate(fechaHoy, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm"),
+            "RUT": formatRutServer(beneficiario.rut),
+            "NOMBRE": beneficiario.nombre,
+            "REGION": beneficiario.region,
+            "MOTIVO": tipo,
+            "ARGUMENTO": motivo,
+            "RESPALDO": respaldoDisplayDirigente, // <--- AQUI ESTA EL CAMBIO (Antes decía "Documento Cargado")
+            "OBSERVACION": "",
+            "ASAMBLEA": codigoAsamblea,
+            "GESTION": gestion,
+            "DIRIGENTE": nomDirigente
+        };
+
         enviarCorreoEstilizado(
           correoDirigente,
           "Respaldo Gestión Justificación - Sindicato SLIM n°3",
-          "Justificación Ingresada",
+          "Gestión Realizada",
           `Has ingresado exitosamente una justificación para el socio <strong>${beneficiario.nombre}</strong>.`,
-          {
-            ID: idUnico,
-            Socio: beneficiario.nombre,
-            Tipo: tipo,
-            Motivo: motivo,
-          },
-          "#475569"
+          datosCorreoDirigente,
+          "#475569" // Color gris/azul para administración
         );
       }
-
-      return { success: true, message: "Justificación enviada exitosamente." };
+      
+      // ========== PREPARAR RESPUESTA ==========
+      var respuesta = {
+        success: true,
+        message: "Justificación enviada exitosamente."
+      };
+      
+      // Agregar alerta si hay problemas con permisos
+      if (alertaPermisos && alertaPermisos.mostrarAlerta) {
+        respuesta.mostrarAlerta = true;
+        respuesta.tipoAlerta = alertaPermisos.tipoAlerta;
+        respuesta.mensajeAlerta = alertaPermisos.mensajeAlerta;
+      }
+      
+      return respuesta;
+      
     } catch (e) {
+      Logger.log("Error en enviarJustificacion: " + e.toString());
       return { success: false, message: "Error: " + e.toString() };
     } finally {
       lock.releaseLock();
@@ -827,78 +1812,173 @@ function enviarJustificacion(
   }
 }
 
-function obtenerHistorialJustificaciones(rutInput) {
-  try {
-    const sheet =
-      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("JUSTIFICACIONES");
-    if (!sheet) return { success: true, registros: [] };
-
-    const data = sheet.getDataRange().getDisplayValues();
-    const rutLimpio = cleanRut(rutInput);
-    const registros = [];
-
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      if (cleanRut(row[2]) === rutLimpio) {
-        registros.push({
-          id: row[0],
-          fecha: row[1],
-          tipo: row[5],
-          motivo: row[6],
-          url: row[7],
-          estado: row[8],
-          obs: row[9],
-          asamblea: row[11],
-          gestion: row[12],
-          nomDirigente: row[13],
-        });
-      }
-    }
-    registros.reverse();
-    return { success: true, registros: registros };
-  } catch (e) {
-    return { success: false, message: "Error: " + e.toString() };
-  }
-}
-
 function eliminarJustificacion(idJustif) {
-  const lock = LockService.getScriptLock();
-  if (lock.tryLock(10000)) {
+  var lock = LockService.getScriptLock();
+  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
     try {
-      const sheet =
-        SpreadsheetApp.getActiveSpreadsheet().getSheetByName("JUSTIFICACIONES");
+      const sheet = getSheet('JUSTIFICACIONES', 'JUSTIFICACIONES');
       const data = sheet.getDataRange().getValues();
-
+      const COL = CONFIG.COLUMNAS.JUSTIFICACIONES;
+      
       const estadoSwitch = obtenerEstadoSwitchJustificaciones();
-
+      
       for (let i = 1; i < data.length; i++) {
-        if (String(data[i][0]) === String(idJustif)) {
-          const estado = String(data[i][8]);
-
+        if (String(data[i][COL.ID]) === String(idJustif)) {
+          const estado = String(data[i][COL.ESTADO]);
+          
           if (!estadoSwitch.habilitado && estado === "Enviado") {
-            return {
-              success: false,
-              message:
-                "El plazo para agregar o modificar información ha vencido. Si al final del mes aparece con multa puede realizar la apelación.",
+            return { 
+              success: false, 
+              message: "El plazo para agregar o modificar información ha vencido. Si al final del mes aparece con multa puede realizar la apelación." 
             };
           }
-
+          
           if (estado !== "Enviado") {
             return { success: false, message: "No se puede eliminar." };
           }
-
-          sheet.deleteRow(i + 1);
+          
+          sheet.deleteRow(i + 1); 
           return { success: true, message: "Eliminado." };
         }
       }
       return { success: false, message: "No encontrado." };
-    } catch (e) {
-      return { success: false, message: "Error: " + e.toString() };
-    } finally {
-      lock.releaseLock();
+    } catch (e) { 
+      return { success: false, message: "Error: " + e.toString() }; 
+    } finally { 
+      lock.releaseLock(); 
     }
-  } else {
-    return { success: false, message: "Ocupado." };
+  } else { 
+    return { success: false, message: "Ocupado." }; 
+  }
+} 
+
+function obtenerHistorialJustificaciones(rutInput) {
+  try {
+    const sheet = getSheet('JUSTIFICACIONES', 'JUSTIFICACIONES');
+    const COL = CONFIG.COLUMNAS.JUSTIFICACIONES;
+    
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 2) return { success: true, registros: [] };
+    
+    // ⭐ CORRECCIÓN: Calcular correctamente el número de columnas
+    var lastCol = sheet.getLastColumn();
+    var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getDisplayValues();
+    
+    const rutLimpio = cleanRut(rutInput);
+    const registros = [];
+
+    for (let i = 0; i < data.length; i++) { // ⭐ CAMBIO: Empezar en 0 porque data ya no tiene header
+      const row = data[i];
+      if (cleanRut(row[COL.RUT]) === rutLimpio) {
+        registros.push({
+          id: row[COL.ID],
+          fecha: row[COL.FECHA],
+          tipo: row[COL.MOTIVO],
+          motivo: row[COL.ARGUMENTO],
+          url: row[COL.RESPALDO],
+          estado: row[COL.ESTADO],
+          obs: row[COL.OBSERVACION],
+          asamblea: row[COL.ASAMBLEA],
+          gestion: row[COL.GESTION],    
+          nomDirigente: row[COL.DIRIGENTE]
+        });
+      }
+    }
+    
+    registros.reverse();
+    return { success: true, registros: registros };
+  } catch (e) { 
+    Logger.log("❌ Error en obtenerHistorialJustificaciones: " + e.toString());
+    return { success: false, message: "Error: " + e.toString() }; 
+  }
+}
+
+function verificarCambiosJustificaciones() {
+  try {
+    // ⭐ VALIDACIÓN
+    const sheet = getSheet('JUSTIFICACIONES', 'JUSTIFICACIONES');
+    if (!sheet) {
+      console.error("❌ No se pudo acceder a la hoja de justificaciones");
+      return;
+    }
+    
+    const data = sheet.getDataRange().getValues();
+    const COL = CONFIG.COLUMNAS.JUSTIFICACIONES;
+    
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const idRegistro = String(row[COL.ID]);
+      const estadoActual = String(row[COL.ESTADO]);
+      const estadoNotif = String(row[COL.NOTIFICACION]);
+      const nombre = row[COL.NOMBRE];
+      const tipo = row[COL.MOTIVO];
+      const obs = row[COL.OBSERVACION];
+      const asamblea = row[COL.ASAMBLEA];
+      
+      // ⭐ Verificar y corregir código de asamblea si falta
+      const fechaSolicitud = row[COL.FECHA];
+      const asambleaActual = row[COL.ASAMBLEA];
+      
+      if (fechaSolicitud && !asambleaActual) {
+        const codigoAsamblea = generarCodigoAsamblea(new Date(fechaSolicitud));
+        sheet.getRange(i + 1, COL.ASAMBLEA + 1).setValue(codigoAsamblea);
+        console.log(`✅ Código de asamblea generado para fila ${i + 1}: ${codigoAsamblea}`);
+      }
+      
+      if (estadoActual !== estadoNotif) {
+        const rutUsuario = row[COL.RUT];
+        
+        // ⭐ VALIDACIÓN: Verificar que existe la hoja de usuarios
+        const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
+        if (!sheetUsers) {
+          console.error("❌ No se pudo acceder a la hoja de usuarios");
+          continue;
+        }
+        
+        const dataUsers = sheetUsers.getDataRange().getDisplayValues();
+        const COL_USER = CONFIG.COLUMNAS.USUARIOS;
+        let correoUsuario = "";
+        
+        for (let j = 1; j < dataUsers.length; j++) {
+          if (cleanRut(dataUsers[j][COL_USER.RUT]) === cleanRut(rutUsuario)) {
+            correoUsuario = dataUsers[j][COL_USER.CORREO];
+            break;
+          }
+        }
+        
+        if (correoUsuario && correoUsuario.includes("@")) {
+          let color = "#ea580c";
+          let titulo = "Actualización de Justificación";
+          
+          if (estadoActual.includes("Aceptado")) { 
+            color = "#15803d"; 
+            titulo = "Justificación Aceptada"; 
+          } else if (estadoActual.includes("Rechazado")) { 
+            color = "#b91c1c"; 
+            titulo = "Justificación Rechazada"; 
+          }
+          
+          enviarCorreoEstilizado(
+            correoUsuario, 
+            titulo + " - Sindicato SLIM n°3", 
+            titulo, 
+            `Hola ${nombre}, el estado de tu justificación ha cambiado.`, 
+            { 
+              "ID": idRegistro,
+              "Tipo": tipo, 
+              "Nuevo Estado": estadoActual, 
+              "Observación": obs || "Sin observaciones",
+              "Asamblea": asamblea || "Pendiente asignación"
+            }, 
+            color
+          );
+        }
+        
+        sheet.getRange(i + 1, COL.NOTIFICACION + 1).setValue(estadoActual);
+      }
+    }
+  } catch (e) { 
+    console.error("❌ Error verificando justificaciones: " + e.toString()); 
   }
 }
 
@@ -910,382 +1990,325 @@ function verificarDisponibilidadApelaciones(mesApelacion) {
   try {
     const hoy = new Date();
     const diaActual = hoy.getDate();
-
+    
     const limiteInferior = new Date(2025, 2, 1);
     limiteInferior.setHours(0, 0, 0, 0);
-
+    
     const partes = mesApelacion.split("-");
     const yearSel = parseInt(partes[0]);
     const monthSel = parseInt(partes[1]) - 1;
     const fechaSeleccionada = new Date(yearSel, monthSel, 1);
     fechaSeleccionada.setHours(0, 0, 0, 0);
-
+    
     if (fechaSeleccionada < limiteInferior) {
-      return {
-        habilitado: false,
-        mensaje: "No se pueden apelar meses anteriores a Marzo 2025.",
+      return { 
+        habilitado: false, 
+        mensaje: "No se pueden apelar meses anteriores a Marzo 2025." 
       };
     }
-
+    
     const mesActual = hoy.getMonth();
     const yearActual = hoy.getFullYear();
-
+    
     if (yearSel === yearActual && monthSel === mesActual) {
       if (diaActual < 25) {
         return {
           habilitado: false,
-          mensaje:
-            "Las apelaciones del mes en curso solo están disponibles a partir del día 25.",
+          mensaje: "Las apelaciones del mes en curso solo están disponibles a partir del día 25."
         };
       }
     }
-
+    
     const fechaHoy = new Date(yearActual, mesActual, 1);
     fechaHoy.setHours(0, 0, 0, 0);
-
+    
     if (fechaSeleccionada > fechaHoy) {
       return {
         habilitado: false,
-        mensaje: "No se pueden apelar meses futuros.",
+        mensaje: "No se pueden apelar meses futuros."
       };
     }
-
+    
     return { habilitado: true };
+    
   } catch (e) {
-    return {
-      habilitado: false,
-      mensaje: "Error validando disponibilidad: " + e.toString(),
-    };
+    return { habilitado: false, mensaje: "Error validando disponibilidad: " + e.toString() };
   }
 }
 
-function enviarApelacion(
-  rutGestor,
-  mesApelacion,
-  tipoMotivo,
-  detalleMotivo,
-  archivoComprobante,
-  archivoLiquidacion,
-  rutBeneficiario
-) {
-  const CARPETA_COMPROBANTES_ID = "12LJ9YQggDLtHiVismYOMz30OnomY37oP";
-  const CARPETA_LIQUIDACIONES_ID = "15B19WnWy-3hDkst730J00qwUhpz4VQrZ";
+// ==========================================
+// FUNCIÓN ENVIAR APELACIÓN - VERSIÓN ACTUALIZADA (DISEÑO + SILENCIO)
+// Reemplazar la función existente completamente
+// ==========================================
 
-  const validacion = verificarDisponibilidadApelaciones(mesApelacion);
+function enviarApelacion(rutGestor, mesApelacion, tipoMotivo, detalleMotivo, archivoComprobante, archivoLiquidacion, rutBeneficiario) {
+  var CARPETA_COMPROBANTES_ID = CONFIG.CARPETAS.APELACIONES_COMPROBANTES;
+  var CARPETA_LIQUIDACIONES_ID = CONFIG.CARPETAS.APELACIONES_LIQUIDACIONES;
+  
+  // Validar disponibilidad
+  var validacion = verificarDisponibilidadApelaciones(mesApelacion);
   if (!validacion.habilitado) {
     return { success: false, message: validacion.mensaje };
   }
-
-  const lock = LockService.getScriptLock();
+  
+  var lock = LockService.getScriptLock();
   if (lock.tryLock(30000)) {
     try {
-      const ss = SpreadsheetApp.getActiveSpreadsheet();
-      const sheetUsers = ss.getSheetByName("BD_USUARIOS");
-      let sheetApelaciones = ss.getSheetByName("APELACIONES");
-
-      if (!sheetApelaciones) {
-        sheetApelaciones = ss.insertSheet("APELACIONES");
-        sheetApelaciones.appendRow([
-          "ID",
-          "Fecha",
-          "Rut",
-          "Nombre",
-          "Correo",
-          "Mes Apelación",
-          "Tipo Motivo",
-          "Detalle Motivo",
-          "URL Comprobante",
-          "URL Liquidación",
-          "Estado",
-          "Observación",
-          "Notificado",
-          "Gestión",
-          "Nombre Dirigente",
-          "Correo Dirigente",
-          "URL Comprobante Devolución",
-        ]);
-      }
-
-      const dataUsers = sheetUsers.getDataRange().getDisplayValues();
-
-      let gestor = null;
-      const rutLimpioGestor = cleanRut(rutGestor);
-      for (let i = 1; i < dataUsers.length; i++) {
-        if (cleanRut(dataUsers[i][0]) === rutLimpioGestor) {
-          gestor = {
-            rut: dataUsers[i][0],
-            nombre: dataUsers[i][3],
-            correo: dataUsers[i][5],
-          };
-          break;
-        }
-      }
-      if (!gestor) return { success: false, message: "Error de sesión." };
-
-      let rutTarget = rutBeneficiario
-        ? cleanRut(rutBeneficiario)
-        : rutLimpioGestor;
-      let beneficiario = null;
-
-      if (rutTarget === rutLimpioGestor) {
+      var sheetApelaciones = getSheet('APELACIONES', 'APELACIONES');
+      var COL_APEL = CONFIG.COLUMNAS.APELACIONES;
+      
+      // Obtener datos del gestor
+      var gestor = obtenerUsuarioPorRut(rutGestor);
+      if (!gestor.encontrado) return { success: false, message: "Error de sesión." };
+      
+      // Determinar beneficiario
+      var beneficiario;
+      var rutTarget = rutBeneficiario ? cleanRut(rutBeneficiario) : cleanRut(rutGestor);
+      var esGestionDirigente = rutTarget !== cleanRut(rutGestor);
+      
+      if (!esGestionDirigente) {
         beneficiario = gestor;
       } else {
-        for (let i = 1; i < dataUsers.length; i++) {
-          if (cleanRut(dataUsers[i][0]) === rutTarget) {
-            beneficiario = {
-              rut: dataUsers[i][0],
-              nombre: dataUsers[i][3],
-              correo: dataUsers[i][5],
-            };
-            break;
-          }
-        }
-        if (!beneficiario)
-          return { success: false, message: "RUT del socio no encontrado." };
+        beneficiario = obtenerUsuarioPorRut(rutBeneficiario);
+        if (!beneficiario.encontrado) return { success: false, message: "RUT del socio no encontrado." };
       }
-
-      const dataApelaciones = sheetApelaciones
-        .getDataRange()
-        .getDisplayValues();
-      for (let i = 1; i < dataApelaciones.length; i++) {
-        const row = dataApelaciones[i];
-        const estadoActual = String(row[10]);
-        const estadosBloqueantes = ["Enviado", "Aceptado", "Aceptado-Obs"];
-
-        if (
-          cleanRut(row[2]) === cleanRut(beneficiario.rut) &&
-          row[5] === mesApelacion &&
-          estadosBloqueantes.includes(estadoActual)
-        ) {
-          let mensajeError = "";
+      
+      // Verificar apelaciones existentes
+      var dataApelaciones = sheetApelaciones.getDataRange().getDisplayValues();
+      for (var i = 1; i < dataApelaciones.length; i++) {
+        var row = dataApelaciones[i];
+        var estadoActual = String(row[COL_APEL.ESTADO]);
+        var estadosBloqueantes = ["Enviado", "Aceptado", "Aceptado-Obs"];
+        
+        if (cleanRut(row[COL_APEL.RUT]) === cleanRut(beneficiario.rut) &&
+            row[COL_APEL.MES_APELACION] === mesApelacion &&
+            estadosBloqueantes.indexOf(estadoActual) !== -1) {
+          
+          var mensajeError = "";
           if (estadoActual === "Enviado") {
-            mensajeError =
-              "Ya tienes una apelación pendiente para este mes. Verifica el estado en tu historial.";
-          } else if (
-            estadoActual === "Aceptado" ||
-            estadoActual === "Aceptado-Obs"
-          ) {
-            mensajeError =
-              "Este mes ya fue resuelto favorablemente. Verifica los detalles en tu historial.";
+            mensajeError = "Ya tienes una apelación pendiente para este mes. Verifica el estado en tu historial.";
+          } else {
+            mensajeError = "Este mes ya fue resuelto favorablemente. Verifica los detalles en tu historial.";
           }
-
+          
           return { success: false, message: mensajeError };
         }
       }
-
-      if (archivoComprobante && archivoComprobante.base64) {
-        const sizeComp = (archivoComprobante.base64.length * 3) / 4;
-        if (sizeComp > 5 * 1024 * 1024) {
-          return {
-            success: false,
-            message: "El comprobante es muy pesado (máx 5MB).",
-          };
-        }
-      }
-
-      if (archivoLiquidacion && archivoLiquidacion.base64) {
-        const sizeLiq = (archivoLiquidacion.base64.length * 3) / 4;
-        if (sizeLiq > 5 * 1024 * 1024) {
-          return {
-            success: false,
-            message: "La liquidación es muy pesada (máx 5MB).",
-          };
-        }
-      }
-
-      const idUnico = Utilities.getUuid();
-
-      let urlComprobante = "Sin archivo";
-      if (archivoComprobante && archivoComprobante.base64) {
-        try {
-          const folderComp = DriveApp.getFolderById(CARPETA_COMPROBANTES_ID);
-          const blobComp = Utilities.newBlob(
-            Utilities.base64Decode(archivoComprobante.base64),
-            archivoComprobante.mimeType,
-            archivoComprobante.fileName
-          );
-
-          let extensionComp = "";
-          const namePartsComp = archivoComprobante.fileName.split(".");
-          if (namePartsComp.length > 1)
-            extensionComp = "." + namePartsComp.pop();
-
-          blobComp.setName(
-            `APEL-COMP-${idUnico}-${cleanRut(beneficiario.rut)}${extensionComp}`
-          );
-
-          const fileComp = folderComp.createFile(blobComp);
-          fileComp.setSharing(
-            DriveApp.Access.PRIVATE,
-            DriveApp.Permission.NONE
-          );
-
-          if (beneficiario.correo && beneficiario.correo.includes("@")) {
-            try {
-              fileComp.addViewer(beneficiario.correo);
-            } catch (permErr) {
-              console.log("Permiso drive comprobante: " + permErr);
-            }
-          }
-
-          urlComprobante = fileComp.getUrl();
-        } catch (errComp) {
-          console.error("Error subiendo comprobante: " + errComp);
-          urlComprobante = "Error subida comprobante";
-        }
-      }
-
-      let urlLiquidacion = "Error: No se subió liquidación";
+      
+      // Validar liquidación obligatoria
       if (!archivoLiquidacion || !archivoLiquidacion.base64) {
-        return {
-          success: false,
-          message: "La liquidación de sueldo es obligatoria.",
-        };
+        return { success: false, message: "La liquidación de sueldo es obligatoria." };
       }
-
-      try {
-        const folderLiq = DriveApp.getFolderById(CARPETA_LIQUIDACIONES_ID);
-        const blobLiq = Utilities.newBlob(
-          Utilities.base64Decode(archivoLiquidacion.base64),
-          archivoLiquidacion.mimeType,
-          archivoLiquidacion.fileName
+      
+      // ========== VALIDAR CORREOS ANTES DE SUBIR ARCHIVOS ==========
+      var validacionCorreos = validarCorreosParaPermisos(
+        { rut: beneficiario.rut, nombre: beneficiario.nombre, correo: beneficiario.correo },
+        esGestionDirigente ? { rut: gestor.rut, nombre: gestor.nombre, correo: gestor.correo } : null,
+        esGestionDirigente
+      );
+      
+      var idUnico = Utilities.getUuid();
+      var urlComprobante = ""; // Se guardará vacío en BD si no hay
+      var urlLiquidacion = "";
+      var alertaPermisosGlobal = { mostrarAlerta: false, detalles: [] };
+      
+      // ========== SUBIR COMPROBANTE (Opcional) ==========
+      if (archivoComprobante && archivoComprobante.base64) {
+        var nombreArchivoComp = "APEL-COMP-" + idUnico + "-" + cleanRut(beneficiario.rut);
+        
+        var resultadoComp = subirArchivoConPermisos(
+          archivoComprobante,
+          CARPETA_COMPROBANTES_ID,
+          nombreArchivoComp,
+          validacionCorreos.correosParaPermisos, // Usa la función silenciosa automáticamente
+          []
         );
-
-        let extensionLiq = "";
-        const namePartsLiq = archivoLiquidacion.fileName.split(".");
-        if (namePartsLiq.length > 1) extensionLiq = "." + namePartsLiq.pop();
-
-        blobLiq.setName(
-          `APEL-LIQ-${idUnico}-${cleanRut(beneficiario.rut)}${extensionLiq}`
-        );
-
-        const fileLiq = folderLiq.createFile(blobLiq);
-        fileLiq.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
-
-        if (beneficiario.correo && beneficiario.correo.includes("@")) {
-          try {
-            fileLiq.addViewer(beneficiario.correo);
-          } catch (permErr) {
-            console.log("Permiso drive liquidación: " + permErr);
+        
+        if (resultadoComp.success) {
+          urlComprobante = resultadoComp.url;
+          if (resultadoComp.permisosError && resultadoComp.permisosError.length > 0) {
+            alertaPermisosGlobal.mostrarAlerta = true;
+            resultadoComp.permisosError.forEach(function(err) {
+              alertaPermisosGlobal.detalles.push("Comprobante: No se pudo dar acceso a " + err.nombre);
+            });
           }
+        } else {
+          // Si falla la subida opcional, registramos error pero continuamos
+          console.error("Error subiendo comprobante: " + resultadoComp.mensajeError);
         }
-
-        urlLiquidacion = fileLiq.getUrl();
-      } catch (errLiq) {
-        console.error("Error subiendo liquidación: " + errLiq);
-        return {
-          success: false,
-          message: "Error al subir la liquidación. Intente nuevamente.",
-        };
       }
-
-      const fechaHoy = new Date();
-      const estado = "Enviado";
-
-      let gestion = "Socio";
-      let nomDirigente = "";
-      let correoDirigente = "";
-
-      if (rutTarget !== rutLimpioGestor) {
+      
+      // ========== SUBIR LIQUIDACIÓN (Obligatoria) ==========
+      var nombreArchivoLiq = "APEL-LIQ-" + idUnico + "-" + cleanRut(beneficiario.rut);
+      
+      var resultadoLiq = subirArchivoConPermisos(
+        archivoLiquidacion,
+        CARPETA_LIQUIDACIONES_ID,
+        nombreArchivoLiq,
+        validacionCorreos.correosParaPermisos, // Usa la función silenciosa automáticamente
+        []
+      );
+      
+      if (!resultadoLiq.success) {
+        return { success: false, message: "Error al subir la liquidación: " + resultadoLiq.mensajeError };
+      }
+      
+      urlLiquidacion = resultadoLiq.url;
+      
+      if (resultadoLiq.permisosError && resultadoLiq.permisosError.length > 0) {
+        alertaPermisosGlobal.mostrarAlerta = true;
+        resultadoLiq.permisosError.forEach(function(err) {
+          alertaPermisosGlobal.detalles.push("Liquidación: No se pudo dar acceso a " + err.nombre);
+        });
+      }
+      
+      // Agregar alertas de validación de correos
+      if (validacionCorreos.alertas && validacionCorreos.alertas.length > 0) {
+        alertaPermisosGlobal.mostrarAlerta = true;
+        validacionCorreos.alertas.forEach(function(a) {
+          alertaPermisosGlobal.detalles.push(a.mensaje);
+        });
+      }
+      
+      // ========== CREAR REGISTRO EN LA BASE DE DATOS ==========
+      var fechaHoy = new Date();
+      var estado = "Enviado";
+      
+      var gestion = "Socio";
+      var nomDirigente = "";
+      var correoDirigente = "";
+      
+      if (esGestionDirigente) {
         gestion = "Dirigente";
         nomDirigente = gestor.nombre;
         correoDirigente = gestor.correo;
       }
-
-      sheetApelaciones.appendRow([
-        idUnico,
-        fechaHoy,
-        beneficiario.rut,
-        beneficiario.nombre,
-        beneficiario.correo,
-        mesApelacion,
-        tipoMotivo,
-        detalleMotivo || "",
-        urlComprobante,
-        urlLiquidacion,
-        estado,
-        "",
-        estado,
-        gestion,
-        nomDirigente,
-        correoDirigente,
-        "",
-      ]);
-
-      const lastRow = sheetApelaciones.getLastRow();
-      const cellEstado = sheetApelaciones.getRange(lastRow, 11);
-      const rule = SpreadsheetApp.newDataValidation()
-        .requireValueInList(
-          ["Enviado", "Aceptado", "Aceptado-Obs", "Rechazado"],
-          true
-        )
+      
+      var newRow = [];
+      newRow[COL_APEL.ID] = idUnico;
+      newRow[COL_APEL.FECHA_SOLICITUD] = fechaHoy;
+      newRow[COL_APEL.RUT] = beneficiario.rut;
+      newRow[COL_APEL.NOMBRE] = beneficiario.nombre;
+      newRow[COL_APEL.CORREO] = beneficiario.correo;
+      newRow[COL_APEL.MES_APELACION] = mesApelacion;
+      newRow[COL_APEL.TIPO_MOTIVO] = tipoMotivo;
+      newRow[COL_APEL.DETALLE_MOTIVO] = detalleMotivo || "";
+      newRow[COL_APEL.URL_COMPROBANTE] = urlComprobante;
+      newRow[COL_APEL.URL_LIQUIDACION] = urlLiquidacion;
+      newRow[COL_APEL.ESTADO] = estado;
+      newRow[COL_APEL.OBSERVACION] = "";
+      newRow[COL_APEL.NOTIFICADO] = estado;
+      newRow[COL_APEL.GESTION] = gestion;
+      newRow[COL_APEL.NOMBRE_DIRIGENTE] = nomDirigente;
+      newRow[COL_APEL.CORREO_DIRIGENTE] = correoDirigente;
+      newRow[COL_APEL.URL_COMPROBANTE_DEVOLUCION] = "";
+      
+      sheetApelaciones.appendRow(newRow);
+      
+      // Validación de celda (opcional, para integridad)
+      var lastRow = sheetApelaciones.getLastRow();
+      var cellEstado = sheetApelaciones.getRange(lastRow, COL_APEL.ESTADO + 1);
+      var rule = SpreadsheetApp.newDataValidation()
+        .requireValueInList(['Enviado', 'Aceptado', 'Aceptado-Obs', 'Rechazado'], true)
         .setAllowInvalid(false)
         .build();
       cellEstado.setDataValidation(rule);
+      
+      // Formatear mes para visualización
+      var fechaMes = new Date(mesApelacion + "-02");
+      var nombreMes = fechaMes.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
+      nombreMes = nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
 
-      if (beneficiario.correo && beneficiario.correo.includes("@")) {
-        let mensajeExtra =
-          gestion === "Dirigente"
-            ? `<br><em>(Ingresado por: ${nomDirigente})</em>`
+      // ========== ENVIAR CORREOS ==========
+      
+      // 1. Correo al Beneficiario
+      if (esCorreoValido(beneficiario.correo)) {
+        
+        // Construir enlaces HTML con color del tema apelaciones (Rojo #dc2626)
+        var linkComprobanteSocio = (urlComprobante && urlComprobante.includes("http")) 
+            ? `<a href="${urlComprobante}" style="color: #dc2626; text-decoration: none; font-weight: bold;">Ver Comprobante</a>` 
+            : "";
+            
+        var linkLiquidacionSocio = (urlLiquidacion && urlLiquidacion.includes("http")) 
+            ? `<a href="${urlLiquidacion}" style="color: #dc2626; text-decoration: none; font-weight: bold;">Ver Liquidación</a>` 
             : "";
 
-        const partesMes = mesApelacion.split("-");
-        const fechaMes = new Date(`${mesApelacion}-02`);
-        const nombreMes = fechaMes.toLocaleString("es-CL", {
-          month: "long",
-          year: "numeric",
-        });
+        var datosCorreoSocio = {
+            "FECHA SOLICITUD": Utilities.formatDate(fechaHoy, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm"),
+            "RUT": formatRutServer(beneficiario.rut),
+            "NOMBRE": beneficiario.nombre,
+            "MES APELACION": nombreMes,
+            "TIPO MOTIVO": tipoMotivo,
+            "DETALLE MOTIVO": detalleMotivo || "", // Saldrá S/D si es vacío
+            "URL COMPROBANTE": linkComprobanteSocio, // Saldrá S/D si es vacío
+            "URL LIQUIDACIÓN": linkLiquidacionSocio, // Saldrá S/D si es vacío
+            "OBSERVACIÓN": "",
+            "GESTIÓN": gestion,
+            "NOMBRE DIRIGENTE": nomDirigente || "" // Saldrá S/D si es vacío
+        };
 
         enviarCorreoEstilizado(
           beneficiario.correo,
-          "Apelación Recibida - Sindicato SLIM n°3",
-          "Apelación Enviada",
-          `Hola ${beneficiario.nombre}, hemos recibido tu apelación de multa.`,
-          {
-            ID: idUnico,
-            "Mes Apelado": nombreMes.toUpperCase(),
-            Motivo: tipoMotivo,
-            Detalle: detalleMotivo || "Sin detalle adicional",
-            Gestión: gestion + mensajeExtra,
-            Liquidación: urlLiquidacion.includes("http")
-              ? "Adjuntada"
-              : "Error",
-            Comprobante: urlComprobante.includes("http")
-              ? "Adjuntado"
-              : "No adjuntado",
-            Estado: estado,
-          },
-          "#dc2626"
+          "Apelación Ingresada - Sindicato SLIM n°3",
+          "Comprobante de Apelación",
+          `Hola <strong>${beneficiario.nombre}</strong>, hemos recibido correctamente tu apelación de multa. A continuación los detalles registrados:`,
+          datosCorreoSocio,
+          "#dc2626" // Color rojo para apelaciones
         );
       }
+      
+      // 2. Correo al Dirigente (si gestiona a tercero)
+      if (esGestionDirigente && esCorreoValido(correoDirigente) && correoDirigente !== beneficiario.correo) {
+        
+        // Enlaces con color administrativo (#475569)
+        var linkComprobanteDirigente = (urlComprobante && urlComprobante.includes("http")) 
+            ? `<a href="${urlComprobante}" style="color: #475569; text-decoration: none; font-weight: bold;">Ver Comprobante</a>` 
+            : "";
+            
+        var linkLiquidacionDirigente = (urlLiquidacion && urlLiquidacion.includes("http")) 
+            ? `<a href="${urlLiquidacion}" style="color: #475569; text-decoration: none; font-weight: bold;">Ver Liquidación</a>` 
+            : "";
 
-      if (
-        gestion === "Dirigente" &&
-        correoDirigente &&
-        correoDirigente.includes("@") &&
-        correoDirigente !== beneficiario.correo
-      ) {
+        var datosCorreoDirigente = {
+            "FECHA SOLICITUD": Utilities.formatDate(fechaHoy, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm"),
+            "RUT": formatRutServer(beneficiario.rut),
+            "NOMBRE": beneficiario.nombre,
+            "MES APELACION": nombreMes,
+            "TIPO MOTIVO": tipoMotivo,
+            "DETALLE MOTIVO": detalleMotivo || "",
+            "URL COMPROBANTE": linkComprobanteDirigente,
+            "URL LIQUIDACIÓN": linkLiquidacionDirigente,
+            "OBSERVACIÓN": "",
+            "GESTIÓN": gestion,
+            "NOMBRE DIRIGENTE": nomDirigente
+        };
+
         enviarCorreoEstilizado(
           correoDirigente,
           "Respaldo Gestión Apelación - Sindicato SLIM n°3",
-          "Apelación Ingresada",
+          "Gestión Realizada",
           `Has ingresado exitosamente una apelación para el socio <strong>${beneficiario.nombre}</strong>.`,
-          {
-            ID: idUnico,
-            Socio: beneficiario.nombre,
-            Mes: mesApelacion,
-            Motivo: tipoMotivo,
-          },
-          "#475569"
+          datosCorreoDirigente,
+          "#475569" // Color gris/azul
         );
       }
-
-      return { success: true, message: "Apelación enviada exitosamente." };
-    } catch (e) {
-      return {
-        success: false,
-        message: "Error al enviar apelación: " + e.toString(),
+      
+      // ========== PREPARAR RESPUESTA ==========
+      var respuesta = {
+        success: true,
+        message: "Apelación enviada exitosamente."
       };
+      
+      if (alertaPermisosGlobal.mostrarAlerta && alertaPermisosGlobal.detalles.length > 0) {
+        respuesta.mostrarAlerta = true;
+        respuesta.tipoAlerta = validacionCorreos.alertaBeneficiario ? 'warning' : 'info';
+        respuesta.mensajeAlerta = alertaPermisosGlobal.detalles.join('\n\n');
+      }
+      
+      return respuesta;
+      
+    } catch (e) {
+      return { success: false, message: "Error al enviar apelación: " + e.toString() };
     } finally {
       lock.releaseLock();
     }
@@ -1296,161 +2319,168 @@ function enviarApelacion(
 
 function obtenerHistorialApelaciones(rutInput) {
   try {
-    const sheet =
-      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("APELACIONES");
-    if (!sheet) return { success: true, registros: [] };
-
-    const data = sheet.getDataRange().getDisplayValues();
+    const sheet = getSheet('APELACIONES', 'APELACIONES');
+    const COL = CONFIG.COLUMNAS.APELACIONES;
+    
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 2) return { success: true, registros: [] };
+    
+    // ⭐ CORRECCIÓN: Calcular correctamente el número de columnas
+    var lastCol = sheet.getLastColumn();
+    var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getDisplayValues();
+    
     const rutLimpio = cleanRut(rutInput);
     const registros = [];
-
-    for (let i = 1; i < data.length; i++) {
+    
+    for (let i = 0; i < data.length; i++) { // ⭐ CAMBIO: Empezar en 0
       const row = data[i];
-      if (cleanRut(row[2]) === rutLimpio) {
+      if (cleanRut(row[COL.RUT]) === rutLimpio) {
         registros.push({
-          id: row[0],
-          fecha: row[1],
-          mesApelacion: row[5],
-          tipoMotivo: row[6],
-          detalleMotivo: row[7],
-          urlComprobante: row[8],
-          urlLiquidacion: row[9],
-          estado: row[10],
-          obs: row[11],
-          gestion: row[13],
-          nomDirigente: row[14],
-          urlComprobanteDevolucion: row[16] || "",
+          id: row[COL.ID],
+          fecha: row[COL.FECHA_SOLICITUD],
+          mesApelacion: row[COL.MES_APELACION],
+          tipoMotivo: row[COL.TIPO_MOTIVO],
+          detalleMotivo: row[COL.DETALLE_MOTIVO],
+          urlComprobante: row[COL.URL_COMPROBANTE],
+          urlLiquidacion: row[COL.URL_LIQUIDACION],
+          estado: row[COL.ESTADO],
+          obs: row[COL.OBSERVACION],
+          gestion: row[COL.GESTION],
+          nomDirigente: row[COL.NOMBRE_DIRIGENTE],
+          urlComprobanteDevolucion: row[COL.URL_COMPROBANTE_DEVOLUCION] || ""
         });
       }
     }
-
+    
     registros.reverse();
     return { success: true, registros: registros };
-  } catch (e) {
-    return { success: false, message: "Error: " + e.toString() };
+    
+  } catch (e) { 
+    Logger.log("❌ Error en obtenerHistorialApelaciones: " + e.toString());
+    return { success: false, message: "Error: " + e.toString() }; 
   }
 }
 
 function eliminarApelacion(idApelacion) {
-  const lock = LockService.getScriptLock();
-  if (lock.tryLock(10000)) {
+  var lock = LockService.getScriptLock();
+  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
     try {
-      const sheet =
-        SpreadsheetApp.getActiveSpreadsheet().getSheetByName("APELACIONES");
+      const sheet = getSheet('APELACIONES', 'APELACIONES');
       const data = sheet.getDataRange().getValues();
-
+      const COL = CONFIG.COLUMNAS.APELACIONES;
+      
       for (let i = 1; i < data.length; i++) {
-        if (String(data[i][0]) === String(idApelacion)) {
-          const estado = String(data[i][10]);
-
-          if (estado !== "Enviado") {
-            return {
-              success: false,
-              message: "No se puede eliminar una apelación procesada.",
-            };
+        if (String(data[i][COL.ID]) === String(idApelacion)) {
+          const estado = String(data[i][COL.ESTADO]);
+          
+          // CAMBIO AQUI: Permitimos eliminar si es "Enviado" O "Rechazado"
+          if (estado !== "Enviado" && estado !== "Rechazado") {
+            return { success: false, message: "Solo se pueden eliminar apelaciones en estado 'Enviado' o 'Rechazado'." };
           }
-
+          
           sheet.deleteRow(i + 1);
-          return {
-            success: true,
-            message: "Apelación eliminada correctamente.",
-          };
+          return { success: true, message: "Apelación eliminada correctamente." };
         }
       }
-
+      
       return { success: false, message: "Apelación no encontrada." };
-    } catch (e) {
-      return { success: false, message: "Error: " + e.toString() };
-    } finally {
-      lock.releaseLock();
+      
+    } catch (e) { 
+      return { success: false, message: "Error: " + e.toString() }; 
+    } finally { 
+      lock.releaseLock(); 
     }
-  } else {
-    return { success: false, message: "Servidor ocupado." };
+  } else { 
+    return { success: false, message: "Servidor ocupado." }; 
   }
 }
 
 function verificarCambiosApelaciones() {
   try {
-    const sheet =
-      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("APELACIONES");
-    if (!sheet) return;
-
+    // ⭐ VALIDACIÓN
+    const sheet = getSheet('APELACIONES', 'APELACIONES');
+    if (!sheet) {
+      console.error("❌ No se pudo acceder a la hoja de apelaciones");
+      return;
+    }
+    
     const data = sheet.getDataRange().getValues();
-
+    const COL = CONFIG.COLUMNAS.APELACIONES;
+    
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      const idRegistro = String(row[0]);
-      const estadoActual = String(row[10]);
-      const estadoNotif = String(row[12]);
-      const correo = row[4];
-      const nombre = row[3];
-      const mesApel = String(row[5]);
-      const tipoMotivo = row[6];
-      const obs = row[11];
-
+      const idRegistro = String(row[COL.ID]);
+      const estadoActual = String(row[COL.ESTADO]);
+      const estadoNotif = String(row[COL.NOTIFICADO]);
+      const correo = row[COL.CORREO];
+      const nombre = row[COL.NOMBRE];
+      const mesApel = String(row[COL.MES_APELACION]);
+      const tipoMotivo = row[COL.TIPO_MOTIVO];
+      const obs = row[COL.OBSERVACION];
+      
       if (estadoActual !== estadoNotif) {
         if (correo && correo.includes("@")) {
           let color = "#dc2626";
           let titulo = "Actualización de Apelación";
-
-          if (estadoActual.includes("Aceptado")) {
-            color = "#15803d";
-            titulo = "Apelación Aceptada";
-          } else if (estadoActual.includes("Rechazado")) {
-            color = "#b91c1c";
-            titulo = "Apelación Rechazada";
+          
+          if (estadoActual.includes("Aceptado")) { 
+            color = "#15803d"; 
+            titulo = "Apelación Aceptada"; 
+          } else if (estadoActual.includes("Rechazado")) { 
+            color = "#b91c1c"; 
+            titulo = "Apelación Rechazada"; 
           }
-
+          
           const partesMes = mesApel.split("-");
           const fechaMes = new Date(`${mesApel}-02`);
-          const nombreMes = fechaMes.toLocaleString("es-CL", {
-            month: "long",
-            year: "numeric",
-          });
-
+          const nombreMes = fechaMes.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
+          
           enviarCorreoEstilizado(
-            correo,
-            titulo + " - Sindicato SLIM n°3",
-            titulo,
-            `Hola ${nombre}, el estado de tu apelación ha cambiado.`,
-            {
-              ID: idRegistro,
+            correo, 
+            titulo + " - Sindicato SLIM n°3", 
+            titulo, 
+            `Hola ${nombre}, el estado de tu apelación ha cambiado.`, 
+            { 
+              "ID": idRegistro,
               "Mes Apelado": nombreMes.toUpperCase(),
-              Motivo: tipoMotivo,
-              "Nuevo Estado": estadoActual,
-              Observación: obs || "Sin observaciones",
-            },
+              "Motivo": tipoMotivo, 
+              "Nuevo Estado": estadoActual, 
+              "Observación": obs || "Sin observaciones" 
+            }, 
             color
           );
         }
-
-        sheet.getRange(i + 1, 13).setValue(estadoActual);
+        
+        sheet.getRange(i + 1, COL.NOTIFICADO + 1).setValue(estadoActual);
       }
     }
-  } catch (e) {
-    console.error("Error verificando apelaciones: " + e);
+  } catch (e) { 
+    console.error("❌ Error verificando apelaciones: " + e.toString()); 
   }
 }
 
 function procesarPermisosComprobantesDevolucion() {
   try {
-    const sheet =
-      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("APELACIONES");
-    if (!sheet) return;
-
+    // ⭐ VALIDACIÓN
+    const sheet = getSheet('APELACIONES', 'APELACIONES');
+    if (!sheet) {
+      console.error("❌ No se pudo acceder a la hoja de apelaciones");
+      return;
+    }
+    
     const data = sheet.getDataRange().getValues();
-
+    const COL = CONFIG.COLUMNAS.APELACIONES;
+    
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      const urlComprobanteDevolucion = String(row[16]);
-      const correoUsuario = row[4];
-
-      if (
-        urlComprobanteDevolucion &&
-        urlComprobanteDevolucion.includes("drive.google.com") &&
-        correoUsuario &&
-        correoUsuario.includes("@")
-      ) {
+      const urlComprobanteDevolucion = String(row[COL.URL_COMPROBANTE_DEVOLUCION]);
+      const correoUsuario = row[COL.CORREO];
+      
+      if (urlComprobanteDevolucion && 
+          urlComprobanteDevolucion.includes("drive.google.com") && 
+          correoUsuario && 
+          correoUsuario.includes("@")) {
+        
         try {
           let fileId = "";
           if (urlComprobanteDevolucion.includes("/d/")) {
@@ -1458,31 +2488,24 @@ function procesarPermisosComprobantesDevolucion() {
           } else if (urlComprobanteDevolucion.includes("id=")) {
             fileId = urlComprobanteDevolucion.split("id=")[1].split("&")[0];
           }
-
+          
           if (fileId) {
             const file = DriveApp.getFileById(fileId);
-
             const viewers = file.getViewers();
-            const hasAccess = viewers.some(
-              (viewer) => viewer.getEmail() === correoUsuario
-            );
-
+            const hasAccess = viewers.some(viewer => viewer.getEmail() === correoUsuario);
+            
             if (!hasAccess) {
               file.addViewer(correoUsuario);
-              console.log(
-                `Permiso otorgado a ${correoUsuario} para archivo ${fileId}`
-              );
+              console.log(`✅ Permiso otorgado a ${correoUsuario} para archivo ${fileId}`);
             }
           }
         } catch (fileErr) {
-          console.error(
-            `Error procesando archivo para fila ${i + 1}: ${fileErr}`
-          );
+          console.error(`⚠️ Error procesando archivo para fila ${i + 1}: ${fileErr}`);
         }
       }
     }
   } catch (e) {
-    console.error("Error en procesarPermisosComprobantesDevolucion: " + e);
+    console.error("❌ Error en procesarPermisosComprobantesDevolucion: " + e.toString());
   }
 }
 
@@ -1490,182 +2513,140 @@ function procesarPermisosComprobantesDevolucion() {
 // MÓDULO: PERMISO MÉDICO
 // ==========================================
 
-function solicitarPermisoMedico(
-  rutGestor,
-  tipoPermiso,
-  fechaInicio,
-  motivo,
-  rutBeneficiario
-) {
-  const CORREO_REPRESENTANTE_LEGAL = "penailillo.fetrasiss@gmail.com"; // CAMBIAR POR CORREO REAL
-
+function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rutBeneficiario) {
+  const CORREO_REPRESENTANTE_LEGAL = CONFIG.CORREOS.REPRESENTANTE_LEGAL;
+  
   const lock = LockService.getScriptLock();
   if (lock.tryLock(30000)) {
     try {
-      const ss = SpreadsheetApp.getActiveSpreadsheet();
-      const sheetUsers = ss.getSheetByName("BD_USUARIOS");
-      let sheetPermisos = ss.getSheetByName("PERMISO-MEDICO");
-
-      if (!sheetPermisos) {
-        sheetPermisos = ss.insertSheet("PERMISO-MEDICO");
-        sheetPermisos.appendRow([
-          "ID",
-          "Fecha Solicitud",
-          "Rut",
-          "Nombre",
-          "Correo",
-          "Tipo Permiso",
-          "Fecha Inicio Permiso",
-          "Motivo/Detalle",
-          "URL Documento Respaldo",
-          "Estado",
-          "Fecha Subida Documento",
-          "Notificado Rep. Legal",
-          "Gestión",
-          "Nombre Dirigente",
-          "Correo Dirigente",
-        ]);
-      }
-
+      const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
+      const sheetPermisos = getSheet('PERMISOS_MEDICOS', 'PERMISOS_MEDICOS');
+      const COL_USER = CONFIG.COLUMNAS.USUARIOS;
+      const COL_PERM = CONFIG.COLUMNAS.PERMISOS_MEDICOS;
+      
       const dataUsers = sheetUsers.getDataRange().getDisplayValues();
-
+      
       let gestor = null;
       const rutLimpioGestor = cleanRut(rutGestor);
       for (let i = 1; i < dataUsers.length; i++) {
-        if (cleanRut(dataUsers[i][0]) === rutLimpioGestor) {
-          gestor = {
-            rut: dataUsers[i][0],
-            nombre: dataUsers[i][3],
-            correo: dataUsers[i][5],
+        if (cleanRut(dataUsers[i][COL_USER.RUT]) === rutLimpioGestor) {
+          gestor = { 
+            rut: dataUsers[i][COL_USER.RUT], 
+            nombre: dataUsers[i][COL_USER.NOMBRE], 
+            correo: dataUsers[i][COL_USER.CORREO] 
           };
           break;
         }
       }
       if (!gestor) return { success: false, message: "Error de sesión." };
-
-      let rutTarget = rutBeneficiario
-        ? cleanRut(rutBeneficiario)
-        : rutLimpioGestor;
+      
+      let rutTarget = rutBeneficiario ? cleanRut(rutBeneficiario) : rutLimpioGestor;
       let beneficiario = null;
-
+      
       if (rutTarget === rutLimpioGestor) {
         beneficiario = gestor;
       } else {
         for (let i = 1; i < dataUsers.length; i++) {
-          if (cleanRut(dataUsers[i][0]) === rutTarget) {
-            beneficiario = {
-              rut: dataUsers[i][0],
-              nombre: dataUsers[i][3],
-              correo: dataUsers[i][5],
+          if (cleanRut(dataUsers[i][COL_USER.RUT]) === rutTarget) {
+            beneficiario = { 
+              rut: dataUsers[i][COL_USER.RUT], 
+              nombre: dataUsers[i][COL_USER.NOMBRE], 
+              correo: dataUsers[i][COL_USER.CORREO] 
             };
             break;
           }
         }
-        if (!beneficiario)
-          return { success: false, message: "RUT del socio no encontrado." };
+        if (!beneficiario) return { success: false, message: "RUT del socio no encontrado." };
       }
-
+      
       const idUnico = Utilities.getUuid();
       const fechaHoy = new Date();
       const estado = "Solicitado";
-
+      
       let gestion = "Socio";
       let nomDirigente = "";
       let correoDirigente = "";
-
+      
       if (rutTarget !== rutLimpioGestor) {
         gestion = "Dirigente";
         nomDirigente = gestor.nombre;
         correoDirigente = gestor.correo;
       }
-
-      sheetPermisos.appendRow([
-        idUnico,
-        fechaHoy,
-        beneficiario.rut,
-        beneficiario.nombre,
-        beneficiario.correo,
-        tipoPermiso,
-        fechaInicio,
-        motivo,
-        "Sin documento",
-        estado,
-        "",
-        false,
-        gestion,
-        nomDirigente,
-        correoDirigente,
-      ]);
-
+      
+      // Preparar datos según nueva estructura
+      const newRow = [];
+      newRow[COL_PERM.ID] = idUnico;
+      newRow[COL_PERM.FECHA_SOLICITUD] = fechaHoy;
+      newRow[COL_PERM.RUT] = beneficiario.rut;
+      newRow[COL_PERM.NOMBRE] = beneficiario.nombre;
+      newRow[COL_PERM.CORREO] = beneficiario.correo;
+      newRow[COL_PERM.TIPO_PERMISO] = tipoPermiso;
+      newRow[COL_PERM.FECHA_INICIO] = fechaInicio;
+      newRow[COL_PERM.MOTIVO_DETALLE] = motivo;
+      newRow[COL_PERM.URL_DOCUMENTO] = "Sin documento";
+      newRow[COL_PERM.ESTADO] = estado;
+      newRow[COL_PERM.FECHA_SUBIDA] = "";
+      newRow[COL_PERM.NOTIFICADO_REP_LEGAL] = false;
+      newRow[COL_PERM.GESTION] = gestion;
+      newRow[COL_PERM.NOMBRE_DIRIGENTE] = nomDirigente;
+      newRow[COL_PERM.CORREO_DIRIGENTE] = correoDirigente;
+      
+      sheetPermisos.appendRow(newRow);
+      
       if (beneficiario.correo && beneficiario.correo.includes("@")) {
-        let mensajeExtra =
-          gestion === "Dirigente"
-            ? `<br><em>(Ingresado por: ${nomDirigente})</em>`
-            : "";
-
+        let mensajeExtra = gestion === "Dirigente" ? `<br><em>(Ingresado por: ${nomDirigente})</em>` : "";
+        
         const fechaInicioObj = new Date(fechaInicio);
-        const fechaInicioStr = fechaInicioObj.toLocaleDateString("es-CL", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
-
+        const fechaInicioStr = fechaInicioObj.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' });
+        
         enviarCorreoEstilizado(
           beneficiario.correo,
           "Solicitud Permiso Médico - Sindicato SLIM n°3",
           "Permiso Médico Solicitado",
           `Hola ${beneficiario.nombre}, se ha registrado tu solicitud de permiso médico. <strong>IMPORTANTE:</strong> Debes adjuntar el documento de respaldo en el historial del módulo.`,
-          {
-            ID: idUnico,
-            Tipo: tipoPermiso,
+          { 
+            "ID": idUnico,
+            "Tipo": tipoPermiso,
             "Fecha Inicio": fechaInicioStr,
-            Motivo: motivo,
-            Gestión: gestion + mensajeExtra,
-            Estado: estado,
-            "Acción Requerida": "Adjuntar documento de respaldo",
+            "Motivo": motivo,
+            "Gestión": gestion + mensajeExtra,
+            "Estado": estado,
+            "Acción Requerida": "Adjuntar documento de respaldo"
           },
           "#10b981"
         );
       }
-
+      
       enviarCorreoEstilizado(
         CORREO_REPRESENTANTE_LEGAL,
         "Notificación Permiso Médico - Sindicato SLIM n°3",
         "Nueva Solicitud de Permiso Médico",
         `Se ha registrado una solicitud de permiso médico para el trabajador <strong>${beneficiario.nombre}</strong>.`,
-        {
-          ID: idUnico,
-          Trabajador: beneficiario.nombre,
-          RUT: beneficiario.rut,
-          Tipo: tipoPermiso,
+        { 
+          "ID": idUnico,
+          "Trabajador": beneficiario.nombre,
+          "RUT": beneficiario.rut,
+          "Tipo": tipoPermiso,
           "Fecha Inicio": fechaInicio,
-          Motivo: motivo,
-          "Fecha Solicitud": fechaHoy.toLocaleDateString(),
+          "Motivo": motivo,
+          "Fecha Solicitud": fechaHoy.toLocaleDateString()
         },
         "#475569"
       );
-
-      if (
-        gestion === "Dirigente" &&
-        correoDirigente &&
-        correoDirigente.includes("@") &&
-        correoDirigente !== beneficiario.correo
-      ) {
+      
+      if (gestion === "Dirigente" && correoDirigente && correoDirigente.includes("@") && correoDirigente !== beneficiario.correo) {
         enviarCorreoEstilizado(
           correoDirigente,
           "Respaldo Gestión Permiso Médico - Sindicato SLIM n°3",
           "Permiso Médico Ingresado",
           `Has ingresado exitosamente un permiso médico para el socio <strong>${beneficiario.nombre}</strong>.`,
-          { ID: idUnico, Socio: beneficiario.nombre, Tipo: tipoPermiso },
+          { "ID": idUnico, "Socio": beneficiario.nombre, "Tipo": tipoPermiso },
           "#475569"
         );
       }
-
-      return {
-        success: true,
-        message:
-          "Permiso médico solicitado. No olvides adjuntar el documento de respaldo.",
-      };
+      
+      return { success: true, message: "Permiso médico solicitado. No olvides adjuntar el documento de respaldo." };
+      
     } catch (e) {
       return { success: false, message: "Error: " + e.toString() };
     } finally {
@@ -1676,147 +2657,153 @@ function solicitarPermisoMedico(
   }
 }
 
-function adjuntarDocumentoPermiso(idPermiso, archivoData) {
-  const CARPETA_ID = "1VBzAXMnKzZ-RdO0Nzyqz4EblKDB9T3Ka";
-  const CORREO_REPRESENTANTE_LEGAL = "penailillo.fetrasiss@gmail.com"; // CAMBIAR POR CORREO REAL
+// ==========================================
+// FUNCIÓN ADJUNTAR DOCUMENTO PERMISO - VERSIÓN MEJORADA
+// Reemplazar la función existente completamente
+// ==========================================
 
-  const lock = LockService.getScriptLock();
+function adjuntarDocumentoPermiso(idPermiso, archivoData) {
+  var CARPETA_ID = CONFIG.CARPETAS.PERMISOS_MEDICOS;
+  var CORREO_REPRESENTANTE_LEGAL = CONFIG.CORREOS.REPRESENTANTE_LEGAL;
+  
+  var lock = LockService.getScriptLock();
   if (lock.tryLock(30000)) {
     try {
-      const ss = SpreadsheetApp.getActiveSpreadsheet();
-      const sheetPermisos = ss.getSheetByName("PERMISO-MEDICO");
-      if (!sheetPermisos)
-        return { success: false, message: "Hoja no encontrada." };
-
-      const data = sheetPermisos.getDataRange().getValues();
-      let rowIndex = -1;
-      let beneficiario = null;
-      let tipoPermiso = "";
-
-      for (let i = 1; i < data.length; i++) {
-        if (String(data[i][0]) === String(idPermiso)) {
+      var sheetPermisos = getSheet('PERMISOS_MEDICOS', 'PERMISOS_MEDICOS');
+      var data = sheetPermisos.getDataRange().getValues();
+      var COL = CONFIG.COLUMNAS.PERMISOS_MEDICOS;
+      
+      var rowIndex = -1;
+      var beneficiario = null;
+      var tipoPermiso = "";
+      var gestionTipo = "";
+      var correoGestor = "";
+      
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][COL.ID]) === String(idPermiso)) {
           rowIndex = i + 1;
           beneficiario = {
-            nombre: data[i][3],
-            correo: data[i][4],
-            rut: data[i][2],
+            nombre: data[i][COL.NOMBRE],
+            correo: data[i][COL.CORREO],
+            rut: data[i][COL.RUT]
           };
-          tipoPermiso = data[i][5];
+          tipoPermiso = data[i][COL.TIPO_PERMISO];
+          gestionTipo = data[i][COL.GESTION];
+          correoGestor = data[i][COL.CORREO_DIRIGENTE];
           break;
         }
       }
-
-      if (rowIndex === -1)
-        return { success: false, message: "Permiso no encontrado." };
-
-      const sizeInBytes = (archivoData.base64.length * 3) / 4;
-      if (sizeInBytes > 5 * 1024 * 1024) {
-        return {
-          success: false,
-          message: "El archivo es demasiado grande (máx 5MB).",
-        };
+      
+      if (rowIndex === -1) return { success: false, message: "Permiso no encontrado." };
+      
+      // ========== VALIDAR CORREOS ==========
+      var esGestionDirigente = gestionTipo === "Dirigente" && esCorreoValido(correoGestor);
+      
+      var correosParaPermisos = [];
+      var alertas = [];
+      
+      // Correo del beneficiario
+      if (esCorreoValido(beneficiario.correo)) {
+        correosParaPermisos.push({
+          correo: beneficiario.correo.trim().toLowerCase(),
+          tipo: 'beneficiario',
+          nombre: beneficiario.nombre
+        });
+      } else {
+        alertas.push("El socio " + beneficiario.nombre + " no tiene correo válido. No podrá acceder al documento.");
       }
-
-      let fileUrl = "Sin archivo";
-
-      try {
-        const folder = DriveApp.getFolderById(CARPETA_ID);
-        const blob = Utilities.newBlob(
-          Utilities.base64Decode(archivoData.base64),
-          archivoData.mimeType,
-          archivoData.fileName
-        );
-
-        let extension = "";
-        const nameParts = archivoData.fileName.split(".");
-        if (nameParts.length > 1) extension = "." + nameParts.pop();
-
-        blob.setName(
-          `PERMISO-${idPermiso}-${cleanRut(beneficiario.rut)}${extension}`
-        );
-
-        const file = folder.createFile(blob);
-        file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
-
-        // Otorgar permisos al socio
-        if (beneficiario.correo && beneficiario.correo.includes("@")) {
-          try {
-            file.addViewer(beneficiario.correo);
-          } catch (permErr) {
-            console.log("Permiso drive error socio: " + permErr);
-          }
-        }
-
-        // Otorgar permisos al representante legal
-        if (
-          CORREO_REPRESENTANTE_LEGAL &&
-          CORREO_REPRESENTANTE_LEGAL.includes("@")
-        ) {
-          try {
-            file.addViewer(CORREO_REPRESENTANTE_LEGAL);
-          } catch (permErr) {
-            console.log("Permiso drive error rep legal: " + permErr);
-          }
-        }
-
-        fileUrl = file.getUrl();
-      } catch (errDrive) {
-        console.error("Error Drive: " + errDrive);
-        return {
-          success: false,
-          message: "Error al subir archivo: " + errDrive.toString(),
-        };
+      
+      // Correo del gestor
+      if (esGestionDirigente && correoGestor !== beneficiario.correo) {
+        correosParaPermisos.push({
+          correo: correoGestor.trim().toLowerCase(),
+          tipo: 'gestor',
+          nombre: 'Dirigente'
+        });
       }
-
-      const fechaSubida = new Date();
-      const nuevoEstado = "Documento Adjuntado";
-
-      sheetPermisos.getRange(rowIndex, 9).setValue(fileUrl); // URL Documento
-      sheetPermisos.getRange(rowIndex, 10).setValue(nuevoEstado); // Estado
-      sheetPermisos.getRange(rowIndex, 11).setValue(fechaSubida); // Fecha Subida
-      sheetPermisos.getRange(rowIndex, 12).setValue(false); // Notificado Rep. Legal (se notificará ahora)
-
-      // Notificar al socio
-      if (beneficiario.correo && beneficiario.correo.includes("@")) {
+      
+      // ========== SUBIR ARCHIVO ==========
+      var nombreArchivo = "PERMISO-" + idPermiso + "-" + cleanRut(beneficiario.rut);
+      
+      var resultadoSubida = subirArchivoConPermisos(
+        archivoData,
+        CARPETA_ID,
+        nombreArchivo,
+        correosParaPermisos,
+        [CORREO_REPRESENTANTE_LEGAL]
+      );
+      
+      if (!resultadoSubida.success) {
+        return { success: false, message: resultadoSubida.mensajeError };
+      }
+      
+      // ========== ACTUALIZAR REGISTRO ==========
+      var fechaSubida = new Date();
+      var nuevoEstado = "Documento Adjuntado";
+      
+      sheetPermisos.getRange(rowIndex, COL.URL_DOCUMENTO + 1).setValue(resultadoSubida.url);
+      sheetPermisos.getRange(rowIndex, COL.ESTADO + 1).setValue(nuevoEstado);
+      sheetPermisos.getRange(rowIndex, COL.FECHA_SUBIDA + 1).setValue(fechaSubida);
+      sheetPermisos.getRange(rowIndex, COL.NOTIFICADO_REP_LEGAL + 1).setValue(false);
+      
+      // ========== ENVIAR CORREOS ==========
+      if (esCorreoValido(beneficiario.correo)) {
         enviarCorreoEstilizado(
           beneficiario.correo,
           "Documento Adjuntado - Sindicato SLIM n°3",
           "Documento de Permiso Médico Adjuntado",
-          `Hola ${beneficiario.nombre}, tu documento de respaldo ha sido adjuntado exitosamente.`,
+          "Hola " + beneficiario.nombre + ", tu documento de respaldo ha sido adjuntado exitosamente.",
           {
-            ID: idPermiso,
+            "ID": idPermiso,
             "Tipo Permiso": tipoPermiso,
-            Estado: nuevoEstado,
-            Documento: "Adjuntado correctamente",
+            "Estado": nuevoEstado,
+            "Documento": '<a href="' + resultadoSubida.url + '" style="color: #10b981; text-decoration: none; font-weight: 600;">📎 Ver Documento</a>'  // ✅ CORRECCIÓN
           },
           "#10b981"
         );
       }
-
-      // Notificar al representante legal CON ENLACE AL DOCUMENTO
+      
       enviarCorreoEstilizado(
         CORREO_REPRESENTANTE_LEGAL,
         "Documento Permiso Médico Adjuntado - Sindicato SLIM n°3",
         "Documento de Permiso Médico Disponible",
-        `El trabajador <strong>${beneficiario.nombre}</strong> ha adjuntado el documento de respaldo para su permiso médico.`,
+        "El trabajador <strong>" + beneficiario.nombre + "</strong> ha adjuntado el documento de respaldo para su permiso médico.",
         {
-          ID: idPermiso,
-          Trabajador: beneficiario.nombre,
-          RUT: beneficiario.rut,
+          "ID": idPermiso,
+          "Trabajador": beneficiario.nombre,
+          "RUT": beneficiario.rut,
           "Tipo Permiso": tipoPermiso,
-          Documento: `<a href="${fileUrl}" style="color: #10b981; font-weight: bold;">Disponible para revisión</a>`,
-          "Fecha Adjunto": fechaSubida.toLocaleDateString(),
+          "Documento": '<a href="' + resultadoSubida.url + '" style="color: #10b981; font-weight: bold;">Disponible para revisión</a>',
+          "Fecha Adjunto": fechaSubida.toLocaleDateString()
         },
         "#475569"
       );
-
-      // Marcar como notificado
-      sheetPermisos.getRange(rowIndex, 12).setValue(true);
-
-      return {
+      
+      sheetPermisos.getRange(rowIndex, COL.NOTIFICADO_REP_LEGAL + 1).setValue(true);
+      
+      // ========== PREPARAR RESPUESTA ==========
+      var respuesta = {
         success: true,
-        message: "Documento adjuntado y notificaciones enviadas.",
+        message: "Documento adjuntado y notificaciones enviadas."
       };
+      
+      // Agregar alertas si hay problemas
+      if (alertas.length > 0 || (resultadoSubida.permisosError && resultadoSubida.permisosError.length > 0)) {
+        respuesta.mostrarAlerta = true;
+        respuesta.tipoAlerta = 'warning';
+        
+        var todosDetalles = alertas.slice(); // Copia del array
+        if (resultadoSubida.permisosError) {
+          resultadoSubida.permisosError.forEach(function(err) {
+            todosDetalles.push("No se pudo dar acceso a " + err.nombre);
+          });
+        }
+        
+        respuesta.mensajeAlerta = todosDetalles.join('\n\n');
+      }
+      
+      return respuesta;
+      
     } catch (e) {
       return { success: false, message: "Error: " + e.toString() };
     } finally {
@@ -1829,113 +2816,111 @@ function adjuntarDocumentoPermiso(idPermiso, archivoData) {
 
 function obtenerHistorialPermisosMedicos(rutInput) {
   try {
-    const sheet =
-      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("PERMISO-MEDICO");
-    if (!sheet) return { success: true, registros: [] };
-
-    const data = sheet.getDataRange().getDisplayValues();
+    const sheet = getSheet('PERMISOS_MEDICOS', 'PERMISOS_MEDICOS');
+    const COL = CONFIG.COLUMNAS.PERMISOS_MEDICOS;
+    
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 2) return { success: true, registros: [] };
+    
+    // ⭐ CORRECCIÓN: Calcular correctamente el número de columnas
+    var lastCol = sheet.getLastColumn();
+    var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getDisplayValues();
+    
     const rutLimpio = cleanRut(rutInput);
     const registros = [];
-
-    for (let i = 1; i < data.length; i++) {
+    
+    for (let i = 0; i < data.length; i++) { // ⭐ CAMBIO: Empezar en 0
       const row = data[i];
-      if (cleanRut(row[2]) === rutLimpio) {
+      if (cleanRut(row[COL.RUT]) === rutLimpio) {
         registros.push({
-          id: row[0],
-          fecha: row[1],
-          tipoPermiso: row[5],
-          fechaInicio: row[6],
-          motivo: row[7],
-          urlDocumento: row[8],
-          estado: row[9],
-          gestion: row[12],
-          nomDirigente: row[13],
+          id: row[COL.ID],
+          fecha: row[COL.FECHA_SOLICITUD],
+          tipoPermiso: row[COL.TIPO_PERMISO],
+          fechaInicio: row[COL.FECHA_INICIO],
+          motivo: row[COL.MOTIVO_DETALLE],
+          urlDocumento: row[COL.URL_DOCUMENTO],
+          estado: row[COL.ESTADO],
+          gestion: row[COL.GESTION],
+          nomDirigente: row[COL.NOMBRE_DIRIGENTE]
         });
       }
     }
-
+    
     registros.reverse();
     return { success: true, registros: registros };
+    
   } catch (e) {
+    Logger.log("❌ Error en obtenerHistorialPermisosMedicos: " + e.toString());
     return { success: false, message: "Error: " + e.toString() };
   }
 }
 
 function eliminarPermisoMedico(idPermiso) {
-  const CORREO_REPRESENTANTE_LEGAL = "penailillo.fetrasiss@gmail.com"; // CAMBIAR POR CORREO REAL
-
-  const lock = LockService.getScriptLock();
-  if (lock.tryLock(10000)) {
+  const CORREO_REPRESENTANTE_LEGAL = CONFIG.CORREOS.REPRESENTANTE_LEGAL;
+  
+  var lock = LockService.getScriptLock();
+  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
     try {
-      const sheet =
-        SpreadsheetApp.getActiveSpreadsheet().getSheetByName("PERMISO-MEDICO");
-      if (!sheet) return { success: false, message: "Hoja no encontrada." };
-
+      const sheet = getSheet('PERMISOS_MEDICOS', 'PERMISOS_MEDICOS');
       const data = sheet.getDataRange().getValues();
-
+      const COL = CONFIG.COLUMNAS.PERMISOS_MEDICOS;
+      
       for (let i = 1; i < data.length; i++) {
-        if (String(data[i][0]) === String(idPermiso)) {
-          const estado = String(data[i][9]);
-
+        if (String(data[i][COL.ID]) === String(idPermiso)) {
+          const estado = String(data[i][COL.ESTADO]);
+          
           if (estado !== "Solicitado") {
-            return {
-              success: false,
-              message: "Solo se pueden anular permisos en estado 'Solicitado'.",
-            };
+            return { success: false, message: "Solo se pueden anular permisos en estado 'Solicitado'." };
           }
-
+          
           const beneficiario = {
-            nombre: data[i][3],
-            correo: data[i][4],
-            rut: data[i][2],
+            nombre: data[i][COL.NOMBRE],
+            correo: data[i][COL.CORREO],
+            rut: data[i][COL.RUT]
           };
-          const tipoPermiso = data[i][5];
-          const fechaInicio = data[i][6];
-
-          // Notificar al socio
+          const tipoPermiso = data[i][COL.TIPO_PERMISO];
+          const fechaInicio = data[i][COL.FECHA_INICIO];
+          
           if (beneficiario.correo && beneficiario.correo.includes("@")) {
             enviarCorreoEstilizado(
               beneficiario.correo,
               "Permiso Médico Anulado - Sindicato SLIM n°3",
               "Solicitud de Permiso Anulada",
               `Hola ${beneficiario.nombre}, tu solicitud de permiso médico ha sido anulada. No se hará uso de este permiso.`,
-              {
-                ID: idPermiso,
+              { 
+                "ID": idPermiso,
                 "Tipo Permiso": tipoPermiso,
                 "Fecha Inicio": fechaInicio,
-                Estado: "Anulado",
-                Acción: "Solicitud eliminada del sistema",
+                "Estado": "Anulado",
+                "Acción": "Solicitud eliminada del sistema"
               },
               "#ef4444"
             );
           }
-
-          // Notificar al representante legal
+          
           enviarCorreoEstilizado(
             CORREO_REPRESENTANTE_LEGAL,
             "Permiso Médico Anulado - Sindicato SLIM n°3",
             "Solicitud de Permiso Anulada",
             `La solicitud de permiso médico del trabajador <strong>${beneficiario.nombre}</strong> ha sido anulada. No se hará uso de este permiso.`,
-            {
-              ID: idPermiso,
-              Trabajador: beneficiario.nombre,
-              RUT: beneficiario.rut,
+            { 
+              "ID": idPermiso,
+              "Trabajador": beneficiario.nombre,
+              "RUT": beneficiario.rut,
               "Tipo Permiso": tipoPermiso,
               "Fecha Inicio": fechaInicio,
-              Estado: "Anulado por el usuario",
+              "Estado": "Anulado por el usuario"
             },
             "#475569"
           );
-
+          
           sheet.deleteRow(i + 1);
-          return {
-            success: true,
-            message: "Permiso anulado y notificaciones enviadas.",
-          };
+          return { success: true, message: "Permiso anulado y notificaciones enviadas." };
         }
       }
-
+      
       return { success: false, message: "Permiso no encontrado." };
+      
     } catch (e) {
       return { success: false, message: "Error: " + e.toString() };
     } finally {
@@ -1952,14 +2937,17 @@ function eliminarPermisoMedico(idPermiso) {
 
 function obtenerHistorialAsistencia(rutInput) {
   try {
-    const sheet =
-      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("ASISTENCIA");
+    // NOTA: El módulo de asistencia todavía está en el spreadsheet principal
+    // hasta que se cree su propio archivo
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("ASISTENCIA");
+    
     if (!sheet) return { success: true, registros: [] };
-
+    
     const data = sheet.getDataRange().getDisplayValues();
     const rutLimpio = cleanRut(rutInput);
     const registros = [];
-
+    
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
       if (cleanRut(row[0]) === rutLimpio) {
@@ -1967,13 +2955,14 @@ function obtenerHistorialAsistencia(rutInput) {
           asamblea: row[1] || "Asamblea",
           tipo: row[2] || "Tipo no especificado",
           gestion: row[3] || "Sistema",
-          dirigente: row[4] || "",
+          dirigente: row[4] || ""
         });
       }
     }
-
+    
     registros.reverse();
     return { success: true, registros: registros };
+    
   } catch (e) {
     return { success: false, message: "Error: " + e.toString() };
   }
@@ -1985,117 +2974,135 @@ function obtenerHistorialAsistencia(rutInput) {
 
 function obtenerGestionesDirigente(rutDirigente) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
     const rutLimpio = cleanRut(rutDirigente);
-
+    
     const resultado = {
       prestamos: [],
       justificaciones: [],
       apelaciones: [],
-      permisosMedicos: [],
+      permisosMedicos: []
     };
-
-    // PRÉSTAMOS
-    const sheetPrestamos = ss.getSheetByName("PRESTAMOS");
-    if (sheetPrestamos) {
-      const dataPrestamos = sheetPrestamos.getDataRange().getDisplayValues();
-      for (let i = 1; i < dataPrestamos.length; i++) {
-        const row = dataPrestamos[i];
-        const gestion = row[10];
-
-        if (gestion === "Dirigente") {
-          resultado.prestamos.push({
-            id: row[0],
-            fecha: row[1],
-            rutSocio: row[2],
-            nombreSocio: row[3],
-            tipo: row[5],
-            cuotas: row[6],
-            medio: row[7],
-            estado: row[8],
-            fechaTermino: row[9],
-          });
-        }
+    
+    // 1. PRÉSTAMOS
+    const sheetPrestamos = getSheet('PRESTAMOS', 'PRESTAMOS');
+    const dataPrestamos = sheetPrestamos.getDataRange().getDisplayValues();
+    const COL_PRES = CONFIG.COLUMNAS.PRESTAMOS;
+    
+    for (let i = 1; i < dataPrestamos.length; i++) {
+      const row = dataPrestamos[i];
+      const tipo = row[COL_PRES.TIPO] || "Préstamo";
+      const cuotas = row[COL_PRES.CUOTAS] || "S/D";
+      const medio = row[COL_PRES.MEDIO_PAGO] || "S/D";
+      const monto = row[COL_PRES.MONTO] || "$0";
+      const observacion = row[COL_PRES.OBSERVACION] || "";
+      
+      // --- LIMPIEZA FECHA TÉRMINO ---
+      let fechaTerminoStr = "S/D";
+      const ftRaw = row[COL_PRES.FECHA_TERMINO];
+      if (ftRaw) {
+         try {
+            const d = new Date(ftRaw);
+            if (!isNaN(d.getTime())) {
+               fechaTerminoStr = Utilities.formatDate(d, Session.getScriptTimeZone(), "dd/MM/yyyy");
+            } else {
+               fechaTerminoStr = String(ftRaw).split(' ')[0];
+            }
+         } catch(e) { fechaTerminoStr = String(ftRaw).split(' ')[0]; }
       }
-    }
 
+      resultado.prestamos.push({
+        id: row[COL_PRES.ID],
+        fecha: row[COL_PRES.FECHA],
+        rutSocio: row[COL_PRES.RUT],
+        nombreSocio: row[COL_PRES.NOMBRE],
+        tipo: tipo,
+        monto: monto,
+        cuotas: cuotas,
+        medio: medio,
+        estado: row[COL_PRES.ESTADO],
+        observacion: observacion,
+        fechaTermino: fechaTerminoStr
+      });
+    }
+    
     // JUSTIFICACIONES
-    const sheetJustif = ss.getSheetByName("JUSTIFICACIONES");
-    if (sheetJustif) {
-      const dataJustif = sheetJustif.getDataRange().getDisplayValues();
-      for (let i = 1; i < dataJustif.length; i++) {
-        const row = dataJustif[i];
-        const gestion = row[12];
-
-        if (gestion === "Dirigente") {
-          resultado.justificaciones.push({
-            id: row[0],
-            fecha: row[1],
-            rutSocio: row[2],
-            nombreSocio: row[3],
-            tipo: row[5],
-            motivo: row[6],
-            url: row[7],
-            estado: row[8],
-            obs: row[9],
-            asamblea: row[11],
-          });
-        }
+    const sheetJustif = getSheet('JUSTIFICACIONES', 'JUSTIFICACIONES');
+    const dataJustif = sheetJustif.getDataRange().getDisplayValues();
+    const COL_JUST = CONFIG.COLUMNAS.JUSTIFICACIONES;
+    
+    for (let i = 1; i < dataJustif.length; i++) {
+      const row = dataJustif[i];
+      const gestion = row[COL_JUST.GESTION];
+      
+      if (gestion === "Dirigente") {
+        resultado.justificaciones.push({
+          id: row[COL_JUST.ID],
+          fecha: row[COL_JUST.FECHA],
+          rutSocio: row[COL_JUST.RUT],
+          nombreSocio: row[COL_JUST.NOMBRE],
+          tipo: row[COL_JUST.MOTIVO],
+          motivo: row[COL_JUST.ARGUMENTO],
+          url: row[COL_JUST.RESPALDO],
+          estado: row[COL_JUST.ESTADO],
+          obs: row[COL_JUST.OBSERVACION],
+          asamblea: row[COL_JUST.ASAMBLEA]
+        });
       }
     }
-
+    
     // APELACIONES
-    const sheetApel = ss.getSheetByName("APELACIONES");
-    if (sheetApel) {
-      const dataApel = sheetApel.getDataRange().getDisplayValues();
-      for (let i = 1; i < dataApel.length; i++) {
-        const row = dataApel[i];
-        const gestion = row[13];
-
-        if (gestion === "Dirigente") {
-          resultado.apelaciones.push({
-            id: row[0],
-            fecha: row[1],
-            rutSocio: row[2],
-            nombreSocio: row[3],
-            mesApelacion: row[5],
-            tipoMotivo: row[6],
-            detalleMotivo: row[7],
-            urlComprobante: row[8],
-            urlLiquidacion: row[9],
-            estado: row[10],
-            obs: row[11],
-            urlComprobanteDevolucion: row[16] || "",
-          });
-        }
+    const sheetApel = getSheet('APELACIONES', 'APELACIONES');
+    const dataApel = sheetApel.getDataRange().getDisplayValues();
+    const COL_APEL = CONFIG.COLUMNAS.APELACIONES;
+    
+    for (let i = 1; i < dataApel.length; i++) {
+      const row = dataApel[i];
+      const gestion = row[COL_APEL.GESTION];
+      
+      if (gestion === "Dirigente") {
+        resultado.apelaciones.push({
+          id: row[COL_APEL.ID],
+          fecha: row[COL_APEL.FECHA_SOLICITUD],
+          rutSocio: row[COL_APEL.RUT],
+          nombreSocio: row[COL_APEL.NOMBRE],
+          mesApelacion: row[COL_APEL.MES_APELACION],
+          tipoMotivo: row[COL_APEL.TIPO_MOTIVO],
+          detalleMotivo: row[COL_APEL.DETALLE_MOTIVO],
+          urlComprobante: row[COL_APEL.URL_COMPROBANTE],
+          urlLiquidacion: row[COL_APEL.URL_LIQUIDACION],
+          estado: row[COL_APEL.ESTADO],
+          obs: row[COL_APEL.OBSERVACION],
+          urlComprobanteDevolucion: row[COL_APEL.URL_COMPROBANTE_DEVOLUCION] || ""
+        });
       }
     }
-
+    
     // PERMISOS MÉDICOS
-    const sheetPermisos = ss.getSheetByName("PERMISO-MEDICO");
-    if (sheetPermisos) {
-      const dataPermisos = sheetPermisos.getDataRange().getDisplayValues();
-      for (let i = 1; i < dataPermisos.length; i++) {
-        const row = dataPermisos[i];
-        const gestion = row[12];
-
-        if (gestion === "Dirigente") {
-          resultado.permisosMedicos.push({
-            id: row[0],
-            fecha: row[1],
-            rutSocio: row[2],
-            nombreSocio: row[3],
-            tipoPermiso: row[5],
-            fechaInicio: row[6],
-            motivo: row[7],
-            urlDocumento: row[8],
-            estado: row[9],
-          });
-        }
+    const sheetPermisos = getSheet('PERMISOS_MEDICOS', 'PERMISOS_MEDICOS');
+    const dataPermisos = sheetPermisos.getDataRange().getDisplayValues();
+    const COL_PERM = CONFIG.COLUMNAS.PERMISOS_MEDICOS;
+    
+    for (let i = 1; i < dataPermisos.length; i++) {
+      const row = dataPermisos[i];
+      const gestion = row[COL_PERM.GESTION];
+      
+      if (gestion === "Dirigente") {
+        resultado.permisosMedicos.push({
+          id: row[COL_PERM.ID],
+          fecha: row[COL_PERM.FECHA_SOLICITUD],
+          rutSocio: row[COL_PERM.RUT],
+          nombreSocio: row[COL_PERM.NOMBRE],
+          tipoPermiso: row[COL_PERM.TIPO_PERMISO],
+          fechaInicio: row[COL_PERM.FECHA_INICIO],
+          motivo: row[COL_PERM.MOTIVO_DETALLE],
+          urlDocumento: row[COL_PERM.URL_DOCUMENTO],
+          estado: row[COL_PERM.ESTADO]
+        });
       }
     }
-
+    
     return { success: true, datos: resultado };
+    
   } catch (e) {
     return { success: false, message: "Error: " + e.toString() };
   }
@@ -2107,110 +3114,93 @@ function obtenerGestionesDirigente(rutDirigente) {
 
 function generarInformeAdministrador() {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheetPrestamos = ss.getSheetByName("PRESTAMOS");
-
-    if (!sheetPrestamos) {
-      return { success: false, message: "No se encontró la hoja PRESTAMOS." };
-    }
-
+    const sheetPrestamos = getSheet('PRESTAMOS', 'PRESTAMOS');
     const data = sheetPrestamos.getDataRange().getValues();
-
-    // Filtrar solo préstamos en estado "Solicitado"
+    const COL = CONFIG.COLUMNAS.PRESTAMOS;
+    
     const prestamosSolicitados = [];
     const filasActualizar = [];
-
+    
     for (let i = 1; i < data.length; i++) {
-      const estado = String(data[i][8]); // Columna Estado (índice 8)
-
+      const estado = String(data[i][COL.VALIDACION]);
+      
       if (estado === "Solicitado") {
+        const obs = data[i][COL.OBSERVACION] || "";
+        const partes = obs.split(" - ");
+        const tipo = partes[0] || "Préstamo";
+        const cuotas = partes[1] || "";
+        const medio = partes[2] || "";
+        
         prestamosSolicitados.push({
-          rut: data[i][2], // Columna C: RUT
-          nombre: data[i][3], // Columna D: NOMBRE
-          tipoPrestamo: data[i][5], // Columna F: TIPO PRÉSTAMO
-          cuotas: data[i][6], // Columna G: CUOTAS
-          medioPago: data[i][7], // Columna H: MEDIO PAGO
+          rut: data[i][COL.RUT],
+          nombre: data[i][COL.NOMBRE],
+          tipoPrestamo: tipo,
+          cuotas: cuotas,
+          medioPago: medio
         });
-        filasActualizar.push(i + 1); // Guardar índice de fila (base 1)
+        filasActualizar.push(i + 1);
       }
     }
-
+    
     if (prestamosSolicitados.length === 0) {
-      return {
-        success: false,
-        message: "No hay préstamos en estado 'Solicitado' para procesar.",
-      };
+      return { success: false, message: "No hay préstamos en estado 'Solicitado' para procesar." };
     }
-
-    // Crear nueva hoja temporal para el informe
+    
+    const ss = getSpreadsheet('PRESTAMOS');
     let sheetInforme = ss.getSheetByName("INFORME_PRESTAMOS_TEMP");
     if (sheetInforme) {
       ss.deleteSheet(sheetInforme);
     }
     sheetInforme = ss.insertSheet("INFORME_PRESTAMOS_TEMP");
-
-    // Encabezados
+    
     const headers = ["RUT", "NOMBRE", "TIPO PRÉSTAMO", "CUOTAS", "MEDIO PAGO"];
     sheetInforme.appendRow(headers);
-
-    // Agregar datos filtrados
-    prestamosSolicitados.forEach((prestamo) => {
+    
+    prestamosSolicitados.forEach(prestamo => {
       sheetInforme.appendRow([
         prestamo.rut,
         prestamo.nombre,
         prestamo.tipoPrestamo,
         prestamo.cuotas,
-        prestamo.medioPago,
+        prestamo.medioPago
       ]);
     });
-
-    // Formatear
+    
     const lastRow = sheetInforme.getLastRow();
     const lastCol = sheetInforme.getLastColumn();
-
-    sheetInforme
-      .getRange(1, 1, 1, lastCol)
+    
+    sheetInforme.getRange(1, 1, 1, lastCol)
       .setFontWeight("bold")
       .setBackground("#4c1d95")
       .setFontColor("#ffffff");
-
+    
     sheetInforme.setFrozenRows(1);
     sheetInforme.autoResizeColumns(1, lastCol);
-
-    // Convertir a Excel (blob)
-    const url =
-      "https://docs.google.com/spreadsheets/d/" +
-      ss.getId() +
-      "/export?format=xlsx&gid=" +
-      sheetInforme.getSheetId();
+    
+    const url = "https://docs.google.com/spreadsheets/d/" + ss.getId() + "/export?format=xlsx&gid=" + sheetInforme.getSheetId();
     const token = ScriptApp.getOAuthToken();
     const response = UrlFetchApp.fetch(url, {
       headers: {
-        Authorization: "Bearer " + token,
-      },
+        'Authorization': 'Bearer ' + token
+      }
     });
-
+    
     const blob = response.getBlob();
-    blob.setName(
-      `Informe_Prestamos_Solicitados_${new Date()
-        .toLocaleDateString("es-CL")
-        .replace(/\//g, "-")}.xlsx`
-    );
-
-    // Obtener correo del administrador desde BD_USUARIOS
-    const sheetUsers = ss.getSheetByName("BD_USUARIOS");
+    blob.setName(`Informe_Prestamos_Solicitados_${new Date().toLocaleDateString('es-CL').replace(/\//g, '-')}.xlsx`);
+    
+    const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
     const dataUsers = sheetUsers.getDataRange().getDisplayValues();
-    let correoAdmin = "admin@sindicato.com"; // Correo por defecto
-
+    const COL_USER = CONFIG.COLUMNAS.USUARIOS;
+    let correoAdmin = "admin@sindicato.com";
+    
     for (let i = 1; i < dataUsers.length; i++) {
-      const rol = String(dataUsers[i][14]).toUpperCase();
+      const rol = String(dataUsers[i][COL_USER.ROL]).toUpperCase();
       if (rol === "ADMIN") {
-        correoAdmin = dataUsers[i][5]; // Columna F: CORREO
+        correoAdmin = dataUsers[i][COL_USER.CORREO];
         break;
       }
     }
-
-    // Enviar correo con archivo adjunto
+    
     MailApp.sendEmail({
       to: correoAdmin,
       subject: "Informe de Préstamos Solicitados - Sindicato SLIM n°3",
@@ -2221,14 +3211,10 @@ function generarInformeAdministrador() {
           </div>
           <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
             <p style="color: #1e293b; font-size: 16px; line-height: 1.6;">
-              Se adjunta el informe de préstamos en estado <strong>"Solicitado"</strong> generado el <strong>${new Date().toLocaleDateString(
-                "es-CL"
-              )}</strong>.
+              Se adjunta el informe de préstamos en estado <strong>"Solicitado"</strong> generado el <strong>${new Date().toLocaleDateString('es-CL')}</strong>.
             </p>
             <p style="color: #64748b; font-size: 14px; margin-top: 20px;">
-              Total de préstamos procesados: <strong>${
-                prestamosSolicitados.length
-              }</strong>
+              Total de préstamos procesados: <strong>${prestamosSolicitados.length}</strong>
             </p>
             <p style="color: #dc2626; font-size: 14px; font-weight: bold; margin-top: 15px;">
               ⚠️ Estos préstamos han sido cambiados automáticamente al estado "Enviado".
@@ -2240,26 +3226,22 @@ function generarInformeAdministrador() {
           </div>
         </div>
       `,
-      attachments: [blob],
+      attachments: [blob]
     });
-
-    // Cambiar estado de "Solicitado" a "Enviado"
-    filasActualizar.forEach((fila) => {
-      sheetPrestamos.getRange(fila, 9).setValue("Enviado"); // Columna I: Estado
+    
+    filasActualizar.forEach(fila => {
+      sheetPrestamos.getRange(fila, COL.VALIDACION + 1).setValue("Enviado");
     });
-
-    // Eliminar hoja temporal
+    
     ss.deleteSheet(sheetInforme);
-
-    return {
-      success: true,
-      message: `Informe generado y enviado. ${prestamosSolicitados.length} préstamo(s) cambiado(s) a "Enviado".`,
+    
+    return { 
+      success: true, 
+      message: `Informe generado y enviado. ${prestamosSolicitados.length} préstamo(s) cambiado(s) a "Enviado".` 
     };
+    
   } catch (e) {
-    return {
-      success: false,
-      message: "Error al generar informe: " + e.toString(),
-    };
+    return { success: false, message: "Error al generar informe: " + e.toString() };
   }
 }
 
@@ -2267,56 +3249,102 @@ function generarInformeAdministrador() {
 // FUNCIONES AUXILIARES
 // ==========================================
 
-function cleanRut(rut) {
-  if (!rut) return "";
-  return String(rut).replace(/\./g, "").replace(/-/g, "").toUpperCase().trim();
+// AGREGAR al inicio de Code.gs, después de las funciones auxiliares
+
+/**
+ * Verifica si un usuario tiene un rol específico
+ * @param {string} rut - RUT del usuario
+ * @param {Array} rolesPermitidos - Array de roles permitidos ['ADMIN', 'DIRIGENTE']
+ * @returns {Object} {autorizado: boolean, mensaje: string, rol: string}
+ */
+function verificarRolUsuario(rut, rolesPermitidos) {
+  try {
+    const usuario = obtenerUsuarioPorRut(rut);
+    
+    if (!usuario.encontrado) {
+      return {
+        autorizado: false,
+        mensaje: "Usuario no encontrado",
+        rol: ""
+      };
+    }
+    
+    const rolUsuario = String(usuario.rol || "SOCIO").trim().toUpperCase();
+    const tienePermiso = rolesPermitidos.some(function(rol) {
+      return rol.toUpperCase() === rolUsuario;
+    });
+    
+    if (!tienePermiso) {
+      Logger.log('⚠️ INTENTO DE ACCESO NO AUTORIZADO:');
+      Logger.log('   RUT: ' + rut);
+      Logger.log('   Rol actual: ' + rolUsuario);
+      Logger.log('   Roles requeridos: ' + rolesPermitidos.join(', '));
+      
+      return {
+        autorizado: false,
+        mensaje: "No tienes permisos para realizar esta acción",
+        rol: rolUsuario
+      };
+    }
+    
+    return {
+      autorizado: true,
+      mensaje: "Acceso autorizado",
+      rol: rolUsuario
+    };
+    
+  } catch (e) {
+    Logger.log('❌ Error verificando rol: ' + e.toString());
+    return {
+      autorizado: false,
+      mensaje: "Error de validación",
+      rol: ""
+    };
+  }
 }
 
-function enviarCorreoEstilizado(
-  destinatario,
-  asunto,
-  titulo,
-  mensaje,
-  detalles,
-  colorTema
-) {
+function cleanRut(rut) {
+  if (!rut) return "";
+  return String(rut).replace(/\./g, '').replace(/-/g, '').toUpperCase().trim();
+}
+
+function enviarCorreoEstilizado(destinatario, asunto, titulo, mensaje, detalles, colorTema) {
   try {
     if (!destinatario || !destinatario.includes("@")) {
       console.log("Correo inválido: " + destinatario);
       return;
     }
-
+    
+    // Convertir detalles a tabla HTML
     let detallesHtml = "";
     if (detalles && typeof detalles === "object") {
-      detallesHtml =
-        "<table style='width: 100%; border-collapse: collapse; margin-top: 20px;'>";
+      detallesHtml = "<table style='width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;'>";
+      
+      let isEven = false;
       for (let key in detalles) {
         let valor = detalles[key];
-
-        // Si el valor contiene HTML (como enlaces), no escaparlo
-        if (
-          typeof valor === "string" &&
-          (valor.includes("<a href=") ||
-            valor.includes("<br>") ||
-            valor.includes("<em>") ||
-            valor.includes("<strong>"))
-        ) {
-          // Ya contiene HTML, usar tal cual
-        } else {
-          // Escapar caracteres especiales para valores normales
-          valor = String(valor).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        
+        // LÓGICA S/D
+        if (valor === null || valor === undefined || valor === "") {
+          valor = "<span style='color: #94a3b8; font-style: italic;'>S/D</span>";
         }
-
+        
+        const bgRow = isEven ? "#f8fafc" : "#ffffff";
+        
         detallesHtml += `
-          <tr>
-            <td style='padding: 12px; border-bottom: 1px solid #e2e8f0; color: #64748b; font-weight: 600; width: 40%;'>${key}</td>
-            <td style='padding: 12px; border-bottom: 1px solid #e2e8f0; color: #1e293b; font-weight: 500;'>${valor}</td>
+          <tr style="background-color: ${bgRow};">
+            <td style='padding: 12px 15px; border-bottom: 1px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 13px; width: 35%; vertical-align: top; text-transform: uppercase; letter-spacing: 0.05em;'>${key}</td>
+            <td style='padding: 12px 15px; border-bottom: 1px solid #e2e8f0; color: #1e293b; font-weight: 500; font-size: 14px; vertical-align: top;'>${valor}</td>
           </tr>
         `;
+        isEven = !isEven;
       }
       detallesHtml += "</table>";
     }
-
+    
+    // Generamos un ID único para evitar que Gmail agrupe y oculte el footer
+    const uniqueId = Utilities.getUuid().slice(0, 8);
+    
     const htmlBody = `
       <!DOCTYPE html>
       <html>
@@ -2324,51 +3352,49 @@ function enviarCorreoEstilizado(
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
       </head>
-      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9;">
-        <div style="max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+      <body style="margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f1f5f9;">
+        <div style="max-width: 600px; margin: 20px auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
           
-          <div style="background: linear-gradient(135deg, ${colorTema} 0%, ${adjustColor(
-      colorTema,
-      -20
-    )} 100%); color: white; padding: 40px 30px; text-align: center;">
-            <h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">${titulo}</h1>
+          <div style="background: linear-gradient(135deg, ${colorTema} 0%, ${adjustColor(colorTema, -40)} 100%); padding: 40px 30px; text-align: center;">
+            <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">${titulo}</h1>
+            <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Sindicato SLIM N°3</p>
           </div>
           
-          <div style="padding: 40px 30px;">
-            <p style="color: #1e293b; font-size: 16px; line-height: 1.8; margin: 0 0 20px 0;">
+          <div style="padding: 40px 30px; background-color: #ffffff;">
+            <p style="color: #334155; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0; text-align: left;">
               ${mensaje}
             </p>
             
             ${detallesHtml}
             
-            <div style="margin-top: 30px; padding-top: 30px; border-top: 2px solid #f1f5f9;">
-              <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 0;">
-                <strong style="color: #1e293b;">Importante:</strong> Este es un correo automático del sistema de gestión del Sindicato SLIM n°3. 
-                Por favor no respondas a este correo.
+            <div style="margin-top: 30px; padding: 15px; background-color: #eff6ff; border-left: 4px solid ${colorTema}; border-radius: 4px;">
+              <p style="color: #1e40af; font-size: 12px; line-height: 1.5; margin: 0;">
+                <strong>Nota Importante:</strong> Si el campo aparece como "S/D", significa que no hay datos registrados para ese ítem en el momento de la gestión.
               </p>
             </div>
           </div>
           
-          <div style="background: #f8fafc; padding: 20px 30px; text-align: center; border-top: 1px solid #e2e8f0;">
-            <p style="color: #94a3b8; font-size: 12px; margin: 0;">
-              © ${new Date().getFullYear()} Sindicato SLIM n°3 - Sistema de Gestión de Socios
+          <div style="background: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
+            <p style="color: #64748b; font-size: 11px; margin: 0; line-height: 1.4;">
+              Este es un mensaje automático. Por favor no respondas a este correo.<br>
+              © ${new Date().getFullYear()} Plataforma de Gestión Sindicato SLIM N°3
             </p>
+            <p style="color: #cbd5e1; font-size: 9px; margin: 10px 0 0 0;">Ref: ${uniqueId}</p>
           </div>
           
         </div>
       </body>
       </html>
     `;
-
+    
     MailApp.sendEmail({
       to: destinatario,
       subject: asunto,
-      htmlBody: htmlBody,
+      htmlBody: htmlBody
     });
+    
   } catch (e) {
-    console.error(
-      "Error enviando correo a " + destinatario + ": " + e.toString()
-    );
+    console.error("Error enviando correo a " + destinatario + ": " + e.toString());
   }
 }
 
@@ -2376,77 +3402,39 @@ function adjustColor(hexColor, percent) {
   const num = parseInt(hexColor.replace("#", ""), 16);
   const amt = Math.round(2.55 * percent);
   const R = (num >> 16) + amt;
-  const G = ((num >> 8) & 0x00ff) + amt;
-  const B = (num & 0x0000ff) + amt;
-  return (
-    "#" +
-    (
-      0x1000000 +
-      (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
-      (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
-      (B < 255 ? (B < 1 ? 0 : B) : 255)
-    )
-      .toString(16)
-      .slice(1)
-  );
+  const G = (num >> 8 & 0x00FF) + amt;
+  const B = (num & 0x0000FF) + amt;
+  return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+    (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+    (B < 255 ? B < 1 ? 0 : B : 255))
+    .toString(16).slice(1);
 }
+
+function formatRutServer(rut) {
+  if (!rut) return "";
+  let value = rut.replace(/[^0-9kK]/g, '').toUpperCase();
+  if (value.length < 2) return value;
+  const body = value.slice(0, -1);
+  const dv = value.slice(-1);
+  let formattedBody = "";
+  for (let i = body.length - 1, j = 0; i >= 0; i--, j++) {
+    formattedBody = body.charAt(i) + ((j > 0 && j % 3 === 0) ? "." : "") + formattedBody;
+  }
+  return formattedBody + "-" + dv;
+}
+
 
 // ==========================================
 // TRIGGERS Y AUTOMATIZACIONES
 // ==========================================
 
-function verificarCambiosPrestamos() {
-  try {
-    const sheet =
-      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("PRESTAMOS");
-    if (!sheet) return;
-
-    const data = sheet.getDataRange().getValues();
-
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const estado = String(row[8]);
-      const fechaTermino = new Date(row[9]);
-      const hoy = new Date();
-
-      // Si el préstamo está "Vigente" y ya pasó la fecha de término, cambiar a "Pagado"
-      if (estado === "Vigente" && hoy > fechaTermino) {
-        sheet.getRange(i + 1, 9).setValue("Pagado");
-
-        const correo = row[4];
-        const nombre = row[3];
-        const tipo = row[5];
-
-        if (correo && correo.includes("@")) {
-          enviarCorreoEstilizado(
-            correo,
-            "Préstamo Completado - Sindicato SLIM n°3",
-            "Préstamo Finalizado",
-            `Hola ${nombre}, tu préstamo de tipo <strong>${tipo}</strong> ha sido marcado como pagado.`,
-            {
-              ID: row[0],
-              Tipo: tipo,
-              Estado: "Pagado",
-              "Fecha Término": fechaTermino.toLocaleDateString(),
-            },
-            "#10b981"
-          );
-        }
-      }
-    }
-  } catch (e) {
-    console.error("Error verificando préstamos: " + e);
-  }
-}
-
 function verificarCambiosJustificaciones() {
   try {
-    const sheet =
-      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("JUSTIFICACIONES");
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("JUSTIFICACIONES");
     if (!sheet) return;
-
+    
     const data = sheet.getDataRange().getValues();
-
+    
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
       const idRegistro = String(row[0]);
@@ -2457,447 +3445,360 @@ function verificarCambiosJustificaciones() {
       const tipo = row[5];
       const obs = row[9];
       const asamblea = row[11];
-
+      
       if (estadoActual !== estadoNotif) {
         if (correo && correo.includes("@")) {
           let color = "#ea580c";
           let titulo = "Actualización de Justificación";
-
-          if (estadoActual.includes("Aceptado")) {
-            color = "#15803d";
-            titulo = "Justificación Aceptada";
-          } else if (estadoActual.includes("Rechazado")) {
-            color = "#b91c1c";
-            titulo = "Justificación Rechazada";
+          
+          if (estadoActual.includes("Aceptado")) { 
+            color = "#15803d"; 
+            titulo = "Justificación Aceptada"; 
+          } else if (estadoActual.includes("Rechazado")) { 
+            color = "#b91c1c"; 
+            titulo = "Justificación Rechazada"; 
           }
-
+          
           enviarCorreoEstilizado(
-            correo,
-            titulo + " - Sindicato SLIM n°3",
-            titulo,
-            `Hola ${nombre}, el estado de tu justificación ha cambiado.`,
-            {
-              ID: idRegistro,
-              Tipo: tipo,
-              "Nuevo Estado": estadoActual,
-              Observación: obs || "Sin observaciones",
-              Asamblea: asamblea || "Pendiente asignación",
-            },
+            correo, 
+            titulo + " - Sindicato SLIM n°3", 
+            titulo, 
+            `Hola ${nombre}, el estado de tu justificación ha cambiado.`, 
+            { 
+              "ID": idRegistro,
+              "Tipo": tipo, 
+              "Nuevo Estado": estadoActual, 
+              "Observación": obs || "Sin observaciones",
+              "Asamblea": asamblea || "Pendiente asignación"
+            }, 
             color
           );
         }
-
+        
         sheet.getRange(i + 1, 11).setValue(estadoActual);
       }
     }
-  } catch (e) {
-    console.error("Error verificando justificaciones: " + e);
+  } catch (e) { 
+    console.error("Error verificando justificaciones: " + e); 
   }
 }
 
-// Las funciones verificarCambiosApelaciones y procesarPermisosComprobantesDevolucion
-// ya están definidas arriba en la sección de apelaciones
-
 // ==========================================
-// MÓDULO: SISTEMA QR DE ASISTENCIA
+// SISTEMA QR - VALIDACIÓN Y REGISTRO
 // ==========================================
 
-/**
- * Valida si un usuario existe y está ACTIVO (con caché)
- */
-function validarUsuarioQR(rut) {
+function validarUsuarioQR(rutInput) {
   try {
-    const cache = CacheService.getScriptCache();
-    const cacheKey = `user_${cleanRut(rut)}`;
-
-    // Intentar obtener del caché (válido por 10 minutos)
-    const cached = cache.get(cacheKey);
-    if (cached) {
-      const userData = JSON.parse(cached);
-      Logger.log(`✅ Usuario ${rut} obtenido desde caché`);
-      return userData;
-    }
-
-    // Si no está en caché, buscar en hoja
-    const sheet =
-      SpreadsheetApp.getActiveSpreadsheet().getSheetByName("BD_USUARIOS");
-    if (!sheet)
-      return { success: false, error: "Error: Base de datos no encontrada." };
-
+    const sheet = getSheet('USUARIOS', 'USUARIOS');
     const data = sheet.getDataRange().getDisplayValues();
-    const rutLimpio = cleanRut(rut);
-
+    const rutLimpio = cleanRut(rutInput);
+    const COL = CONFIG.COLUMNAS.USUARIOS;
+    
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      if (cleanRut(row[0]) === rutLimpio) {
-        const estadoUsuario = String(row[9]).toUpperCase();
-        const nombreUsuario = row[3];
-
-        const resultado =
-          estadoUsuario === "ACTIVO"
-            ? { success: true, nombre: nombreUsuario }
-            : {
-                success: false,
-                error: "Usuario inactivo. Contacta con la directiva.",
-              };
-
-        // Guardar en caché solo si está activo
-        if (resultado.success) {
-          cache.put(cacheKey, JSON.stringify(resultado), 600); // 10 minutos
-          Logger.log(`💾 Usuario ${rut} guardado en caché`);
+      if (cleanRut(row[COL.RUT]) === rutLimpio) {
+        const estadoUsuario = String(row[COL.ESTADO]).toUpperCase();
+        
+        if (estadoUsuario !== "ACTIVO" && estadoUsuario !== "SI" && estadoUsuario !== "TRUE") {
+          return { 
+            success: false, 
+            error: "Usuario desvinculado. Contacta con la directiva." 
+          };
         }
-
-        return resultado;
+        
+        return {
+          success: true,
+          nombre: row[COL.NOMBRE] || "Socio",
+          rut: row[COL.RUT]
+        };
       }
     }
-
+    
     return { success: false, error: "RUT no encontrado en el sistema." };
+    
   } catch (e) {
     return { success: false, error: "Error del servidor: " + e.toString() };
   }
 }
 
-/**
- * Registra asistencia mediante QR con sistema de bloqueo robusto
- */
-function checkinQR(rut, asamblea) {
-  const MAX_INTENTOS = 3;
-  const TIMEOUT_LOCK = 30000; // 30 segundos
-
-  let intentoActual = 0;
-  let ultimoError = null;
-
-  // Reintentos automáticos en caso de conflicto
-  while (intentoActual < MAX_INTENTOS) {
-    intentoActual++;
-
-    const lock = LockService.getScriptLock();
-
+function checkinQR(rutInput, nombreAsamblea) {
+  var lock = LockService.getScriptLock();
+  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
     try {
-      // Intentar obtener el bloqueo con timeout
-      const lockObtenido = lock.tryLock(TIMEOUT_LOCK);
-
-      if (!lockObtenido) {
-        ultimoError = `Intento ${intentoActual}/${MAX_INTENTOS}: Sistema ocupado`;
-        Logger.log(ultimoError);
-
-        // Esperar antes de reintentar (backoff exponencial)
-        Utilities.sleep(Math.pow(2, intentoActual) * 100);
-        continue;
+      const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
+      
+      // NOTA: El módulo de ASISTENCIA aún no está en la nueva estructura
+      // Por ahora usamos el spreadsheet principal
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      let sheetAsistencia = ss.getSheetByName("ASISTENCIA");
+      
+      if (!sheetAsistencia) {
+        sheetAsistencia = ss.insertSheet("ASISTENCIA");
+        sheetAsistencia.appendRow(["RUT", "ASAMBLEA", "TIPO ASISTENCIA", "GESTION", "DIRIGENTE"]);
       }
-
-      // ✅ BLOQUEO OBTENIDO - Ejecutar operación
-      try {
-        const validacion = validarUsuarioQR(rut);
-
-        if (!validacion.success) {
-          throw new Error(validacion.error);
+      
+      const dataUsers = sheetUsers.getDataRange().getDisplayValues();
+      const rutLimpio = cleanRut(rutInput);
+      const COL = CONFIG.COLUMNAS.USUARIOS;
+      
+      let usuario = null;
+      for (let i = 1; i < dataUsers.length; i++) {
+        if (cleanRut(dataUsers[i][COL.RUT]) === rutLimpio) {
+          usuario = {
+            rut: dataUsers[i][COL.RUT],
+            nombre: dataUsers[i][COL.NOMBRE]
+          };
+          break;
         }
-
-        const ss = SpreadsheetApp.getActiveSpreadsheet();
-        const sheet = ss.getSheetByName("ASISTENCIA");
-
-        if (!sheet) {
-          throw new Error("Error: Hoja ASISTENCIA no encontrada.");
-        }
-
-        const now = new Date();
-        const rutFormateado = rut;
-        const nombreUsuario = validacion.nombre;
-        const gestion = "Socio";
-        const dirigente = "";
-
-        // Verificar duplicados en los últimos 5 minutos
-        const data = sheet.getDataRange().getValues();
-        const cincMinutosAtras = new Date(now.getTime() - 5 * 60 * 1000);
-
-        for (let i = data.length - 1; i >= Math.max(0, data.length - 50); i--) {
-          if (cleanRut(String(data[i][0])) === cleanRut(rut)) {
-            // Verificar si el registro es del mismo evento (asamblea)
-            if (String(data[i][2]) === asamblea) {
-              Logger.log(`⚠️ Usuario ${rut} ya registrado en ${asamblea}`);
-              throw new Error("Ya registraste tu asistencia para este evento.");
-            }
-          }
-        }
-
-        // Registrar asistencia
-        sheet.appendRow([
-          rutFormateado,
-          nombreUsuario,
-          asamblea,
-          "Asistencia Presencial",
-          gestion,
-          dirigente,
-        ]);
-
-        const fechaFormateada = Utilities.formatDate(
-          now,
-          "America/Santiago",
-          "dd/MM/yyyy HH:mm:ss"
-        );
-
-        Logger.log(
-          `✅ Asistencia registrada: ${nombreUsuario} (${rut}) - ${asamblea} - ${fechaFormateada}`
-        );
-
-        // Liberar bloqueo antes de retornar
-        lock.releaseLock();
-
-        return {
-          rut: rutFormateado,
-          fecha: fechaFormateada,
-          nombre: nombreUsuario,
-          mensaje: "Asistencia registrada exitosamente",
-        };
-      } catch (innerError) {
-        // Liberar bloqueo en caso de error
-        lock.releaseLock();
-        throw innerError;
       }
+      
+      if (!usuario) {
+        throw new Error("Usuario no encontrado");
+      }
+      
+      // Verificar si ya registró asistencia en esta asamblea
+      const dataAsistencia = sheetAsistencia.getDataRange().getDisplayValues();
+      for (let i = 1; i < dataAsistencia.length; i++) {
+        const row = dataAsistencia[i];
+        if (cleanRut(row[0]) === rutLimpio && row[1] === nombreAsamblea) {
+          throw new Error("Ya registraste tu asistencia en esta asamblea.");
+        }
+      }
+      
+      // Registrar asistencia
+      const fechaHora = new Date();
+      sheetAsistencia.appendRow([
+        usuario.rut,
+        nombreAsamblea,
+        "Asistencia QR",
+        "Sistema",
+        ""
+      ]);
+      
+      return {
+        success: true,
+        nombre: usuario.nombre,
+        rut: usuario.rut,
+        fecha: fechaHora.toLocaleString('es-CL')
+      };
+      
     } catch (e) {
-      ultimoError = e.message || e.toString();
-      Logger.log(`❌ Error intento ${intentoActual}: ${ultimoError}`);
-
-      // Si es el último intento, lanzar el error
-      if (intentoActual >= MAX_INTENTOS) {
-        // Registrar fallo en hoja de log (opcional)
-        registrarErrorAsistencia(rut, asamblea, ultimoError);
-        throw new Error(ultimoError);
-      }
-
-      // Esperar antes de reintentar
-      Utilities.sleep(Math.pow(2, intentoActual) * 100);
+      throw new Error(e.message || e.toString());
+    } finally {
+      lock.releaseLock();
     }
-  }
-
-  // Si se agotaron los intentos
-  throw new Error(
-    `No se pudo registrar después de ${MAX_INTENTOS} intentos. Intenta nuevamente.`
-  );
-}
-
-/**
- * Registra errores de asistencia para auditoría
- */
-function registrarErrorAsistencia(rut, asamblea, error) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheetLog = ss.getSheetByName("LOG_ERRORES_QR");
-
-    // Crear hoja de log si no existe
-    if (!sheetLog) {
-      sheetLog = ss.insertSheet("LOG_ERRORES_QR");
-      sheetLog.appendRow(["Fecha", "RUT", "Asamblea", "Error", "Reintentado"]);
-      sheetLog
-        .getRange(1, 1, 1, 5)
-        .setFontWeight("bold")
-        .setBackground("#dc2626")
-        .setFontColor("#ffffff");
-    }
-
-    const now = new Date();
-    const fechaFormateada = Utilities.formatDate(
-      now,
-      "America/Santiago",
-      "dd/MM/yyyy HH:mm:ss"
-    );
-
-    sheetLog.appendRow([fechaFormateada, rut, asamblea, error, "Sí"]);
-
-    Logger.log(`📝 Error registrado en LOG: ${rut} - ${error}`);
-  } catch (logError) {
-    Logger.log(`⚠️ No se pudo registrar error en log: ${logError.toString()}`);
-  }
-}
-
-/**
- * Genera Link de Registro QR para un usuario
- */
-function generarLinkRegistroQR(rut) {
-  try {
-    let webAppUrl = ScriptApp.getService().getUrl();
-
-    // LIMPIAR Y CORREGIR URL
-    webAppUrl = webAppUrl.replace(/\/a\/[^\/]+\//, "/");
-    webAppUrl = webAppUrl.replace("/macros/", "/a/~/macros/");
-
-    const rutLimpio = cleanRut(rut);
-    const linkRegistro = `${webAppUrl}?page=qr&action=register&rut=${rutLimpio}`;
-
-    return { success: true, link: linkRegistro };
-  } catch (e) {
-    return { success: false, message: "Error: " + e.toString() };
-  }
-}
-
-/**
- * Genera Link de Punto de Control
- */
-function generarLinkPuntoControl(nombrePunto, fecha, datosQR) {
-  try {
-    let webAppUrl = ScriptApp.getService().getUrl();
-
-    // LIMPIAR Y CORREGIR URL
-    webAppUrl = webAppUrl.replace(/\/a\/[^\/]+\//, "/");
-    webAppUrl = webAppUrl.replace("/macros/", "/a/~/macros/");
-
-    const asambleaId = `${fecha}-${datosQR}`;
-    const linkPuntoControl = `${webAppUrl}?page=qr&action=checkin&asamblea=${encodeURIComponent(
-      asambleaId
-    )}`;
-
-    return { success: true, link: linkPuntoControl };
-  } catch (e) {
-    return { success: false, message: "Error: " + e.toString() };
-  }
-}
-
-/**
- * Obtener URL base de la WebApp
- */
-function obtenerUrlWebApp() {
-  try {
-    let webAppUrl = ScriptApp.getService().getUrl();
-
-    // LIMPIAR Y CORREGIR URL
-    webAppUrl = webAppUrl.replace(/\/a\/[^\/]+\//, "/");
-    webAppUrl = webAppUrl.replace("/macros/", "/a/~/macros/");
-
-    return { success: true, url: webAppUrl };
-  } catch (e) {
-    return { success: false, message: "Error: " + e.toString() };
-  }
-}
-
-/**
- * Generar QRs personales para TODOS los usuarios ACTIVOS
- */
-function generarQRsUsuarios() {
-  try {
-    Logger.log("🚀 INICIANDO generarQRsUsuarios()");
-
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    Logger.log("✅ Spreadsheet obtenido: " + ss.getName());
-
-    const sheet = ss.getSheetByName("BD_USUARIOS");
-
-    if (!sheet) {
-      Logger.log("❌ ERROR: No se encontró la hoja BD_USUARIOS");
-      return;
-    }
-
-    Logger.log("✅ Hoja BD_USUARIOS encontrada");
-
-    const data = sheet.getDataRange().getValues();
-    Logger.log("📊 Total de filas en la hoja: " + data.length);
-
-    // URL FIJA del deployment (exec, NO dev)
-    const webAppUrl =
-      "https://script.google.com/a/~/macros/s/AKfycbxUJWzgv-fA8XpTCkfBydGbiCikwC4ouJSnLJcuIcxfwwAb4J4B7W-02CXicX5GbSxY8w/exec";
-
-    Logger.log("📍 URL base utilizada: " + webAppUrl);
-
-    let contador = 0;
-    let usuariosRevisados = 0;
-    let usuariosActivos = 0;
-    let usuariosInactivos = 0;
-
-    // Limpiar columnas P y Q primero
-    const lastRow = sheet.getLastRow();
-    Logger.log("📏 Última fila con datos: " + lastRow);
-
-    if (lastRow > 1) {
-      Logger.log("🧹 Limpiando columnas P y Q (filas 2 a " + lastRow + ")");
-      sheet.getRange(2, 16, lastRow - 1, 2).clearContent();
-      Logger.log("✅ Limpieza completada");
-    }
-
-    for (let i = 1; i < data.length; i++) {
-      usuariosRevisados++;
-
-      const rut = data[i][0]; // Columna A
-      const estado = String(data[i][9]).toUpperCase().trim(); // Columna J
-
-      Logger.log(`\n--- Usuario ${i} ---`);
-      Logger.log("RUT: " + rut);
-      Logger.log("Estado (columna J): '" + estado + "'");
-      Logger.log("Estado original: '" + data[i][9] + "'");
-
-      if (estado === "ACTIVO" && rut) {
-        usuariosActivos++;
-
-        const rutLimpio = cleanRut(String(rut));
-        Logger.log("RUT limpio: " + rutLimpio);
-
-        // URL completa con page=qr
-        const linkRegistro = `${webAppUrl}?page=qr&action=register&rut=${rutLimpio}`;
-        Logger.log("Link generado: " + linkRegistro);
-
-        // Fórmula para generar QR
-        const formulaQR = `=IMAGE("https://quickchart.io/qr?size=200&text=" & ENCODEURL(P${
-          i + 1
-        }))`;
-        Logger.log("Fórmula QR: " + formulaQR);
-
-        // Escribir en columna P (Link Registro)
-        Logger.log("Escribiendo en P" + (i + 1));
-        sheet.getRange(i + 1, 16).setValue(linkRegistro);
-
-        // Escribir en columna Q (Código QR)
-        Logger.log("Escribiendo en Q" + (i + 1));
-        sheet.getRange(i + 1, 17).setFormula(formulaQR);
-
-        contador++;
-        Logger.log("✅ QR generado exitosamente para fila " + (i + 1));
-      } else {
-        usuariosInactivos++;
-        Logger.log("⏭️ Usuario omitido - Estado: " + estado + ", RUT: " + rut);
-      }
-    }
-
-    Logger.log("\n📊 RESUMEN FINAL:");
-    Logger.log("Total usuarios revisados: " + usuariosRevisados);
-    Logger.log("Usuarios ACTIVOS encontrados: " + usuariosActivos);
-    Logger.log("Usuarios INACTIVOS/sin RUT: " + usuariosInactivos);
-    Logger.log("QRs generados exitosamente: " + contador);
-    Logger.log(`✅ ÉXITO: Se generaron ${contador} códigos QR personales`);
-    Logger.log(
-      `📊 Ejemplo URL: ${webAppUrl}?page=qr&action=register&rut=166258375`
-    );
-  } catch (error) {
-    Logger.log(`❌ ERROR CRÍTICO: ${error.toString()}`);
-    Logger.log(`Stack trace: ${error.stack}`);
+  } else {
+    throw new Error("Sistema ocupado, intenta nuevamente.");
   }
 }
 
 // ==========================================
-// CONFIGURAR TRIGGERS
+// CONFIGURAR TRIGGERS (Ejecutar manualmente UNA VEZ)
 // ==========================================
 
 function configurarTriggers() {
+  // Eliminar triggers existentes para evitar duplicados
   const triggers = ScriptApp.getProjectTriggers();
-  triggers.forEach((trigger) => ScriptApp.deleteTrigger(trigger));
-
-  ScriptApp.newTrigger("verificarCambiosPrestamos")
+  triggers.forEach(trigger => ScriptApp.deleteTrigger(trigger));
+  
+  // Trigger para verificar cambios en justificaciones cada 30 minutos
+  // Escalonar las ejecuciones
+  ScriptApp.newTrigger('verificarCambiosJustificaciones')
+    .timeBased().everyMinutes(30).create();
+  
+  ScriptApp.newTrigger('verificarCambiosApelaciones')
+    .timeBased().everyMinutes(30)
+    .atHour(1).nearMinute(15).create(); // ← Desplazado 15 min
+  
+  // ✅ AGREGAR ESTE (FALTABA)
+  ScriptApp.newTrigger('procesarValidacionPrestamos')
+    .timeBased().everyHours(1).create();
+  
+  // Trigger para procesar permisos de comprobantes de devolución cada hora
+  ScriptApp.newTrigger('procesarPermisosComprobantesDevolucion')
     .timeBased()
     .everyHours(1)
     .create();
-
-  ScriptApp.newTrigger("verificarCambiosJustificaciones")
+  
+  // ⭐ NUEVO: Trigger para verificar préstamos diariamente a las 8 AM
+  ScriptApp.newTrigger('verificarCambiosPrestamos')
     .timeBased()
-    .everyMinutes(30)
+    .everyDays(1)
+    .atHour(8)
     .create();
+  
+  Logger.log("✅ Triggers configurados exitosamente");
+  Logger.log("Total de triggers activos: " + ScriptApp.getProjectTriggers().length);
+  
+  return {
+    success: true,
+    message: "Triggers configurados correctamente",
+    triggers: [
+      "verificarCambiosJustificaciones (cada 30 min)",
+      "verificarCambiosApelaciones (cada 30 min)",
+      "procesarPermisosComprobantesDevolucion (cada hora)"
+    ]
+  };
+}
 
-  ScriptApp.newTrigger("verificarCambiosApelaciones")
-    .timeBased()
-    .everyMinutes(30)
-    .create();
+/**
+ * Función para obtener el correo de un usuario por RUT
+ */
+function obtenerCorreoDeRut(rut) {
+  try {
+    const sheet = getSheet('USUARIOS', 'USUARIOS');
+    const data = sheet.getDataRange().getDisplayValues();
+    const rutLimpio = cleanRut(rut);
+    const COL = CONFIG.COLUMNAS.USUARIOS;
+    
+    for (let i = 1; i < data.length; i++) {
+      if (cleanRut(data[i][COL.RUT]) === rutLimpio) {
+        return data[i][COL.CORREO];
+      }
+    }
+    return "";
+  } catch (e) {
+    console.error("Error obteniendo correo: " + e);
+    return "";
+  }
+}
 
-  ScriptApp.newTrigger("procesarPermisosComprobantesDevolucion")
-    .timeBased()
-    .everyHours(1)
-    .create();
+/**
+ * Función para otorgar permisos a archivos de justificaciones existentes
+ * EJECUTAR MANUALMENTE UNA SOLA VEZ
+ */
+function corregirPermisosJustificacionesExistentes() {
+  try {
+    const sheet = getSheet('JUSTIFICACIONES', 'JUSTIFICACIONES');
+    const data = sheet.getDataRange().getValues();
+    const COL = CONFIG.COLUMNAS.JUSTIFICACIONES;
+    
+    let archivosCorregidos = 0;
+    let errores = 0;
+    
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const gestion = String(row[COL.GESTION]);
+      const urlArchivo = String(row[COL.RESPALDO]);
+      const correoDirigente = String(row[COL.CORREO_DIRIGENTE]);
+      const correoSocio = obtenerCorreoDeRut(row[COL.RUT]);
+      
+      if (gestion === "Dirigente" && urlArchivo.includes("drive.google.com") && correoDirigente && correoDirigente.includes("@")) {
+        
+        try {
+          let fileId = "";
+          if (urlArchivo.includes("/d/")) {
+            fileId = urlArchivo.split("/d/")[1].split("/")[0];
+          } else if (urlArchivo.includes("id=")) {
+            fileId = urlArchivo.split("id=")[1].split("&")[0];
+          }
+          
+          if (fileId) {
+            const file = DriveApp.getFileById(fileId);
+            const viewers = file.getViewers();
+            const tieneDirigente = viewers.some(viewer => viewer.getEmail() === correoDirigente);
+            const tieneSocio = viewers.some(viewer => viewer.getEmail() === correoSocio);
+            
+            let cambios = [];
+            
+            if (!tieneDirigente) {
+              file.addViewer(correoDirigente);
+              cambios.push(`dirigente: ${correoDirigente}`);
+            }
+            
+            if (correoSocio && correoSocio.includes("@") && !tieneSocio) {
+              file.addViewer(correoSocio);
+              cambios.push(`socio: ${correoSocio}`);
+            }
+            
+            if (cambios.length > 0) {
+              archivosCorregidos++;
+              Logger.log(`✅ Fila ${i + 1} - Permisos otorgados: ${cambios.join(', ')}`);
+            }
+          }
+        } catch (fileErr) {
+          errores++;
+          Logger.log(`⚠️ Error en fila ${i + 1}: ${fileErr.toString()}`);
+        }
+      }
+    }
+    
+    Logger.log(`\n📊 RESUMEN:`);
+    Logger.log(`✅ Archivos corregidos: ${archivosCorregidos}`);
+    Logger.log(`⚠️ Errores: ${errores}`);
+    
+    return {
+      success: true,
+      archivosCorregidos: archivosCorregidos,
+      errores: errores
+    };
+    
+  } catch (error) {
+    Logger.log('❌ Error: ' + error.message);
+    return { success: false, message: error.message };
+  }
+}
 
-  Logger.log("Triggers configurados exitosamente");
+// ==========================================
+// SISTEMA DE MÉTRICAS Y MONITOREO
+// ==========================================
+
+/**
+ * Registra métricas de uso para análisis de performance
+ */
+function registrarMetrica(operacion, duracion, exito) {
+  try {
+    var properties = PropertiesService.getScriptProperties();
+    var fecha = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    var key = 'metrics_' + fecha + '_' + operacion;
+    
+    var existing = properties.getProperty(key);
+    var metrics = existing ? JSON.parse(existing) : { count: 0, totalDuration: 0, errors: 0 };
+    
+    metrics.count++;
+    metrics.totalDuration += duracion;
+    if (!exito) metrics.errors++;
+    
+    properties.setProperty(key, JSON.stringify(metrics));
+  } catch (e) {
+    // No hacer nada si falla el logging
+    Logger.log('Error logging metrics: ' + e);
+  }
+}
+
+/**
+ * Wrapper para medir performance de funciones críticas
+ */
+function medirPerformance(nombreFuncion, funcionCallback) {
+  var inicio = new Date().getTime();
+  var exito = true;
+  
+  try {
+    return funcionCallback();
+  } catch (e) {
+    exito = false;
+    throw e;
+  } finally {
+    var duracion = new Date().getTime() - inicio;
+    registrarMetrica(nombreFuncion, duracion, exito);
+  }
+}
+
+/**
+ * Ver métricas del día (ejecutar manualmente desde editor)
+ */
+function verMetricasHoy() {
+  var properties = PropertiesService.getScriptProperties();
+  var fecha = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  var allProps = properties.getProperties();
+  
+  Logger.log('=== MÉTRICAS ' + fecha + ' ===');
+  for (var key in allProps) {
+    if (key.startsWith('metrics_' + fecha)) {
+      var operacion = key.replace('metrics_' + fecha + '_', '');
+      var data = JSON.parse(allProps[key]);
+      Logger.log(operacion + ': ' + data.count + ' llamadas, avg: ' + 
+                 (data.totalDuration / data.count).toFixed(0) + 'ms, errores: ' + data.errors);
+    }
+  }
 }
