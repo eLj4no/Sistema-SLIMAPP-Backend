@@ -41,113 +41,146 @@
       input:checked + .toggle-slider { background-color: #10b981; }
       input:checked + .toggle-slider:before { transform: translateX(26px); }
       input:disabled + .toggle-slider { opacity: 0.5; cursor: not-allowed; }
+      
       /* ESTILOS MODALES */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-  padding: 20px;
-}
-
-.modal-card {
-  background: white;
-  border-radius: 16px;
-  width: 100%;
-  max-width: 500px;
-  max-height: 85vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  position: relative;
-}
-
-.modal-header {
-  padding: 20px;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #1e293b;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  color: #64748b;
-  cursor: pointer;
-  padding: 4px;
-}
-
-.modal-close:hover {
-  color: #1e293b;
-}
-
-.modal-body {
-  padding: 20px;
-}
-
-.modal-footer {
-  padding: 20px;
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-.btn-secondary {
-  padding: 10px 20px;
-  border-radius: 8px;
-  border: 1px solid #cbd5e1;
-  background: white;
-  color: #475569;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-secondary:hover {
-  background: #f1f5f9;
-}
-
-.btn-primary {
-  padding: 10px 20px;
-  border-radius: 8px;
-  border: none;
-  background: #7c3aed;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-primary:hover {
-  background: #6d28d9;
-}
-
-/* Animación para alerta de restricción */
-@keyframes scaleIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      padding: 20px;
     }
-    to {
+
+    .modal-card {
+      background: white;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #1e293b;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .modal-close:hover {
+      color: #1e293b;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-footer {
+      padding: 20px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .btn-secondary {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: white;
+      color: #475569;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+      background: #f1f5f9;
+    }
+
+    .btn-primary {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      background: #7c3aed;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover {
+      background: #6d28d9;
+    }
+
+    /* Animaciones para alertas de inicio de sesión */
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
         opacity: 1;
         transform: scale(1);
+      }
     }
-}
 
-.animate-scale-in {
-    animation: scaleIn 0.3s ease-out;
-}
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+
+    .animate-scale-in {
+      animation: scaleIn 0.3s ease-out;
+    }
+
+    .fade-out {
+      animation: fadeOut 0.3s ease-out;
+    }
+
+    /* Scroll personalizado para contenido de alertas */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 10px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
     </style>
   </head>
   <body class="text-slate-800 antialiased selection:bg-blue-200 selection:text-blue-900">
@@ -178,7 +211,7 @@
       <section id="dashboard-view" class="hidden w-full max-w-5xl z-10 flex-col md:flex-row glass-panel rounded-xl md:rounded-3xl shadow-2xl overflow-hidden fade-in-up transition-all duration-500 my-2 md:my-0">
         <header class="bg-slate-900 text-white p-5 md:p-6 md:w-72 flex-shrink-0 flex flex-col justify-between relative overflow-hidden">
           <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
-          <div class="relative z-10"><div class="flex items-center gap-2 mb-4 md:mb-8"><div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center backdrop-blur-md text-blue-300"><span class="material-icons-round text-base">token</span></div><span class="font-bold text-base tracking-tight">Sindicato SLIM</span></div><div class="mb-4 md:mb-6"><p class="text-slate-400 text-[10px] uppercase tracking-wider font-bold mb-0.5">Bienvenido</p><h2 id="user-name-display" class="text-lg md:text-2xl font-bold text-white leading-tight break-words">Socio</h2></div></div>
+          <div class="relative z-10"><div class="flex items-center gap-2 mb-4 md:mb-8"><div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center backdrop-blur-md text-blue-300"><span class="material-icons-round text-base">token</span></div><span class="font-bold text-base tracking-tight">Sindicato SLIM n°3</span></div><div class="mb-4 md:mb-6"><p class="text-slate-400 text-[10px] uppercase tracking-wider font-bold mb-0.5">Bienvenido</p><h2 id="user-name-display" class="text-lg md:text-2xl font-bold text-white leading-tight break-words">Socio</h2></div></div>
           <button onclick="handleLogout()" class="hidden md:flex items-center gap-3 text-slate-400 hover:text-white transition mt-auto pt-8 group text-sm"><span class="material-icons-round group-hover:-translate-x-1 transition">logout</span><span class="font-medium">Cerrar Sesión</span></button>
         </header>
         <div class="flex-grow bg-slate-50/50 flex flex-col h-full">
@@ -714,7 +747,7 @@
                  <div>
                     <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Fecha de Inicio del Permiso</label>
                     <input type="date" id="permission-fecha-inicio" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white outline-none">
-                    <p class="text-[10px] text-slate-400 mt-1">La fecha de inicio del permiso médico puede ser desde, 3 dias antes a la solicitud o 7 dias después.</p>
+                    <p class="text-[10px] text-slate-400 mt-1">La fecha de inicio del permiso médico puede ser desde, 7 días antes a la solicitud o 7 días después.</p>
                  </div>
 
                  <div>
@@ -975,7 +1008,7 @@
              <h3 class="text-lg font-bold text-slate-800 mb-2">Recordatorio Importante</h3>
              <p class="text-xs text-slate-600 mb-5">
                 Se enviará una notificación al representante legal de la empresa para informar sobre su permiso médico.<br><br>
-                <strong>Debes adjuntar el documento médico de respaldo (Atención medica, realización de examen, etc...) desde el historial una vez realizado el tramite, para así finalizar correctamente el permiso médico y evitar descuetos por falta laboral.</strong>
+                <strong>Debes adjuntar el documento médico de respaldo (Atención medica, realización de examen, etc...) desde el historial de este modulo una vez realizado el tramite médico, para así finalizar correctamente esta gestión y evitar descuetos por falta laboral.</strong>
              </p>
              <div class="flex gap-2">
                 <button onclick="document.getElementById('permission-warning-modal').classList.add('hidden')" class="w-1/2 py-2 rounded-lg border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50">
@@ -986,28 +1019,6 @@
                 </button>
              </div>
          </div>
-      </div>
-
-      <!-- Modal Advertencia MUTUO ACUERDO -->
-      <div id="mutuo-acuerdo-warning-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 text-center">
-          <div class="w-14 h-14 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span class="material-icons-round text-3xl">warning</span>
-          </div>
-          <h3 class="text-lg font-bold text-slate-800 mb-3">⚠️ Advertencia Importante</h3>
-          <p class="text-sm text-slate-600 mb-5 leading-relaxed">
-            El uso del permiso médico de <strong>"MUTUO ACUERDO"</strong> no significa que la empresa acepta automáticamente estas condiciones.<br><br>
-            <strong class="text-orange-600">Si la empresa lo rechaza</strong>, debes volver a trabajar al día hábil siguiente y los días de ausentismo serán descontados.
-          </p>
-          <div class="flex gap-2">
-            <button onclick="document.getElementById('mutuo-acuerdo-warning-modal').classList.add('hidden')" class="w-1/2 py-2.5 rounded-lg border-2 border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50">
-              Volver
-            </button>
-            <button onclick="confirmMutuoAcuerdoSubmit()" class="w-1/2 py-2.5 rounded-lg bg-orange-600 text-white font-bold text-sm hover:bg-orange-700 shadow-lg shadow-orange-500/30">
-              Continuar y Enviar
-            </button>
-          </div>
-        </div>
       </div>
 
       <!-- Modal Adjuntar Documento Permiso -->
@@ -1313,6 +1324,7 @@
 
       let currentRut = "";
       let currentUserState = "";
+      let currentEstadoNegColect = "";
       let currentEditingField = "";
       let userDataCache = {};
       let selectedRegionTemp = "";
@@ -1633,20 +1645,14 @@
               currentRut = rut; 
               currentUserRole = res.role || "SOCIO";
               currentUserState = res.state || "ACTIVO";
-
-              // ✅ DEBUG TEMPORAL (borrar después)
-              console.log('=== DEBUG LOGIN ===');
-              console.log('currentUserRole:', currentUserRole);
-              console.log('currentUserState:', currentUserState);
-              console.log('Rol normalizado:', (currentUserRole || "").toUpperCase());
-              console.log('Es Admin?', (currentUserRole || "").toUpperCase() === 'ADMIN');
-              console.log('==================');
+              currentEstadoNegColect = res.estadoNegColect || "";
 
               if(document.getElementById('remember-me').checked) localStorage.setItem('sindicato_rut', rut);
               else localStorage.removeItem('sindicato_rut');
               document.getElementById('user-name-display').innerText = res.user;
               applyRolePermissions();
               switchView('dashboard-view');
+              mostrarAlertaNegociacionColectiva();
             } else {
               document.getElementById('error-text').innerText = res.message;
               document.getElementById('error-msg').classList.remove('hidden');
@@ -1670,62 +1676,264 @@
           console.log('HTML del botón Admin:', btnAdmin?.outerHTML);
         }, 2000);
       }
+
+    /**
+     * Función principal que determina qué alerta mostrar al iniciar sesión
+     */
+    function mostrarAlertasInicioSesion() {
+      const estado = (currentUserState || "").trim().toUpperCase();
+      const estadoNeg = (currentEstadoNegColect || "").trim().toUpperCase();
+      
+      // PRIORIDAD 1: Usuarios DESVINCULADOS (alerta crítica)
+      if (estado === "DESVINCULADO") {
+        mostrarAlertaDesvinculado();
+        return;
+      }
+      
+      // PRIORIDAD 2: Estado de negociación colectiva
+      if (estadoNeg === "HABILITADO PARA NEGOCIAR") {
+        mostrarAlertaHabilitado();
+        return;
+      }
+      
+      if (estadoNeg === "EXTENSION DE BENEFICIOS" || estadoNeg === "OTRO CONT. COLEC.") {
+        mostrarAlertaNoHabilitado(estadoNeg);
+        return;
+      }
+      
+      // Si no hay ninguna alerta que mostrar, no hacer nada
+    }
+
+    /**
+     * Alerta para usuarios DESVINCULADOS (NUEVA)
+     */
+    function mostrarAlertaDesvinculado() {
+      const modalHTML = `
+        <div id="alerta-inicio-sesion" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-scale-in">
+          <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+            
+            <!-- Header compacto -->
+            <div class="bg-gradient-to-r from-red-600 to-red-700 p-4 text-center flex-shrink-0">
+              <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
+                <span class="material-icons-round text-3xl">warning</span>
+              </div>
+              <h3 class="text-lg font-bold text-white">Usuario Desvinculado</h3>
+              <p class="text-xs text-red-100 mt-1">Sindicato SLIM N°3</p>
+            </div>
+            
+            <!-- Contenido scrolleable -->
+            <div class="p-5 overflow-y-auto flex-grow custom-scroll">
+              <p class="text-sm text-slate-700 mb-3 leading-relaxed">
+                <strong>Ya no perteneces a la organización.</strong> Has sido desvinculado por renuncia voluntaria o desvinculación laboral de la empresa.
+              </p>
+              
+              <div class="bg-red-50 border-l-4 border-red-400 p-3 rounded-lg">
+                <div class="flex items-start gap-2">
+                  <span class="material-icons-round text-red-600 text-sm flex-shrink-0">info</span>
+                  <p class="text-xs text-red-800 leading-relaxed">
+                    <strong>Acceso limitado:</strong> Solo puedes acceder al módulo "Mis Datos". No puedes realizar gestiones sindicales.
+                  </p>
+                </div>
+              </div>
+              
+              <p class="text-xs text-slate-500 mt-3 text-center">
+                ¿Error? Contacta a la directiva por los canales oficiales.
+              </p>
+            </div>
+            
+            <!-- Footer fijo -->
+            <div class="p-3 bg-slate-50 border-t border-slate-200 flex-shrink-0">
+              <button onclick="cerrarAlertaInicioSesion()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2">
+                <span>Entendido</span>
+                <span class="material-icons-round text-sm">check_circle</span>
+              </button>
+            </div>
+            
+          </div>
+        </div>
+      `;
+      
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    /**
+     * Alerta para usuarios HABILITADOS para negociar (REDISEÑADA - MÁS COMPACTA)
+     */
+    function mostrarAlertaHabilitado() {
+      const modalHTML = `
+        <div id="alerta-inicio-sesion" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-scale-in">
+          <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+            
+            <!-- Header compacto -->
+            <div class="bg-gradient-to-r from-green-600 to-emerald-600 p-4 text-center flex-shrink-0">
+              <div class="w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
+                <span class="material-icons-round text-3xl">verified</span>
+              </div>
+              <h3 class="text-lg font-bold text-white">Habilitado para Negociar</h3>
+              <p class="text-xs text-green-100 mt-1">Sindicato SLIM N°3</p>
+            </div>
+            
+            <!-- Contenido scrolleable -->
+            <div class="p-5 overflow-y-auto flex-grow custom-scroll">
+              <p class="text-sm text-slate-700 mb-3 leading-relaxed">
+                <strong>Estás habilitado(a) para participar</strong> en el proceso de negociación colectiva de nuestra organización.
+              </p>
+              
+              <p class="text-sm text-slate-600 mb-3">
+                Formas parte integral del proceso y tienes derecho a participar activamente en las decisiones laborales del sindicato.
+              </p>
+              
+              <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-lg">
+                <div class="flex items-start gap-2">
+                  <span class="material-icons-round text-blue-600 text-sm flex-shrink-0">info</span>
+                  <p class="text-xs text-blue-800 leading-relaxed">
+                    Más detalles en <strong>"Mis Datos"</strong> desde el menú principal.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Footer fijo -->
+            <div class="p-3 bg-slate-50 border-t border-slate-200 flex-shrink-0">
+              <button onclick="cerrarAlertaInicioSesion()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2">
+                <span>Entendido</span>
+                <span class="material-icons-round text-sm">check_circle</span>
+              </button>
+            </div>
+            
+          </div>
+        </div>
+      `;
+      
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    /**
+     * Alerta para usuarios NO HABILITADOS (REDISEÑADA - MÁS COMPACTA)
+     */
+    function mostrarAlertaNoHabilitado(estadoNeg) {
+      const modalHTML = `
+        <div id="alerta-inicio-sesion" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-scale-in">
+          <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+            
+            <!-- Header compacto -->
+            <div class="bg-gradient-to-r from-amber-600 to-orange-600 p-4 text-center flex-shrink-0">
+              <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
+                <span class="material-icons-round text-3xl">info</span>
+              </div>
+              <h3 class="text-lg font-bold text-white">Estado en la Organización</h3>
+              <p class="text-xs text-amber-100 mt-1">Sindicato SLIM N°3</p>
+            </div>
+            
+            <!-- Contenido scrolleable -->
+            <div class="p-5 overflow-y-auto flex-grow custom-scroll">
+              <p class="text-sm text-slate-700 mb-3 leading-relaxed">
+                <strong>Eres parte de la organización</strong>, sin embargo, <strong>no estás habilitado(a) para negociar colectivamente</strong> en este proceso.
+              </p>
+              
+              <p class="text-sm text-slate-600 mb-3">
+                Tu estado actual: <strong>${estadoNeg}</strong>
+              </p>
+              
+              <div class="bg-amber-50 border-l-4 border-amber-400 p-3 rounded-lg">
+                <div class="flex items-start gap-2">
+                  <span class="material-icons-round text-amber-600 text-sm flex-shrink-0">info</span>
+                  <p class="text-xs text-amber-800 leading-relaxed">
+                    Conoce tus beneficios en <strong>"Mis Datos"</strong> desde el menú principal.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Footer fijo -->
+            <div class="p-3 bg-slate-50 border-t border-slate-200 flex-shrink-0">
+              <button onclick="cerrarAlertaInicioSesion()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2">
+                <span>Entendido</span>
+                <span class="material-icons-round text-sm">check_circle</span>
+              </button>
+            </div>
+            
+          </div>
+        </div>
+      `;
+      
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    /**
+     * Función para cerrar la alerta
+     */
+    function cerrarAlertaInicioSesion() {
+      const modal = document.getElementById('alerta-inicio-sesion');
+      if (modal) {
+        modal.classList.add('fade-out');
+        setTimeout(() => modal.remove(), 300);
+      }
+    }
+
+    function cerrarAlertaNegociacion() {
+      const modal = document.getElementById('alerta-negociacion-colectiva');
+      if (modal) {
+        modal.classList.add('fade-out');
+        setTimeout(() => modal.remove(), 300);
+      }
+    }
       
       function applyRolePermissions() {
-  const btnGestion = document.getElementById('btn-gestion-socios');
-  const btnAdmin = document.getElementById('btn-panel-admin');
-  const switchContainer = document.getElementById('justif-switch-container');
-  
-  // ✅ Obtener rol normalizado
-  const role = (currentUserRole || "").toUpperCase();
-  const estado = (currentUserState || "").toUpperCase();
-  
-  // ✅ NUEVA LÓGICA: Primero verificar si es ADMIN (tiene acceso total)
-  const esAdmin = (role === 'ADMIN');
-  const esDirigente = (role === 'DIRIGENTE');
-  const esDesvinculado = (estado === "DESVINCULADO");
-  
-  // ========== BOTÓN GESTIÓN SOCIOS ==========
-  if (esAdmin || esDirigente) {
-    btnGestion.classList.remove('hidden'); 
-    btnGestion.classList.add('flex');
-    
-    // Mostrar campos admin en formularios
-    document.getElementById('loan-admin-field').classList.remove('hidden');
-    document.getElementById('justif-admin-field').classList.remove('hidden');
-    document.getElementById('appeal-admin-field').classList.remove('hidden');
-    document.getElementById('permission-admin-field').classList.remove('hidden');
-  } else {
-    btnGestion.classList.add('hidden');
-    
-    // Ocultar campos admin en formularios
-    document.getElementById('loan-admin-field').classList.add('hidden');
-    document.getElementById('justif-admin-field').classList.add('hidden');
-    document.getElementById('appeal-admin-field').classList.add('hidden');
-    document.getElementById('permission-admin-field').classList.add('hidden');
-  }
-  
-  // ========== BOTÓN PANEL ADMIN + SWITCH ==========
-  if (esAdmin) {
-    btnAdmin.classList.remove('hidden'); 
-    btnAdmin.classList.add('flex');
-    
-    switchContainer.classList.remove('hidden');
-    switchContainer.classList.add('flex');
-    
-    loadJustifSwitchState();
-  } else {
-    btnAdmin.classList.add('hidden');
-    switchContainer.classList.add('hidden');
-  }
-  
-  // ========== VALIDACIÓN DE ESTADO DESVINCULADO ==========
-  // Si es DESVINCULADO pero NO es ADMIN, mostrar advertencia al intentar acciones
-  if (esDesvinculado && !esAdmin) {
-    console.warn('Usuario desvinculado: acceso limitado a "Mis Datos"');
-    // La validación de acciones se hace en navAction()
-  }
-}
+      const btnGestion = document.getElementById('btn-gestion-socios');
+      const btnAdmin = document.getElementById('btn-panel-admin');
+      const switchContainer = document.getElementById('justif-switch-container');
+      
+      // ✅ Obtener rol normalizado
+      const role = (currentUserRole || "").toUpperCase();
+      const estado = (currentUserState || "").toUpperCase();
+      
+      // ✅ NUEVA LÓGICA: Primero verificar si es ADMIN (tiene acceso total)
+      const esAdmin = (role === 'ADMIN');
+      const esDirigente = (role === 'DIRIGENTE');
+      const esDesvinculado = (estado === "DESVINCULADO");
+      
+      // ========== BOTÓN GESTIÓN SOCIOS ==========
+      if (esAdmin || esDirigente) {
+        btnGestion.classList.remove('hidden'); 
+        btnGestion.classList.add('flex');
+        
+        // Mostrar campos admin en formularios
+        document.getElementById('loan-admin-field').classList.remove('hidden');
+        document.getElementById('justif-admin-field').classList.remove('hidden');
+        document.getElementById('appeal-admin-field').classList.remove('hidden');
+        document.getElementById('permission-admin-field').classList.remove('hidden');
+      } else {
+        btnGestion.classList.add('hidden');
+        
+        // Ocultar campos admin en formularios
+        document.getElementById('loan-admin-field').classList.add('hidden');
+        document.getElementById('justif-admin-field').classList.add('hidden');
+        document.getElementById('appeal-admin-field').classList.add('hidden');
+        document.getElementById('permission-admin-field').classList.add('hidden');
+      }
+      
+      // ========== BOTÓN PANEL ADMIN + SWITCH ==========
+      if (esAdmin) {
+        btnAdmin.classList.remove('hidden'); 
+        btnAdmin.classList.add('flex');
+        
+        switchContainer.classList.remove('hidden');
+        switchContainer.classList.add('flex');
+        
+        loadJustifSwitchState();
+      } else {
+        btnAdmin.classList.add('hidden');
+        switchContainer.classList.add('hidden');
+      }
+      
+      // ========== VALIDACIÓN DE ESTADO DESVINCULADO ==========
+      // Si es DESVINCULADO pero NO es ADMIN, mostrar advertencia al intentar acciones
+      if (esDesvinculado && !esAdmin) {
+        console.warn('Usuario desvinculado: acceso limitado a "Mis Datos"');
+        // La validación de acciones se hace en navAction()
+      }
+    }
 
       function switchView(viewId) {
         // Validar si el usuario está desvinculado
@@ -3179,26 +3387,20 @@ divForm.classList.add('flex');
         if (!motivo || motivo.trim().length < 10) return showWarning("Debe especificar el motivo (mínimo 10 caracteres).");
         if (motivo.length > 150) return showWarning("El motivo no puede superar los 150 caracteres.");
         
-        // Validar rango de fecha (3 días antes, 7 días después)
+        // Validar rango de fecha (7 días antes, 7 días después)
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
         const fechaSeleccionada = new Date(fechaInicio);
         fechaSeleccionada.setHours(0, 0, 0, 0);
-        
-        const tresDiasAntes = new Date(hoy);
-        tresDiasAntes.setDate(tresDiasAntes.getDate() - 3);
-        
+
+        const sieteDiasAntes = new Date(hoy);
+        sieteDiasAntes.setDate(sieteDiasAntes.getDate() - 7);
+
         const sieteDiasDespues = new Date(hoy);
         sieteDiasDespues.setDate(sieteDiasDespues.getDate() + 7);
-        
-        if (fechaSeleccionada < tresDiasAntes || fechaSeleccionada > sieteDiasDespues) {
-          return showWarning("La fecha de inicio debe estar entre 3 días antes y 7 días después de hoy.");
-        }
-        
-        // Si es MUTUO ACUERDO, mostrar advertencia especial
-        if (tipo.includes("MUTUO ACUERDO")) {
-          document.getElementById('mutuo-acuerdo-warning-modal').classList.remove('hidden');
-          return;
+
+        if (fechaSeleccionada < sieteDiasAntes || fechaSeleccionada > sieteDiasDespues) {
+          return showWarning("La fecha de inicio debe estar entre 7 días antes y 7 días después de hoy.");
         }
         
         // Si no es MUTUO ACUERDO, continuar con advertencia normal
@@ -3240,43 +3442,6 @@ divForm.classList.add('flex');
             btn.disabled = false;
             showWarning("Error: " + err);
          }).solicitarPermisoMedico(currentRut, tipo, fechaInicio, motivo, rutBeneficiario);
-      }
-
-      function confirmMutuoAcuerdoSubmit() {
-        document.getElementById('mutuo-acuerdo-warning-modal').classList.add('hidden');
-        
-        const tipo = tempSelectedPermissionType;
-        const fechaInicio = document.getElementById('permission-fecha-inicio').value;
-        const motivo = document.getElementById('permission-motivo').value;
-        const rutBeneficiario = document.getElementById('permission-rut-socio').value;
-        const btn = document.getElementById('btn-submit-permission');
-        const oldHtml = btn.innerHTML;
-        
-        btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Enviando...</span></div>';
-        btn.disabled = true;
-        
-        google.script.run.withSuccessHandler(res => {
-          btn.innerHTML = oldHtml;
-          btn.disabled = false;
-          
-          if (res.success) {
-            showSuccess(res.message);
-            
-            tempSelectedPermissionType = "";
-            document.getElementById('selected-permission-type-text').innerText = "Seleccione...";
-            document.getElementById('permission-fecha-inicio').value = "";
-            document.getElementById('permission-motivo').value = "";
-            document.getElementById('permission-rut-socio').value = "";
-            
-            togglePermissionTab('list');
-          } else {
-            showWarning(res.message);
-          }
-        }).withFailureHandler(err => {
-          btn.innerHTML = oldHtml;
-          btn.disabled = false;
-          showWarning("Error: " + err);
-        }).solicitarPermisoMedico(currentRut, tipo, fechaInicio, motivo, rutBeneficiario);
       }
 
       function loadPermissionHistory() {
