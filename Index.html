@@ -132,6 +132,22 @@
 .btn-primary:hover {
   background: #6d28d9;
 }
+
+/* Animación para alerta de restricción */
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+}
     </style>
   </head>
   <body class="text-slate-800 antialiased selection:bg-blue-200 selection:text-blue-900">
@@ -179,14 +195,6 @@
               <button onclick="navAction('Apelaciones')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-red-200 relative overflow-hidden"><div class="absolute inset-0 bg-red-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">gavel</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Apelaciones</span></button>
               
               <button onclick="navAction('PermisoMedico')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-emerald-200 relative overflow-hidden"><div class="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">local_hospital</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Permiso Médico</span></button>
-
-              <!-- BOTÓN ACCESO QR (Visible para TODOS) -->
-              <!-- BOTÓN VERIFICAR VINCULACIÓN QR (Visible para TODOS) -->
-              <button onclick="abrirSistemaQR()" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-cyan-200 relative overflow-hidden">
-                <div class="absolute inset-0 bg-cyan-50 opacity-0 group-hover:opacity-100 transition duration-300"></div>
-                <div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-cyan-100 text-cyan-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">qr_code_scanner</span></div>
-                <span class="font-bold text-slate-700 text-xs md:text-base relative z-10 leading-tight">Verificar Vinculación QR</span>
-              </button>
               
               <!-- BOTONES DE ROLES -->
               <button id="btn-gestion-socios" onclick="navAction('GestionSocios')" class="hidden glass-card group flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-indigo-200 relative overflow-hidden">
@@ -216,84 +224,187 @@
       <!-- VISTA: PERFIL -->
       <section id="profile-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4">
         <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden">
-           <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
-           <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><span class="material-icons-round">arrow_back</span></button>
-           <h2 class="text-lg font-bold z-10">Mis Datos Personales</h2>
+          <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+          <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><span class="material-icons-round">arrow_back</span></button>
+          <h2 class="text-lg font-bold z-10">Mis Datos Personales</h2>
         </div>
 
         <div class="p-6 bg-slate-50/50 flex-grow overflow-y-auto">
           <div id="profile-loader" class="hidden flex flex-col items-center justify-center py-10">
-             <div class="loader mb-3"></div>
-             <p class="text-xs text-slate-500">Cargando información...</p>
+            <div class="loader mb-3"></div>
+            <p class="text-xs text-slate-500">Cargando información...</p>
           </div>
 
           <div id="profile-content" class="space-y-4">
-            <div class="flex items-start justify-between">
+
+            <!-- TARJETA: DATOS PERSONALES -->
+            
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            
+            <!-- Nombre -->
+            <div class="mb-4 pb-3 border-b border-slate-100">
+              <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nombre Completo</label>
+              <div id="p-nombre" class="font-bold text-slate-900 text-lg leading-tight">Cargando...</div>
+            </div>
+            
+            <!-- Grid de datos -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nombre Completo</label>
-                <div id="p-nombre" class="font-bold text-slate-800 text-lg leading-tight">Cargando...</div>
+                <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">RUT</label>
+                <div id="p-rut" class="text-sm font-bold text-slate-800">Cargando...</div>
               </div>
-              <div id="p-estado-badge" class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-gray-200 text-gray-500">
-                Estado
+              
+              <div>
+                <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cargo</label>
+                <div id="p-cargo" class="text-sm font-bold text-slate-800">Cargando...</div>
+              </div>
+
+              <div class="sm:col-span-2">
+                <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cliente</label>
+                <div id="p-site" class="text-sm font-bold text-slate-800 uppercase">Cargando...</div>
               </div>
             </div>
+          </div>
 
-            <hr class="border-slate-200">
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div>
-                 <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">RUT</label>
-                 <div id="p-rut" class="text-sm font-bold text-slate-800 pt-1">Cargando...</div>
-               </div>
-               
-               <div>
-                 <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Cargo</label>
-                 <div id="p-cargo" class="text-sm font-bold text-slate-800 pt-1">Cargando...</div>
-               </div>
-
-               <div class="md:col-span-2">
-                 <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">CLIENTE</label>
-                 <div id="p-site" class="text-sm font-bold text-slate-800 pt-1 uppercase">Cargando...</div>
-               </div>
+          <!-- TARJETA: ESTADOS DE VIGENCIA -->
+          <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center">
+                <span class="material-icons-round text-white text-base">verified</span>
+              </div>
+              <h4 class="text-sm font-bold text-slate-800">Estados de Vigencia</h4>
             </div>
+            <p class="text-[10px] text-slate-600 mb-3 italic">Presione cada estado para conocer más detalles</p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <!-- ESTADO EN ORGANIZACIÓN -->
+              <button onclick="mostrarInfoEstado('organizacion')" class="bg-white rounded-lg p-3 border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all text-left group">
+                <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 group-hover:text-indigo-600 transition-colors">Estado en Sindicato</label>
+                <div id="p-estado-badge" class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+                  <span class="material-icons-round text-xs">info</span>
+                  Cargando...
+                </div>
+              </button>
+              
+              <!-- ESTADO NEGOCIACIÓN COLECTIVA -->
+              <button onclick="mostrarInfoEstado('negociacion')" class="bg-white rounded-lg p-3 border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all text-left group">
+                <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 group-hover:text-indigo-600 transition-colors">Negociación Colectiva 2026</label>
+                <div id="p-estado-negociacion" class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-slate-100 text-slate-500">
+                  <span class="material-icons-round text-xs">info</span>
+                  S/D
+                </div>
+              </button>
+            </div>
+          </div>
 
-            <div class="mt-4 pt-4 border-t border-slate-200">
-               <h4 class="text-xs font-bold text-blue-600 mb-3 flex items-center gap-1">
-                 <span class="material-icons-round text-sm">edit</span>
-                 Información de Contacto
-               </h4>
-               
-               <div class="space-y-3">
-                 <div class="bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between shadow-sm">
-                   <div class="flex-grow pr-3 min-w-0">
-                     <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Región</label>
-                     <div id="display-region" class="text-sm font-semibold text-slate-800 truncate">No definida</div>
-                   </div>
-                   <button onclick="openEditModal('region')" class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition">
-                     <span class="material-icons-round text-sm">edit</span>
-                   </button>
-                 </div>
+          <!-- TARJETA: INFORMACIÓN DE CONTACTO -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-7 h-7 rounded-lg bg-blue-500 flex items-center justify-center">
+                <span class="material-icons-round text-white text-base">contact_mail</span>
+              </div>
+              <h4 class="text-sm font-bold text-slate-800">Información de Contacto</h4>
+            </div>
+            
+            <div class="space-y-3">
+              <!-- REGIÓN -->
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex items-center justify-between hover:bg-slate-100 transition-colors">
+                <div class="flex-grow pr-3 min-w-0">
+                  <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Región</label>
+                  <div id="display-region" class="text-sm font-semibold text-slate-800 truncate">No definida</div>
+                </div>
+                <button onclick="openEditModal('region')" class="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600 transition-colors shadow-sm">
+                  <span class="material-icons-round text-base">edit</span>
+                </button>
+              </div>
 
-                 <div class="bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between shadow-sm">
-                   <div class="flex-grow pr-3 min-w-0">
-                     <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Correo Electrónico</label>
-                     <div id="display-correo" class="text-sm font-semibold text-slate-800 truncate">No definido</div>
-                   </div>
-                   <button onclick="openEditModal('correo')" class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition">
-                     <span class="material-icons-round text-sm">edit</span>
-                   </button>
-                 </div>
+              <!-- CORREO ELECTRÓNICO -->
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex items-center justify-between hover:bg-slate-100 transition-colors">
+                <div class="flex-grow pr-3 min-w-0">
+                  <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Correo Electrónico</label>
+                  <div id="display-correo" class="text-sm font-semibold text-slate-800 truncate break-all">No definido</div>
+                </div>
+                <button onclick="openEditModal('correo')" class="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600 transition-colors shadow-sm">
+                  <span class="material-icons-round text-base">edit</span>
+                </button>
+              </div>
 
-                 <div class="bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between shadow-sm">
-                   <div class="flex-grow pr-3 min-w-0">
-                     <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Teléfono</label>
-                     <div id="display-contacto" class="text-sm font-semibold text-slate-800 truncate">No definido</div>
-                   </div>
-                   <button onclick="openEditModal('contacto')" class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition">
-                     <span class="material-icons-round text-sm">edit</span>
-                   </button>
-                 </div>
-               </div>
+              <!-- TELÉFONO -->
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex items-center justify-between hover:bg-slate-100 transition-colors">
+                <div class="flex-grow pr-3 min-w-0">
+                  <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Teléfono</label>
+                  <div id="display-contacto" class="text-sm font-semibold text-slate-800 truncate">No definido</div>
+                </div>
+                <button onclick="openEditModal('contacto')" class="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600 transition-colors shadow-sm">
+                  <span class="material-icons-round text-base">edit</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- TARJETA: DATOS BANCARIOS -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-7 h-7 rounded-lg bg-green-500 flex items-center justify-center">
+                <span class="material-icons-round text-white text-base">account_balance</span>
+              </div>
+              <h4 class="text-sm font-bold text-slate-800">Datos Bancarios</h4>
+            </div>
+            <p class="text-[10px] text-slate-600 mb-3 leading-relaxed">
+              Aquellos beneficios que se depositan desde el sindicato se harán a través de esta cuenta bancaria. 
+              <strong>Mantener siempre actualizados tus datos.</strong>
+            </p>
+            
+            <div class="space-y-3">
+              <!-- BANCO -->
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex-grow pr-3 min-w-0">
+                    <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Banco</label>
+                    <div id="display-banco" class="text-sm font-semibold text-slate-800 truncate">No definido</div>
+                  </div>
+                  <button onclick="openEditModal('banco')" class="flex-shrink-0 w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center hover:bg-green-600 transition-colors shadow-sm">
+                    <span class="material-icons-round text-base">edit</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- TIPO DE CUENTA -->
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex-grow pr-3 min-w-0">
+                    <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tipo de Cuenta</label>
+                    <div id="display-tipo-cuenta" class="text-sm font-semibold text-slate-800 truncate">No definido</div>
+                  </div>
+                  <button onclick="openEditModal('tipoCuenta')" class="flex-shrink-0 w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center hover:bg-green-600 transition-colors shadow-sm">
+                    <span class="material-icons-round text-base">edit</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- NÚMERO DE CUENTA -->
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex-grow pr-3 min-w-0">
+                    <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Número de Cuenta</label>
+                    <div id="display-numero-cuenta" class="text-sm font-semibold text-slate-800 font-mono">No definido</div>
+                  </div>
+                  <button onclick="openEditModal('numeroCuenta')" class="flex-shrink-0 w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center hover:bg-green-600 transition-colors shadow-sm">
+                    <span class="material-icons-round text-base">edit</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- NOTA INFORMATIVA -->
+            <div class="mt-3 p-3 bg-amber-50 border-l-4 border-amber-400 rounded-r-lg">
+              <div class="flex items-start gap-2">
+                <span class="material-icons-round text-amber-600 text-base flex-shrink-0 mt-0.5">info</span>
+                <p class="text-[10px] text-amber-900 leading-relaxed">
+                  <strong>Importante:</strong> Verifica que los datos sean correctos. Los errores en la información bancaria 
+                  pueden retrasar o impedir el depósito de beneficios.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -313,19 +424,28 @@
               
               <button onclick="showLoanForm('emergencia')" class="glass-card p-4 flex items-center gap-4 hover:bg-white hover:border-red-200 transition group">
                  <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition"><span class="material-icons-round">medical_services</span></div>
-                 <div class="text-left"><h4 class="font-bold text-slate-700">Préstamo de Emergencia</h4><p class="text-xs text-slate-500">Hasta 10 cuotas</p></div>
+                 <div class="text-left">
+                    <h4 class="font-bold text-slate-700">Préstamo de Emergencia</h4>
+                    <p class="text-xs text-slate-500">$200.000 - Hasta 10 cuotas</p>
+                 </div>
                  <span class="material-icons-round ml-auto text-slate-300">chevron_right</span>
               </button>
 
               <button onclick="showLoanForm('vacaciones')" class="glass-card p-4 flex items-center gap-4 hover:bg-white hover:border-blue-200 transition group">
                  <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition"><span class="material-icons-round">beach_access</span></div>
-                 <div class="text-left"><h4 class="font-bold text-slate-700">Préstamo de Vacaciones</h4><p class="text-xs text-slate-500">Hasta 8 cuotas</p></div>
+                 <div class="text-left">
+                    <h4 class="font-bold text-slate-700">Préstamo de Vacaciones</h4>
+                    <p class="text-xs text-slate-500">$150.000 - Hasta 8 cuotas</p>
+                 </div>
                  <span class="material-icons-round ml-auto text-slate-300">chevron_right</span>
               </button>
 
               <button onclick="showLoanRecords()" class="glass-card p-4 flex items-center gap-4 hover:bg-white hover:border-purple-200 transition group">
                  <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition"><span class="material-icons-round">history</span></div>
-                 <div class="text-left"><h4 class="font-bold text-slate-700">Ver Registros</h4><p class="text-xs text-slate-500">Historial de solicitudes</p></div>
+                 <div class="text-left">
+                    <h4 class="font-bold text-slate-700">Ver Registros</h4>
+                    <p class="text-xs text-slate-500">Modifica o elimina tus registros</p>
+                 </div>
                  <span class="material-icons-round ml-auto text-slate-300">chevron_right</span>
               </button>
            </div>
@@ -423,10 +543,10 @@
                  </div>
 
                  <div id="div-justif-motivo" class="hidden">
-                     <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Motivo / Detalle</label>
-                     <textarea id="justif-motivo" rows="3" maxlength="70" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white outline-none resize-none" placeholder="Explique brevemente (Máx 70 caracteres)..."></textarea>
-                     <p class="text-[10px] text-slate-400 text-right mt-1"><span id="char-count">0</span>/70</p>
-                 </div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Motivo / Detalle</label>
+                    <textarea id="justif-motivo" rows="3" maxlength="150" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white outline-none resize-none" placeholder="Explique brevemente (Máx 150 caracteres)..."></textarea>
+                    <p class="text-[10px] text-slate-400 text-right mt-1"><span id="char-count">0</span>/150</p>
+                  </div>
 
                  <div>
                     <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Adjuntar Comprobante (Imagen/PDF)</label>
@@ -502,10 +622,10 @@
                  </div>
 
                  <div id="div-appeal-detalle" class="hidden">
-                     <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Detalle / Explicación</label>
-                     <textarea id="appeal-detalle" rows="3" maxlength="70" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white outline-none resize-none" placeholder="Explique brevemente (Máx 70 caracteres)..."></textarea>
-                     <p class="text-[10px] text-slate-400 text-right mt-1"><span id="appeal-char-count">0</span>/70</p>
-                 </div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Detalle / Explicación</label>
+                    <textarea id="appeal-detalle" rows="3" maxlength="150" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white outline-none resize-none" placeholder="Explique brevemente (Máx 150 caracteres)..."></textarea>
+                    <p class="text-[10px] text-slate-400 text-right mt-1"><span id="appeal-char-count">0</span>/150</p>
+                  </div>
 
                  <div id="div-appeal-comprobante">
                     <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
@@ -594,7 +714,7 @@
                  <div>
                     <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Fecha de Inicio del Permiso</label>
                     <input type="date" id="permission-fecha-inicio" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white outline-none">
-                    <p class="text-[10px] text-slate-400 mt-1">Debe estar entre 3 días antes y 7 días después de hoy.</p>
+                    <p class="text-[10px] text-slate-400 mt-1">La fecha de inicio del permiso médico puede ser desde, 3 dias antes a la solicitud o 7 dias después.</p>
                  </div>
 
                  <div>
@@ -854,8 +974,8 @@
              </div>
              <h3 class="text-lg font-bold text-slate-800 mb-2">Recordatorio Importante</h3>
              <p class="text-xs text-slate-600 mb-5">
-                Se enviará una notificación al representante legal de la empresa.<br><br>
-                <strong>Debes adjuntar el documento de respaldo desde el historial después de enviar esta solicitud.</strong>
+                Se enviará una notificación al representante legal de la empresa para informar sobre su permiso médico.<br><br>
+                <strong>Debes adjuntar el documento médico de respaldo (Atención medica, realización de examen, etc...) desde el historial una vez realizado el tramite, para así finalizar correctamente el permiso médico y evitar descuetos por falta laboral.</strong>
              </p>
              <div class="flex gap-2">
                 <button onclick="document.getElementById('permission-warning-modal').classList.add('hidden')" class="w-1/2 py-2 rounded-lg border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50">
@@ -894,7 +1014,7 @@
       <div id="attach-permission-doc-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
          <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 fade-in-up">
              <h3 class="text-lg font-bold text-slate-800 mb-4">Adjuntar Documento de Respaldo</h3>
-             <p class="text-sm text-slate-600 mb-4">Seleccione el certificado médico, comprobante u otro documento que respalde su permiso.</p>
+             <p class="text-sm text-slate-600 mb-4">Adjunte el certificado médico, comprobante u otro documento que respalde que efectivamente realizó una atención médica.</p>
              
              <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-emerald-300 rounded-xl cursor-pointer bg-emerald-50 hover:bg-emerald-100 transition" id="drop-area-permission-doc">
                 <div class="flex flex-col items-center justify-center pt-5 pb-6">
@@ -1112,10 +1232,61 @@
             <h3 class="text-lg font-bold text-slate-800">¡Éxito!</h3><p class="text-sm text-slate-500" id="success-msg">Operación realizada correctamente.</p>
          </div>
       </div>
+
+      <!-- Modal Información de Estados -->
+      <div id="info-estado-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden fade-in-up max-h-[85vh] flex flex-col">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-5 flex items-center justify-between flex-shrink-0">
+              <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                    <span class="material-icons-round text-white text-xl" id="info-estado-icon">info</span>
+                  </div>
+                  <h3 class="text-lg font-bold text-white" id="info-estado-titulo">Estado</h3>
+              </div>
+              <button onclick="cerrarInfoEstado()" class="text-white/80 hover:text-white transition-colors">
+                  <span class="material-icons-round text-2xl">close</span>
+              </button>
+            </div>
+            
+            <!-- Body -->
+            <div class="p-6 overflow-y-auto flex-grow">
+              <!-- Badge del estado actual -->
+              <div class="mb-4 flex justify-center">
+                  <div id="info-estado-badge" class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide">
+                    Estado
+                  </div>
+              </div>
+              
+              <!-- Descripción -->
+              <div id="info-estado-descripcion" class="text-sm text-slate-700 leading-relaxed space-y-3">
+                  Cargando información...
+              </div>
+              
+              <!-- Nota importante (solo para negociación) -->
+              <div id="info-estado-nota" class="hidden mt-4 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg">
+                  <div class="flex items-start gap-2">
+                    <span class="material-icons-round text-amber-600 text-lg flex-shrink-0">warning</span>
+                    <p class="text-xs text-amber-900 leading-relaxed">
+                        <strong>Importante:</strong> Esta información es válida desde el 19 de diciembre de 2024 hasta la finalización del proceso de negociación colectiva.
+                    </p>
+                  </div>
+              </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex-shrink-0">
+              <button onclick="cerrarInfoEstado()" class="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/30">
+                  Entendido
+              </button>
+            </div>
+        </div>
+      </div>
       
       <section id="logout-view" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/95 backdrop-blur-md fade-in-up">
         <div class="text-center"><div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/30 animate-bounce"><span class="material-icons-round text-3xl text-white">check</span></div><h2 class="text-2xl font-bold text-white mb-2">¡Hasta pronto!</h2><p class="text-slate-300 text-sm">Cerrando sesión de forma segura...</p></div>
       </section>
+
     </main>
 
     <script>
@@ -1155,6 +1326,31 @@
       let deleteType = "";
       let tempSelectedMotive = "";
       let tempSelectedQuota = "";
+
+      // LISTADOS BANCARIOS
+      const bancosList = [
+        "BANCO ESTADO",
+        "BANCO DE CHILE",
+        "BANCO DE CREDITO E INVERSIONES (BCI)",
+        "BANCO BICE",
+        "SCOTIABANK CHILE",
+        "BANCO SANTANDER-CHILE",
+        "ITAÚ CHILE",
+        "BANCO SECURITY",
+        "BANCO FALABELLA",
+        "BANCO RIPLEY",
+        "BANCO CONSORCIO",
+        "MERCADO PAGO",
+        "SCOTIABANK AZUL",
+        "BANCO INTERNACIONAL",
+        "HSBC BANK (CHILE)",
+        "BANCO BTG PACTUAL CHILE"
+      ];
+
+      const tiposCuentaList = [
+        "CUENTA CORRIENTE",
+        "CUENTA VISTA"
+      ];
       
       // VARIABLES APELACIONES
       let tempSelectedAppealMotive = "";
@@ -1301,6 +1497,63 @@
          m.classList.remove('hidden');
          setTimeout(() => m.classList.add('hidden'), 2500);
       }
+
+      // ==========================================
+      // MODIFICACIONES PARA Index.html
+      // Agregar después de la función showSuccess()
+      // ==========================================
+
+      /**
+       * Muestra una alerta de permisos cuando hay problemas con correos
+       * @param {string} mensaje - Mensaje a mostrar
+       * @param {string} tipo - 'warning' o 'info'
+       */
+      function mostrarAlertaPermisos(mensaje, tipo) {
+        tipo = tipo || 'warning';
+        
+        var icono = tipo === 'warning' ? 'warning' : 'info';
+        var colorIcono = tipo === 'warning' ? 'text-orange-500 bg-orange-100' : 'text-blue-500 bg-blue-100';
+        var colorBoton = tipo === 'warning' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-blue-600 hover:bg-blue-700';
+        
+        // Reemplazar saltos de línea por <br> para HTML
+        var mensajeHTML = mensaje.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+        
+        var html = '<div id="alerta-permisos-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 9999;">' +
+          '<div class="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-scale-in max-h-[80vh] overflow-y-auto">' +
+            '<div class="p-6">' +
+              '<div class="flex items-start gap-4">' +
+                '<div class="w-12 h-12 rounded-full ' + colorIcono + ' flex items-center justify-center flex-shrink-0">' +
+                  '<span class="material-icons-round text-2xl">' + icono + '</span>' +
+                '</div>' +
+                '<div class="flex-1">' +
+                  '<h3 class="text-lg font-bold text-gray-800 mb-2">Aviso sobre permisos</h3>' +
+                  '<p class="text-sm text-gray-600 leading-relaxed">' + mensajeHTML + '</p>' +
+                '</div>' +
+              '</div>' +
+              '<div class="mt-6 flex justify-end">' +
+                '<button onclick="cerrarAlertaPermisos()" class="px-6 py-2.5 rounded-xl ' + colorBoton + ' text-white font-bold text-sm transition-all shadow-lg">' +
+                  'Entendido' +
+                '</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+        
+        // Eliminar alerta existente si la hay
+        var alertaExistente = document.getElementById('alerta-permisos-modal');
+        if (alertaExistente) {
+          alertaExistente.remove();
+        }
+        
+        document.body.insertAdjacentHTML('beforeend', html);
+      }
+
+      function cerrarAlertaPermisos() {
+        var alerta = document.getElementById('alerta-permisos-modal');
+        if (alerta) {
+          alerta.remove();
+        }
+      }
       
       function showConstruction(moduleName) {
          document.getElementById('construction-module-name').innerText = moduleName;
@@ -1308,26 +1561,26 @@
       }
       
       function formatRut(rut) {
-  if (!rut) return "---";
-  const cleaned = String(rut).replace(/\./g, '').replace(/-/g, '').toUpperCase().trim();
-  if (cleaned.length < 2) return rut;
+         if (!rut) return "---";
+         const cleaned = String(rut).replace(/\./g, '').replace(/-/g, '').toUpperCase().trim();
+         if (cleaned.length < 2) return rut;
+         
+         const dv = cleaned.slice(-1);
+         const number = cleaned.slice(0, -1);
+         
+         let formatted = "";
+         let count = 0;
+         for (let i = number.length - 1; i >= 0; i--) {
+            if (count === 3) {
+               formatted = "." + formatted;
+               count = 0;
+            }
+            formatted = number[i] + formatted;
+            count++;
+         }
   
-  const dv = cleaned.slice(-1);
-  const number = cleaned.slice(0, -1);
-  
-  let formatted = "";
-  let count = 0;
-  for (let i = number.length - 1; i >= 0; i--) {
-    if (count === 3) {
-      formatted = "." + formatted;
-      count = 0;
-    }
-    formatted = number[i] + formatted;
-    count++;
-  }
-  
-  return formatted + "-" + dv;
-}
+      return formatted + "-" + dv;
+      }
 
       function parseCustomDate(dateString) {
          if (!dateString) return new Date(0);
@@ -1380,6 +1633,15 @@
               currentRut = rut; 
               currentUserRole = res.role || "SOCIO";
               currentUserState = res.state || "ACTIVO";
+
+              // ✅ DEBUG TEMPORAL (borrar después)
+              console.log('=== DEBUG LOGIN ===');
+              console.log('currentUserRole:', currentUserRole);
+              console.log('currentUserState:', currentUserState);
+              console.log('Rol normalizado:', (currentUserRole || "").toUpperCase());
+              console.log('Es Admin?', (currentUserRole || "").toUpperCase() === 'ADMIN');
+              console.log('==================');
+
               if(document.getElementById('remember-me').checked) localStorage.setItem('sindicato_rut', rut);
               else localStorage.removeItem('sindicato_rut');
               document.getElementById('user-name-display').innerText = res.user;
@@ -1390,45 +1652,80 @@
               document.getElementById('error-msg').classList.remove('hidden');
             }
         }).withFailureHandler(() => { btn.disabled = false; btn.innerHTML = originalContent; showWarning("Error de conexión"); }).validarUsuario(rut, pass);
+
+        // ✅ SUPER DEBUG - Borrar después de solucionar
+        setTimeout(() => {
+          console.log('=== VERIFICACIÓN POST-LOGIN ===');
+          console.log('currentUserRole:', currentUserRole);
+          console.log('currentUserState:', currentUserState);
+          
+          const btnAdmin = document.getElementById('btn-panel-admin');
+          const btnGestion = document.getElementById('btn-gestion-socios');
+          
+          console.log('Botón Admin existe?', !!btnAdmin);
+          console.log('Botón Admin hidden?', btnAdmin?.classList.contains('hidden'));
+          console.log('Botón Gestión existe?', !!btnGestion);
+          console.log('Botón Gestión hidden?', btnGestion?.classList.contains('hidden'));
+          
+          console.log('HTML del botón Admin:', btnAdmin?.outerHTML);
+        }, 2000);
       }
       
       function applyRolePermissions() {
-        const btnGestion = document.getElementById('btn-gestion-socios');
-        const btnAdmin = document.getElementById('btn-panel-admin');
-        const switchContainer = document.getElementById('justif-switch-container');
-        
-        btnGestion.classList.add('hidden'); 
-        btnAdmin.classList.add('hidden');
-        switchContainer.classList.add('hidden');
-        
-        // Si el usuario está DESVINCULADO, ocultar todos los botones del menú excepto Mis Datos
-        if (currentUserState === "DESVINCULADO") {
-          // Los botones del menú principal ya están en el HTML, solo ocultamos los de roles
-          return;
-        }
-        
-        const role = (currentUserRole || "").toUpperCase();
-        
-        if (role === 'DIRIGENTE' || role === 'ADMIN') {
-          btnGestion.classList.remove('hidden'); btnGestion.classList.add('flex');
-          document.getElementById('loan-admin-field').classList.remove('hidden');
-          document.getElementById('justif-admin-field').classList.remove('hidden');
-          document.getElementById('appeal-admin-field').classList.remove('hidden');
-          document.getElementById('permission-admin-field').classList.remove('hidden');
-        } else {
-          document.getElementById('loan-admin-field').classList.add('hidden');
-          document.getElementById('justif-admin-field').classList.add('hidden');
-          document.getElementById('appeal-admin-field').classList.add('hidden');
-          document.getElementById('permission-admin-field').classList.add('hidden');
-        }
-        
-        if (role === 'ADMIN') {
-          btnAdmin.classList.remove('hidden'); btnAdmin.classList.add('flex');
-          switchContainer.classList.remove('hidden');
-          switchContainer.classList.add('flex');
-          loadJustifSwitchState();
-        }
-      }
+  const btnGestion = document.getElementById('btn-gestion-socios');
+  const btnAdmin = document.getElementById('btn-panel-admin');
+  const switchContainer = document.getElementById('justif-switch-container');
+  
+  // ✅ Obtener rol normalizado
+  const role = (currentUserRole || "").toUpperCase();
+  const estado = (currentUserState || "").toUpperCase();
+  
+  // ✅ NUEVA LÓGICA: Primero verificar si es ADMIN (tiene acceso total)
+  const esAdmin = (role === 'ADMIN');
+  const esDirigente = (role === 'DIRIGENTE');
+  const esDesvinculado = (estado === "DESVINCULADO");
+  
+  // ========== BOTÓN GESTIÓN SOCIOS ==========
+  if (esAdmin || esDirigente) {
+    btnGestion.classList.remove('hidden'); 
+    btnGestion.classList.add('flex');
+    
+    // Mostrar campos admin en formularios
+    document.getElementById('loan-admin-field').classList.remove('hidden');
+    document.getElementById('justif-admin-field').classList.remove('hidden');
+    document.getElementById('appeal-admin-field').classList.remove('hidden');
+    document.getElementById('permission-admin-field').classList.remove('hidden');
+  } else {
+    btnGestion.classList.add('hidden');
+    
+    // Ocultar campos admin en formularios
+    document.getElementById('loan-admin-field').classList.add('hidden');
+    document.getElementById('justif-admin-field').classList.add('hidden');
+    document.getElementById('appeal-admin-field').classList.add('hidden');
+    document.getElementById('permission-admin-field').classList.add('hidden');
+  }
+  
+  // ========== BOTÓN PANEL ADMIN + SWITCH ==========
+  if (esAdmin) {
+    btnAdmin.classList.remove('hidden'); 
+    btnAdmin.classList.add('flex');
+    
+    switchContainer.classList.remove('hidden');
+    switchContainer.classList.add('flex');
+    
+    loadJustifSwitchState();
+  } else {
+    btnAdmin.classList.add('hidden');
+    switchContainer.classList.add('hidden');
+  }
+  
+  // ========== VALIDACIÓN DE ESTADO DESVINCULADO ==========
+  // Si es DESVINCULADO pero NO es ADMIN, mostrar advertencia al intentar acciones
+  if (esDesvinculado && !esAdmin) {
+    console.warn('Usuario desvinculado: acceso limitado a "Mis Datos"');
+    // La validación de acciones se hace en navAction()
+  }
+}
 
       function switchView(viewId) {
         // Validar si el usuario está desvinculado
@@ -1452,6 +1749,15 @@
 
       function navAction(module) {
         if(!currentRut) { showWarning("Sesión expirada."); return handleLogout(); }
+
+        const role = (currentUserRole || "").toUpperCase();
+        const esAdmin = (role === 'ADMIN');
+        const esDesvinculado = (currentUserState === "DESVINCULADO");
+        
+        if (esDesvinculado && !esAdmin && module !== 'Mis Datos') {
+          showWarning("No puedes realizar gestiones sindicales debido a que tu estado dentro de la organización es DESVINCULADO. Si crees que existe un error, comunícate con la directiva de la organización.");
+          return;
+        }
         
         if (module === 'Mis Datos') { 
            cargarMisDatos(); 
@@ -1484,19 +1790,6 @@
         } else {
            showConstruction(module);
         }
-      }
-
-      function abrirSistemaQR() {
-        google.script.run.withSuccessHandler(res => {
-          if (res.success) {
-            const url = res.url + "?page=qr";
-            window.open(url, '_blank');
-          } else {
-            showWarning("Error al obtener URL: " + res.message);
-          }
-        }).withFailureHandler(err => {
-          showWarning("Error de conexión: " + err);
-        }).obtenerUrlWebApp();
       }
 
       function recuperarContrasena() {
@@ -1641,57 +1934,72 @@
          renderLoanRecords(); 
       }
       
-      function renderLoanRecords() { 
-         const list = document.getElementById('records-list'); 
-         const empty = document.getElementById('records-empty'); 
-         list.innerHTML = ""; 
-         let records = [...loanRecordsCache]; 
-         if(currentStatusFilter !== 'all') records = records.filter(r => r.estado === currentStatusFilter); 
-         records.sort((a, b) => { 
-            const dateA = parseCustomDate(a.fecha).getTime(); 
-            const dateB = parseCustomDate(b.fecha).getTime(); 
-            return currentSort === 'desc' ? dateB - dateA : dateA - dateB; 
-         }); 
-         if(records.length === 0) { 
-            empty.classList.remove('hidden'); 
-         } else { 
-            empty.classList.add('hidden'); 
-            records.forEach(reg => { 
-               let fechaStr = reg.fecha; 
-               let fechaTerminoStr = reg.fechaTermino ? reg.fechaTermino : ""; 
-               try { 
-                  const d = parseCustomDate(reg.fecha); 
-                  if(!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' }); 
-                  if(fechaTerminoStr) { 
-                     const dt = parseCustomDate(reg.fechaTermino); 
-                     if(!isNaN(dt)) fechaTerminoStr = dt.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' }); 
-                  } 
-               } catch(e){} 
-               let statusColor = "text-slate-500 bg-slate-100"; 
-               const st = reg.estado.toLowerCase(); 
-               if(st.includes('rechazado')) statusColor = "text-red-600 bg-red-50"; 
-               else if(st.includes('vigente') || st.includes('aceptado')) statusColor = "text-green-600 bg-green-50"; 
-               else if(st.includes('enviado')) statusColor = "text-yellow-600 bg-yellow-50"; 
-               else if(st.includes('pagado')) statusColor = "text-blue-600 bg-blue-50"; 
-               else if(st.includes('solicitado')) statusColor = "text-slate-600 bg-slate-100"; 
-               let buttonsHtml = ''; 
-               if (st.includes('solicitado')) { 
-                  buttonsHtml += `<button onclick="startEditLoan('${reg.id}', '${reg.tipo}', '${reg.cuotas}', '${reg.medio}')" class="text-blue-500 hover:bg-blue-50 p-1 rounded-lg" title="Editar"><span class="material-icons-round text-lg">edit</span></button>`; 
-               } 
-               if (st.includes('solicitado') || st.includes('pagado') || st.includes('rechazado')) { 
-                  buttonsHtml += `<button onclick="initDelete('loan', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg" title="Eliminar"><span class="material-icons-round text-lg">delete</span></button>`; 
-               } 
-               const actionDiv = buttonsHtml ? `<div class="flex justify-end gap-2 border-t border-slate-100 pt-2">${buttonsHtml}</div>` : ''; 
-               let gestionHtml = ""; 
-               if(reg.gestion && reg.gestion.toUpperCase() !== "SOCIO") { 
-                  gestionHtml = `<div class="text-[10px] text-indigo-500 bg-indigo-50 px-2 py-1 rounded mb-2 inline-block"><strong>Ingresado por:</strong> ${reg.nomDirigente || "Dirigente"}</div>`; 
-               } 
-               const item = document.createElement('div'); 
-               item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative"; 
-               item.innerHTML = `<div class="flex justify-between items-start mb-2"><span class="font-bold text-slate-800 text-sm">${reg.tipo}</span><span class="text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide ${statusColor}">${reg.estado}</span></div>${gestionHtml}<div class="grid grid-cols-2 gap-2 text-xs text-slate-500 mb-2"><div><span class="block font-semibold text-slate-400 text-[10px] uppercase">Fecha</span>${fechaStr}</div><div><span class="block font-semibold text-slate-400 text-[10px] uppercase">Cuotas</span>${reg.cuotas}</div>${fechaTerminoStr ? `<div><span class="block font-semibold text-slate-400 text-[10px] uppercase">Término</span>${fechaTerminoStr}</div>` : ''}</div>${actionDiv}`; 
-               list.appendChild(item); 
-            }); 
-         } 
+      // === ACTUALIZAR PARA HISTORIAL DE SOCIO (MIS SOLICITUDES) ===
+      function renderLoanRecords() {
+         const list = document.getElementById('records-list');
+         const empty = document.getElementById('records-empty');
+         list.innerHTML = "";
+         let records = [...loanRecordsCache];
+         if(currentStatusFilter !== 'all') records = records.filter(r => r.estado === currentStatusFilter);
+         records.sort((a, b) => {
+            const dateA = parseCustomDate(a.fecha).getTime();
+            const dateB = parseCustomDate(b.fecha).getTime();
+            return currentSort === 'desc' ? dateB - dateA : dateA - dateB;
+         });
+         if(records.length === 0) {
+            empty.classList.remove('hidden');
+         } else {
+            empty.classList.add('hidden');
+            records.forEach(reg => {
+               let fechaStr = reg.fecha;
+               try {
+                  const d = parseCustomDate(reg.fecha);
+                  if(!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+               } catch(e){}
+               
+               let statusColor = "text-slate-500 bg-slate-100";
+               const st = (reg.estado || "S/D").toLowerCase();
+               if(st.includes('rechazado')) statusColor = "text-red-600 bg-red-50";
+               else if(st.includes('vigente') || st.includes('aceptado')) statusColor = "text-green-600 bg-green-50";
+               else if(st.includes('enviado')) statusColor = "text-yellow-600 bg-yellow-50";
+               else if(st.includes('pagado')) statusColor = "text-blue-600 bg-blue-50";
+               else if(st.includes('solicitado')) statusColor = "text-slate-600 bg-slate-100";
+               
+               let buttonsHtml = '';
+               if (st.includes('solicitado')) {
+                  buttonsHtml += `<button onclick="startEditLoan('${reg.id}', '${reg.tipo}', '${reg.cuotas}', '${reg.medio}')" class="text-blue-500 hover:bg-blue-50 p-1 rounded-lg" title="Editar"><span class="material-icons-round text-lg">edit</span></button>`;
+               }
+               if (st.includes('solicitado') || st.includes('pagado') || st.includes('rechazado')) {
+                  buttonsHtml += `<button onclick="initDelete('loan', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg" title="Eliminar"><span class="material-icons-round text-lg">delete</span></button>`;
+               }
+               const actionDiv = buttonsHtml ? `<div class="flex justify-end gap-2 border-t border-slate-100 pt-2">${buttonsHtml}</div>` : '';
+               
+               let gestionHtml = "";
+               if(reg.gestion && reg.gestion.toUpperCase() !== "SOCIO") {
+                  gestionHtml = `<div class="text-[10px] text-indigo-500 bg-indigo-50 px-2 py-1 rounded mb-2 inline-block"><strong>Ingresado por:</strong> ${reg.nomDirigente || "Dirigente"}</div>`;
+               }
+               
+               const item = document.createElement('div');
+               item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative";
+               item.innerHTML = `
+                  <div class="flex justify-between items-start mb-2">
+                     <div>
+                        <span class="font-bold text-slate-800 text-sm block">${reg.tipo}</span>
+                        <span class="text-xs text-emerald-600 font-bold">${reg.monto || "$0"}</span>
+                     </div>
+                     <span class="text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide ${statusColor}">${reg.estado || "S/D"}</span>
+                  </div>
+                  ${gestionHtml}
+                  <div class="grid grid-cols-2 gap-2 text-xs text-slate-500 mb-2">
+                     <div><span class="block font-semibold text-slate-400 text-[10px] uppercase">Solicitud</span>${fechaStr}</div>
+                     <div><span class="block font-semibold text-slate-400 text-[10px] uppercase">Cuotas</span>${reg.cuotas}</div>
+                     <div><span class="block font-semibold text-slate-400 text-[10px] uppercase">Medio</span>${reg.medio}</div>
+                     ${reg.fechaTermino ? `<div><span class="block font-semibold text-slate-400 text-[10px] uppercase">Término</span>${reg.fechaTermino}</div>` : ''}
+                  </div>
+                  ${actionDiv}`;
+               list.appendChild(item);
+            });
+         }
       }
       
       function initDelete(type, id) { 
@@ -1787,38 +2095,80 @@
 
       // === FUNCIONES PERFIL ===
       function cargarMisDatos() { 
-         if(!currentRut) { showWarning("Sesión no válida."); return handleLogout(); } 
-         switchView('profile-view'); 
-         document.getElementById('profile-loader').classList.remove('hidden'); 
-         document.getElementById('profile-content').classList.add('hidden'); 
-         google.script.run.withSuccessHandler(function(response) { 
+        if(!currentRut) { showWarning("Sesión no válida."); return handleLogout(); } 
+        switchView('profile-view'); 
+        document.getElementById('profile-loader').classList.remove('hidden'); 
+        document.getElementById('profile-content').classList.add('hidden'); 
+        
+        google.script.run.withSuccessHandler(function(response) { 
             document.getElementById('profile-loader').classList.add('hidden'); 
             document.getElementById('profile-content').classList.remove('hidden'); 
+            
             if (response.success) { 
-               const d = response.datos; 
-               userDataCache = d; 
-               document.getElementById('p-nombre').innerText = d.nombre; 
-               document.getElementById('p-rut').innerText = formatRutDisplay(d.rut); 
-               document.getElementById('p-cargo').innerText = d.cargo; 
-               document.getElementById('p-site').innerText = (d.site || "").toUpperCase(); 
-               document.getElementById('display-region').innerText = d.region || "No definida"; 
-               document.getElementById('display-correo').innerText = d.correo || "No definido"; 
-               document.getElementById('display-contacto').innerText = d.contacto || "No definido"; 
-               const badge = document.getElementById('p-estado-badge'); 
-               badge.innerText = d.estado; 
-               badge.className = "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide"; 
-               if(d.estado === 'ACTIVO' || d.estado === 'SI' || d.estado === 'TRUE') { 
-                  badge.classList.add('bg-green-100', 'text-green-700'); 
-                  badge.innerText = "ACTIVO"; 
-               } else { 
-                  badge.classList.add('bg-red-100', 'text-red-700'); 
-                  badge.innerText = "DESVINCULADO"; 
-               } 
+              const d = response.datos; 
+              userDataCache = d; 
+              
+              // NOMBRE
+              document.getElementById('p-nombre').innerText = d.nombre; 
+              
+              // DATOS PRINCIPALES
+              document.getElementById('p-rut').innerText = formatRutDisplay(d.rut); 
+              document.getElementById('p-cargo').innerText = d.cargo; 
+              document.getElementById('p-site').innerText = (d.site || "").toUpperCase(); 
+              
+              // INFORMACIÓN DE CONTACTO
+              document.getElementById('display-region').innerText = d.region || "No definida"; 
+              document.getElementById('display-correo').innerText = d.correo || "No definido"; 
+              document.getElementById('display-contacto').innerText = d.contacto || "No definido";
+
+              // DATOS BANCARIOS
+              document.getElementById('display-banco').innerText = d.banco || "No definido";
+              document.getElementById('display-tipo-cuenta').innerText = d.tipoCuenta || "No definido";
+              document.getElementById('display-numero-cuenta').innerText = d.numeroCuenta || "No definido";
+              
+              // ========== BADGE ESTADO ORGANIZACIÓN ==========
+              const badge = document.getElementById('p-estado-badge'); 
+              badge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide"; 
+              
+              if(d.estado === 'ACTIVO' || d.estado === 'SI' || d.estado === 'TRUE') { 
+                  badge.classList.add('bg-emerald-500', 'text-white'); 
+                  badge.innerHTML = '<span class="material-icons-round text-xs">check_circle</span> ACTIVO';
+                  estadoActualOrganizacion = "ACTIVO";
+              } else { 
+                  badge.classList.add('bg-red-500', 'text-white'); 
+                  badge.innerHTML = '<span class="material-icons-round text-xs">cancel</span> DESVINCULADO';
+                  estadoActualOrganizacion = "DESVINCULADO";
+              }
+              
+              // ========== BADGE ESTADO NEGOCIACIÓN COLECTIVA ==========
+              const badgeNeg = document.getElementById('p-estado-negociacion');
+              const estadoNeg = String(d.estadoNegColect || "").trim().toUpperCase();
+              estadoActualNegociacion = estadoNeg;
+              
+              badgeNeg.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide";
+              
+              if (estadoNeg === "" || estadoNeg === "S/D") {
+                  badgeNeg.classList.add('bg-slate-400', 'text-white');
+                  badgeNeg.innerHTML = '<span class="material-icons-round text-xs">help_outline</span> S/D';
+              } else if (estadoNeg.includes("HABILITADO") || estadoNeg.includes("NEGOCIAR")) {
+                  badgeNeg.classList.add('bg-blue-500', 'text-white');
+                  badgeNeg.innerHTML = '<span class="material-icons-round text-xs">how_to_vote</span> ' + (estadoNeg.length > 25 ? 'HABILITADO' : estadoNeg);
+              } else if (estadoNeg.includes("EXTENSION") || estadoNeg.includes("BENEFICIO")) {
+                  badgeNeg.classList.add('bg-purple-500', 'text-white');
+                  badgeNeg.innerHTML = '<span class="material-icons-round text-xs">extension</span> ' + (estadoNeg.length > 25 ? 'EXTENSIÓN' : estadoNeg);
+              } else if (estadoNeg.includes("OTRO") || estadoNeg.includes("CONT")) {
+                  badgeNeg.classList.add('bg-amber-500', 'text-white');
+                  badgeNeg.innerHTML = '<span class="material-icons-round text-xs">description</span> OTRO CONT. COLEC.';
+              } else {
+                  badgeNeg.classList.add('bg-slate-500', 'text-white');
+                  badgeNeg.innerHTML = '<span class="material-icons-round text-xs">info</span> ' + estadoNeg;
+              }
+              
             } else { 
-               showWarning("Error: " + response.message); 
-               switchView('dashboard-view'); 
+              showWarning("Error: " + response.message); 
+              switchView('dashboard-view'); 
             } 
-         }).obtenerDatosUsuario(currentRut); 
+        }).obtenerDatosUsuario(currentRut); 
       }
 
       function selectRegionOption(el, val) { 
@@ -1827,6 +2177,16 @@
          el.classList.add('selected'); 
          el.innerHTML += '<span class="material-icons-round text-blue-600 text-sm check-icon">check</span>'; 
          selectedRegionTemp = val; 
+      }
+
+      function selectBankOption(el, val) {
+        document.querySelectorAll('.region-option').forEach(e => {
+            e.classList.remove('selected');
+            e.querySelectorAll('.check-icon').forEach(icon => icon.remove());
+        });
+        el.classList.add('selected');
+        el.innerHTML += '<span class="material-icons-round text-blue-600 text-sm check-icon">check</span>';
+        selectedRegionTemp = val;
       }
       
       function openEditModal(field) {
@@ -1861,7 +2221,53 @@
            desc.innerText = "Ingrese los 8 dígitos (sin +569)."; 
            const suffix = parsePhoneToSuffix(userDataCache.contacto || ""); 
            container.innerHTML = `<div class="flex items-center input-modern rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-400"><span class="bg-slate-200 px-4 py-3 text-slate-600 font-bold text-sm border-r border-slate-300 select-none">+569</span><input id="modal-input" type="tel" maxlength="8" class="w-full px-4 py-3 text-sm font-medium text-slate-700 outline-none bg-transparent" placeholder="12345678" value="${suffix}" oninput="this.value = this.value.replace(/[^0-9]/g, '')"></div>`; 
+        } else if (field === 'contacto') { 
+          title.innerText = "Editar Teléfono"; 
+          desc.innerText = "Ingrese los 8 dígitos (sin +569)."; 
+          const suffix = parsePhoneToSuffix(userDataCache.contacto || ""); 
+          container.innerHTML = `<div class="flex items-center input-modern rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-400"><span class="bg-slate-200 px-4 py-3 text-slate-600 font-bold text-sm border-r border-slate-300 select-none">+569</span><input id="modal-input" type="tel" maxlength="8" class="w-full px-4 py-3 text-sm font-medium text-slate-700 outline-none bg-transparent" placeholder="12345678" value="${suffix}" oninput="this.value = this.value.replace(/[^0-9]/g, '')"></div>`; 
+
+        // ========== AGREGAR ESTOS CASOS NUEVOS ==========
+        } else if (field === 'banco') {
+          title.innerText = "Editar Banco";
+          desc.innerText = "Seleccione su banco.";
+          const currentVal = userDataCache.banco || "";
+          
+          container.innerHTML = '<div class="max-h-80 overflow-y-auto custom-scroll">' +
+            bancosList.map(banco => {
+              const isSelected = currentVal === banco;
+              return `<div onclick="selectBankOption(this, '${banco}')" class="region-option p-3 rounded-lg mb-2 text-sm cursor-pointer flex items-center justify-between ${isSelected ? 'selected' : ''}">${banco} ${isSelected ? '<span class="material-icons-round text-blue-600 text-sm check-icon">check</span>' : ''}</div>`;
+            }).join('') + '</div>';
+          
+          if (currentVal) selectedRegionTemp = currentVal;
+
+        } else if (field === 'tipoCuenta') {
+          title.innerText = "Editar Tipo de Cuenta";
+          desc.innerText = "Seleccione el tipo de cuenta bancaria.";
+          const currentVal = userDataCache.tipoCuenta || "";
+          
+          container.innerHTML = '<div class="space-y-2">' +
+            tiposCuentaList.map(tipo => {
+              const isSelected = currentVal === tipo;
+              return `<div onclick="selectBankOption(this, '${tipo}')" class="region-option p-3 rounded-lg text-sm cursor-pointer flex items-center justify-between border ${isSelected ? 'selected' : 'border-slate-200'}">${tipo} ${isSelected ? '<span class="material-icons-round text-blue-600 text-sm check-icon">check</span>' : ''}</div>`;
+            }).join('') + '</div>';
+          
+          if (currentVal) selectedRegionTemp = currentVal;
+
+        } else if (field === 'numeroCuenta') {
+          title.innerText = "Editar Número de Cuenta";
+          desc.innerText = "Ingrese su número de cuenta bancaria (solo dígitos).";
+          container.innerHTML = `
+            <input id="modal-input" type="text" maxlength="20" class="input-modern w-full px-4 py-3 rounded-lg text-sm outline-none font-mono" placeholder="Ej: 1234567890" value="${userDataCache.numeroCuenta || ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            <p class="text-[10px] text-slate-500 mt-2">
+              <strong>Consejos:</strong><br>
+              • Solo números, sin guiones ni espacios<br>
+              • Verifica que sea el número correcto<br>
+              • Longitud típica: 8-20 dígitos
+            </p>
+          `;
         }
+
         modal.classList.remove('hidden');
       }
       
@@ -1869,8 +2275,16 @@
       
       function saveEdit() {
         const btn = document.getElementById('btn-save-modal');
-        let val = (currentEditingField === 'region') ? selectedRegionTemp : document.getElementById('modal-input').value;
+        let val = "";
         
+        // ========== CAMBIO 1: Determinar valor según tipo de campo ==========
+        if (currentEditingField === 'region' || currentEditingField === 'banco' || currentEditingField === 'tipoCuenta') {
+          val = selectedRegionTemp; // Esta variable se usa para los 3 selectores
+        } else {
+          val = document.getElementById('modal-input').value;
+        }
+        
+        // ========== VALIDACIONES EXISTENTES ==========
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if(currentEditingField === 'correo' && !emailRegex.test(val)) {
             return showWarning("Ingrese un correo electrónico válido.");
@@ -1882,23 +2296,72 @@
             }
         }
 
-        if(currentEditingField === 'region' && !val) return showWarning("Seleccione una región");
+        if(currentEditingField === 'numeroCuenta') {
+            if (val.length < 8) {
+                return showWarning("El número de cuenta debe tener al menos 8 dígitos.");
+            }
+            if (val.length > 20) {
+                return showWarning("El número de cuenta no puede tener más de 20 dígitos.");
+            }
+        }
+
+        // ========== CAMBIO 2: Validaciones para nuevos campos ==========
+        if(currentEditingField === 'banco' && !val) {
+            return showWarning("Seleccione un banco");
+        }
         
+        if(currentEditingField === 'tipoCuenta' && !val) {
+            return showWarning("Seleccione un tipo de cuenta");
+        }
+
+        if(currentEditingField === 'region' && !val) {
+            return showWarning("Seleccione una región");
+        }
+        
+        // ========== PREPARAR VALOR FINAL ==========
         let finalValue = val; 
         if(currentEditingField === 'contacto') finalValue = "+569" + val;
         
+        // ========== ENVIAR ACTUALIZACIÓN ==========
         const oldBtnHtml = btn.innerHTML; 
         btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Guardando...</span></div>'; 
         btn.disabled = true;
+        
         google.script.run.withSuccessHandler(res => {
-           btn.innerHTML = oldBtnHtml; btn.disabled = false;
-           if(res.success) {
-              closeEditModal(); userDataCache[currentEditingField] = finalValue;
-              if(currentEditingField === 'region') document.getElementById('display-region').innerText = finalValue;
-              if(currentEditingField === 'correo') document.getElementById('display-correo').innerText = finalValue;
-              if(currentEditingField === 'contacto') document.getElementById('display-contacto').innerText = finalValue;
+          btn.innerHTML = oldBtnHtml; 
+          btn.disabled = false;
+          
+          if(res.success) {
+              closeEditModal(); 
+              
+              // ========== CAMBIO 3: Actualizar caché y vista para TODOS los campos ==========
+              userDataCache[currentEditingField] = finalValue;
+              
+              if(currentEditingField === 'region') {
+                document.getElementById('display-region').innerText = finalValue;
+              }
+              if(currentEditingField === 'correo') {
+                document.getElementById('display-correo').innerText = finalValue;
+              }
+              if(currentEditingField === 'contacto') {
+                document.getElementById('display-contacto').innerText = finalValue;
+              }
+              
+              // ========== NUEVAS ACTUALIZACIONES DE VISTA ==========
+              if(currentEditingField === 'banco') {
+                document.getElementById('display-banco').innerText = finalValue;
+              }
+              if(currentEditingField === 'tipoCuenta') {
+                document.getElementById('display-tipo-cuenta').innerText = finalValue;
+              }
+              if(currentEditingField === 'numeroCuenta') {
+                document.getElementById('display-numero-cuenta').innerText = finalValue;
+              }
+              
               showSuccess("Datos actualizados.");
-           } else { showWarning("Error: " + res.message); }
+          } else { 
+              showWarning("Error: " + res.message); 
+          }
         }).actualizarDatoUsuario(currentRut, currentEditingField, finalValue);
       }
 
@@ -2024,27 +2487,32 @@
       }
 
       function submitJustification() {
-         const tipo = tempSelectedMotive;
-         const motivo = document.getElementById('justif-motivo').value; 
-         const fileInput = document.getElementById('justif-file');
-         const rutBeneficiario = document.getElementById('justif-rut-socio').value;
-
-         if (!tipo) return showWarning("Seleccione un tipo de evento.");
-         if (tipo === "Fuerza Mayor" && !motivo) return showWarning("Para Fuerza Mayor, debe especificar el motivo.");
-         if (tipo === "Fuerza Mayor" && motivo.length > 70) return showWarning("El motivo no puede superar los 70 caracteres.");
-
-         const file = (fileInput.files.length > 0) ? fileInput.files[0] : null;
-
-         if (tipo !== "Fuerza Mayor" && !file) {
-             return showWarning("Debe adjuntar un comprobante para este motivo.");
-         }
-
-         if (tipo === "Fuerza Mayor" && !file) {
-             document.getElementById('force-majeure-modal').classList.remove('hidden');
-             return;
-         }
-
-         executeJustificationSubmission(file, rutBeneficiario);
+        const tipo = tempSelectedMotive;
+        const motivo = document.getElementById('justif-motivo').value;
+        const fileInput = document.getElementById('justif-file');
+        const file = fileInput.files[0];
+        const rutBeneficiario = document.getElementById('justif-rut-socio').value;
+        
+        // Validaciones
+        if (!tipo) return showWarning("Debe seleccionar un tipo de evento.");
+        
+        if (tipo === 'Fuerza Mayor') {
+            if (!motivo || motivo.trim().length === 0) {
+              return showWarning("Para Fuerza Mayor debe especificar el motivo.");
+            }
+            if (motivo.length > 150) {
+              return showWarning("El motivo no puede superar los 70 caracteres.");
+            }
+        }
+        
+        // Si es Fuerza Mayor sin archivo, mostrar advertencia
+        if (tipo === 'Fuerza Mayor' && !file) {
+            document.getElementById('force-majeure-modal').classList.remove('hidden');
+            return;
+        }
+        
+        // Para otros tipos, continuar normalmente
+        executeJustificationSubmission(file, rutBeneficiario);
       }
 
       function confirmForceMajeureSubmission() {
@@ -2054,46 +2522,169 @@
       }
 
       function executeJustificationSubmission(file, rutBeneficiario) {
-         const tipo = tempSelectedMotive;
-         const motivo = document.getElementById('justif-motivo').value;
-         const btn = document.getElementById('btn-submit-justif');
-         const oldHtml = btn.innerHTML;
+        const tipo = tempSelectedMotive;
+        const motivo = document.getElementById('justif-motivo').value;
+        const btn = document.getElementById('btn-submit-justif');
+        const oldHtml = btn.innerHTML;
 
-         if (file && file.size > 5 * 1024 * 1024) return showWarning("El archivo es muy pesado (Máx 5MB).");
+        if (file && file.size > 5 * 1024 * 1024) return showWarning("El archivo es muy pesado (Máx 5MB).");
 
-         btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Subiendo...</span></div>';
-         btn.disabled = true;
-         
-         const sendData = (fileData) => {
-            google.script.run.withSuccessHandler(res => {
-               btn.innerHTML = oldHtml; btn.disabled = false;
-               if (res.success) {
+        btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Subiendo...</span></div>';
+        btn.disabled = true;
+        
+        const sendData = (fileData) => {
+            google.script.run
+              .withSuccessHandler(function(res) {
+                  btn.innerHTML = oldHtml; 
+                  btn.disabled = false;
+                  
+                  if (res.success) {
+                  // Primero mostrar el éxito
                   showSuccess("Justificación enviada.");
+                  
+                  // Limpiar formulario
                   document.getElementById('justif-motivo').value = "";
                   tempSelectedMotive = "";
                   document.getElementById('selected-motive-text').innerText = "Seleccione...";
                   document.getElementById('div-justif-motivo').classList.add('hidden');
-                  document.getElementById('justif-file').value = ""; 
+                  document.getElementById('justif-file').value = "";
                   updateFileName(document.getElementById('justif-file'));
                   document.getElementById('justif-rut-socio').value = "";
-                  toggleJustifTab('list'); 
-               } else {
-                  showWarning(res.message);
-               }
-            }).enviarJustificacion(currentRut, tipo, motivo, fileData, rutBeneficiario);
-         };
+                  
+                  // Cambiar a pestaña de historial
+                  toggleJustifTab('list');
+                  
+                  // NUEVO: Mostrar alerta de permisos si existe
+                  if (res.mostrarAlerta && res.mensajeAlerta) {
+                    // Esperar un momento para que se vea el mensaje de éxito
+                    setTimeout(function() {
+                      mostrarAlertaPermisos(res.mensajeAlerta, res.tipoAlerta || 'warning');
+                    }, 1500);
+                  }
+                } else {
+                  // Manejo de errores existente...
+                  if (res.tipoError === 'restriccion_mes' && res.justificacionExistente) {
+                    mostrarAlertaRestriccionMes(res);
+                  } else {
+                    showWarning(res.message || "Error al enviar la justificación");
+                  }
+                }
+              })
+              .withFailureHandler(function(err) {
+                  btn.innerHTML = oldHtml; 
+                  btn.disabled = false;
+                  console.error('Error en enviarJustificacion:', err); // DEBUG
+                  showWarning("Error de conexión: " + err.toString());
+              })
+              .enviarJustificacion(currentRut, tipo, motivo, fileData, rutBeneficiario);
+        };
 
-         if (file) {
-             const reader = new FileReader();
-             reader.onload = function(e) {
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
                 const base64Data = e.target.result.split(',')[1];
                 const fileData = { base64: base64Data, mimeType: file.type, fileName: file.name };
                 sendData(fileData);
-             };
-             reader.readAsDataURL(file);
-         } else {
-             sendData(null);
-         }
+            };
+            reader.readAsDataURL(file);
+        } else {
+            sendData(null);
+        }
+      }
+
+      /**
+       * Muestra alerta simplificada cuando ya existe justificación en el mes
+       */
+      function mostrarAlertaRestriccionMes(response) {
+          console.log('mostrarAlertaRestriccionMes llamada con:', response);
+          
+          const justif = response.justificacionExistente;
+          const tipoBloqueo = response.tipoBloqueo;
+          
+          if (!justif) {
+              showWarning(response.mensaje || "Ya tienes una justificación para este mes");
+              return;
+          }
+          
+          const hoy = new Date();
+          const nombreMes = hoy.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
+          const mesCapitalizado = nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
+          
+          let icono = '';
+          let titulo = '';
+          let colorIcono = '';
+          
+          if (tipoBloqueo === 'enviada') {
+              icono = 'schedule';
+              titulo = `Ya tienes una justificación pendiente para ${mesCapitalizado}`;
+              colorIcono = 'text-orange-500';
+          } else if (tipoBloqueo === 'aceptada') {
+              icono = 'check_circle';
+              titulo = `Ya tienes una justificación aceptada para ${mesCapitalizado}`;
+              colorIcono = 'text-green-500';
+          } else {
+              icono = 'info';
+              titulo = `Ya existe una justificación para ${mesCapitalizado}`;
+              colorIcono = 'text-blue-500';
+          }
+          
+          const html = `
+              <div id="alerta-restriccion-mes" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 9999;">
+                  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm animate-scale-in">
+                      <div class="p-6 text-center">
+                          <div class="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center mx-auto mb-4">
+                              <span class="material-icons-round text-3xl ${colorIcono}">${icono}</span>
+                          </div>
+                          <h3 class="text-lg font-bold text-gray-800 mb-3">
+                              Justificación Existente
+                          </h3>
+                          <p class="text-sm text-gray-600 mb-5 leading-relaxed">
+                              ${titulo}
+                          </p>
+                          <button onclick="cerrarAlertaRestriccion()" 
+                                  class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg">
+                              Entendido
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          `;
+          
+          const alertaExistente = document.getElementById('alerta-restriccion-mes');
+          if (alertaExistente) {
+              alertaExistente.remove();
+          }
+          
+          document.body.insertAdjacentHTML('beforeend', html);
+      }
+
+      function cerrarAlertaRestriccion() {
+          const alerta = document.getElementById('alerta-restriccion-mes');
+          if (alerta) {
+              alerta.remove();
+          }
+      }
+
+      function scrollToHistorialJustif() {
+          toggleJustifTab('list');
+      }
+
+      function cerrarAlertaRestriccion() {
+          const alerta = document.getElementById('alerta-restriccion-mes');
+          if (alerta) {
+              alerta.remove();
+          }
+      }
+
+      function scrollToHistorialJustif() {
+          toggleJustifTab('list');
+      }
+
+      /**
+       * Hace scroll suave hacia el historial de justificaciones
+       */
+      function scrollToHistorialJustif() {
+          toggleJustifTab('list');
       }
 
       function loadJustificationHistory() {
@@ -2337,7 +2928,7 @@
          if (!mes) return showWarning("Debe seleccionar el mes de la multa.");
          if (!motivo) return showWarning("Debe seleccionar el motivo de la ausencia.");
          if (motivo === "Fuerza Mayor" && !detalle) return showWarning("Para Fuerza Mayor, debe especificar el detalle.");
-         if (detalle.length > 70) return showWarning("El detalle no puede superar los 70 caracteres.");
+         if (detalle.length > 150) return showWarning("El detalle no puede superar los 150 caracteres.");
          
          if (!appealFileLiquidacionData) {
             return showWarning("La liquidación de sueldo es OBLIGATORIA para todas las apelaciones.");
@@ -2389,32 +2980,40 @@
          btn.disabled = true;
          
          google.script.run.withSuccessHandler(res => {
-            btn.innerHTML = oldHtml;
-            btn.disabled = false;
+          btn.innerHTML = oldHtml;
+          btn.disabled = false;
+          
+          if (res.success) {
+            showSuccess("Apelación enviada exitosamente.");
             
-            if (res.success) {
-               showSuccess("Apelación enviada exitosamente.");
-               
-               tempSelectedMonth = "";
-               tempSelectedAppealMotive = "";
-               appealFileComprobanteData = null;
-               appealFileLiquidacionData = null;
-               document.getElementById('selected-month-text').innerText = "Seleccione mes...";
-               document.getElementById('selected-appeal-motive-text').innerText = "Seleccione...";
-               document.getElementById('appeal-detalle').value = "";
-               document.getElementById('div-appeal-detalle').classList.add('hidden');
-               document.getElementById('appeal-file-comprobante').value = "";
-               document.getElementById('appeal-file-liquidacion').value = "";
-               updateFileNameAppeal(document.getElementById('appeal-file-comprobante'), 'comprobante');
-               updateFileNameAppeal(document.getElementById('appeal-file-liquidacion'), 'liquidacion');
-               document.getElementById('appeal-rut-socio').value = "";
-               document.getElementById('comprobante-required-label').textContent = "(Opcional)";
-               
-               toggleAppealsTab('list');
-            } else {
-               showWarning(res.message);
+            // Limpiar formulario
+            tempSelectedMonth = "";
+            tempSelectedAppealMotive = "";
+            appealFileComprobanteData = null;
+            appealFileLiquidacionData = null;
+            document.getElementById('selected-month-text').innerText = "Seleccione mes...";
+            document.getElementById('selected-appeal-motive-text').innerText = "Seleccione...";
+            document.getElementById('appeal-detalle').value = "";
+            document.getElementById('div-appeal-detalle').classList.add('hidden');
+            document.getElementById('appeal-file-comprobante').value = "";
+            document.getElementById('appeal-file-liquidacion').value = "";
+            updateFileNameAppeal(document.getElementById('appeal-file-comprobante'), 'comprobante');
+            updateFileNameAppeal(document.getElementById('appeal-file-liquidacion'), 'liquidacion');
+            document.getElementById('appeal-rut-socio').value = "";
+            document.getElementById('comprobante-required-label').textContent = "(Opcional)";
+            
+            toggleAppealsTab('list');
+            
+            // NUEVO: Mostrar alerta de permisos si existe
+            if (res.mostrarAlerta && res.mensajeAlerta) {
+              setTimeout(function() {
+                mostrarAlertaPermisos(res.mensajeAlerta, res.tipoAlerta || 'warning');
+              }, 1500);
             }
-         }).withFailureHandler(err => {
+          } else {
+            showWarning(res.message);
+          }
+        }).withFailureHandler(err => {
             btn.innerHTML = oldHtml;
             btn.disabled = false;
             showWarning("Error al enviar: " + err);
@@ -2464,11 +3063,12 @@
                      
                      const linkDevolucion = hasComprobanteDevolucion ?
                         `<a href="${reg.urlComprobanteDevolucion}" target="_blank" class="text-xs text-green-600 hover:underline flex items-center gap-1 font-bold"><span class="material-icons-round text-sm">payments</span>Comprobante Devolución</a>` : ``;
-                     
-                     let deleteBtn = "";
-                     if (reg.estado === "Enviado") {
-                        deleteBtn = `<button onclick="initDelete('appeal', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg"><span class="material-icons-round text-lg">delete</span></button>`;
-                     }
+                      
+                      // CAMBIO AQUI: Mostrar botón si es Enviado O Rechazado
+                      let deleteBtn = "";
+                      if (reg.estado === "Enviado" || reg.estado === "Rechazado") {
+                        deleteBtn = `<button onclick="initDelete('appeal', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg" title="Eliminar registro"><span class="material-icons-round text-lg">delete</span></button>`;
+                      }
                      
                      let statusColor = "bg-gray-100 text-gray-600";
                      const st = (reg.estado || "").toLowerCase();
@@ -2545,9 +3145,8 @@ divForm.classList.add('flex');
 
       function openPermissionTypeModal() {
         const types = [
-          "Media jornada (Examen médico. Debe volver a trabajar en caso de hacer uso de este permiso antes de comenzar su jornada laboral. - CON GOCE DE REMUNERACIÓN)",
+          "Media jornada (Examen médico. Debe utilizar el permiso al inició o al final de la jornada laboral. En caso de utilizarlo al inicio, debe volver al lugar de trabajo. - CON GOCE DE REMUNERACIÓN)",
           "3 días hábiles (Accidente o enfermedad grave de los padres, hijos, cónyuge, conviviente civil, hermanos, siniestros, daños o pérdidas que afecten a los bienes del trabajador - CON GOCE DE REMUNERACIÓN)",
-          "MUTUO ACUERDO (Casos extraordinarios de fuerza mayor que le impiden asistir a su trabajo durante un tiempo indeterminado - SIN GOCE DE REMUNERACIÓN)"
         ];
         const modal = document.getElementById('permission-type-modal');
         const container = document.getElementById('permission-type-list-container');
@@ -2811,16 +3410,23 @@ divForm.classList.add('flex');
             const fileData = { base64: base64Data, mimeType: file.type, fileName: file.name };
             
             google.script.run.withSuccessHandler(res => {
-               btn.innerHTML = oldHtml;
-               btn.disabled = false;
-               
-               if (res.success) {
-                  closeAttachPermissionModal();
-                  showSuccess("Documento adjuntado correctamente.");
-                  loadPermissionHistory();
-               } else {
-                  showWarning(res.message);
-               }
+              btn.innerHTML = oldHtml;
+              btn.disabled = false;
+              
+              if (res.success) {
+                closeAttachPermissionModal();
+                showSuccess("Documento adjuntado correctamente.");
+                loadPermissionHistory();
+                
+                // NUEVO: Mostrar alerta de permisos si existe
+                if (res.mostrarAlerta && res.mensajeAlerta) {
+                  setTimeout(function() {
+                    mostrarAlertaPermisos(res.mensajeAlerta, res.tipoAlerta || 'warning');
+                  }, 1500);
+                }
+              } else {
+                showWarning(res.message);
+              }
             }).withFailureHandler(err => {
                btn.innerHTML = oldHtml;
                btn.disabled = false;
@@ -2832,64 +3438,53 @@ divForm.classList.add('flex');
 
       // === FUNCIONES REGISTRO ASISTENCIA ===
       function loadAttendanceRecords() {
-   switchView('attendance-records-view');
-   const list = document.getElementById('attendance-list');
-   const loader = document.getElementById('attendance-loader');
-   const empty = document.getElementById('attendance-empty');
-   list.innerHTML = "";
-   loader.classList.remove('hidden');
-   empty.classList.add('hidden');
-   
-   google.script.run.withSuccessHandler(res => {
-      loader.classList.add('hidden');
-      
-      if (res.success) {
-         if (res.registros.length === 0) {
-            empty.classList.remove('hidden');
-         } else {
-            res.registros.forEach(reg => {
-               const tipoAsistencia = reg.tipo || 'Asistencia Presencial';
-               const nombreUsuario = sessionStorage.getItem('userName') || 'Usuario';
-               
-               let gestionHtml = "";
-               if (reg.gestion && reg.gestion !== "Socio" && reg.gestion !== "Sistema") {
-                  gestionHtml = `<p style="margin: 0; font-size: 12px; color: #94a3b8;">Por: ${reg.dirigente || "Dirigente"}</p>`;
+         switchView('attendance-records-view');
+         const list = document.getElementById('attendance-list');
+         const loader = document.getElementById('attendance-loader');
+         const empty = document.getElementById('attendance-empty');
+         list.innerHTML = "";
+         loader.classList.remove('hidden');
+         empty.classList.add('hidden');
+         
+         google.script.run.withSuccessHandler(res => {
+            loader.classList.add('hidden');
+            
+            if (res.success) {
+               if (res.registros.length === 0) {
+                  empty.classList.remove('hidden');
                } else {
-                  gestionHtml = `<p style="margin: 0; font-size: 12px; color: #94a3b8;">Por: ${reg.gestion || "Socio"}</p>`;
-               }
-               
-               const item = document.createElement('div');
-               item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
-               item.style.cssText = "border-left: 4px solid #10b981; display: flex; gap: 12px; align-items: start;";
-               
-               item.innerHTML = `
-                  <div style="flex-shrink: 0; width: 40px; height: 40px; background: #d1fae5; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                     <span class="material-icons-round" style="color: #10b981; font-size: 24px;">check_circle</span>
-                  </div>
-                  
-                  <div style="flex: 1;">
-                     <h3 style="margin: 0 0 8px 0; font-size: 15px; font-weight: 700; color: #1e293b;">
-                        ${nombreUsuario}
-                     </h3>
+                  res.registros.forEach(reg => {
+                     const tipoIcon = reg.tipo.toLowerCase().includes('presencial') ? 'check_circle' : 
+                                     reg.tipo.toLowerCase().includes('online') ? 'video_call' : 'cancel';
+                     const tipoColor = reg.tipo.toLowerCase().includes('presencial') ? 'text-green-600' :
+                                      reg.tipo.toLowerCase().includes('online') ? 'text-blue-600' : 'text-red-600';
                      
-                     <div style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #64748b;">
-                        <p style="margin: 0;">
-                           <strong style="color: #475569;">Asamblea:</strong> ${reg.asamblea}
-                        </p>
-                        <p style="margin: 0;">
-                           <strong style="color: #475569;">Tipo:</strong> ${tipoAsistencia}
-                        </p>
+                     let gestionHtml = "";
+                     if (reg.gestion && reg.gestion !== "Socio" && reg.gestion !== "Sistema") {
+                        gestionHtml = `<div class="text-[10px] text-indigo-500 bg-indigo-50 px-2 py-1 rounded inline-block"><strong>Por:</strong> ${reg.dirigente || "Dirigente"}</div>`;
+                     }
+                     
+                     const item = document.createElement('div');
+                     item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
+                     item.innerHTML = `
+                        <div class="flex items-center justify-between mb-2">
+                           <div class="flex items-center gap-2">
+                              <span class="material-icons-round ${tipoColor}">${tipoIcon}</span>
+                              <span class="font-bold text-slate-800 text-sm">${reg.asamblea}</span>
+                           </div>
+                        </div>
+                        <div class="text-xs text-slate-600">
+                           <span class="font-semibold">Tipo:</span> ${reg.tipo}
+                        </div>
                         ${gestionHtml}
-                     </div>
-                  </div>
-               `;
-               
-               list.appendChild(item);
-            });
-         }
+                     `;
+                     list.appendChild(item);
+                  });
+               }
+            }
+         }).obtenerHistorialAsistencia(currentRut);
       }
-   }).obtenerHistorialAsistencia(currentRut);
-}
+
       // === FUNCIONES PANEL ADMIN ===
       function generarInformePrestamos() {
          document.getElementById('admin-report-modal').classList.remove('hidden');
@@ -2966,276 +3561,272 @@ divForm.classList.add('flex');
          }).obtenerGestionesDirigente(currentRut);
       }
 
-function renderManagementPrestamos(registros) {
-  const container = document.getElementById('mgmt-prestamos-content');
-  const empty = document.getElementById('mgmt-empty');
-  container.innerHTML = "";
-  
-  if (registros.length === 0 && currentManagementModule === 'prestamos') {
-    empty.classList.remove('hidden');
-  } else {
-    registros.forEach(reg => {
-      let statusColor = "bg-slate-100 text-slate-600";
-      const st = (reg.estado || "").toLowerCase();
-      if (st.includes('vigente')) statusColor = "bg-green-100 text-green-600";
-      else if (st.includes('pagado')) statusColor = "bg-blue-100 text-blue-600";
-      else if (st.includes('rechazado')) statusColor = "bg-red-100 text-red-600";
-      else if (st.includes('solicitado')) statusColor = "bg-slate-100 text-slate-600";
-      else if (st.includes('enviado')) statusColor = "bg-orange-100 text-orange-600";
-      
-      let fechaStr = reg.fecha || "";
-      try {
-        const d = parseCustomDate(reg.fecha);
-        if (!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
-      } catch (e) {}
-      
-      let fechaTerminoStr = reg.fechaTermino || "";
-      try {
-        const ft = parseCustomDate(reg.fechaTermino);
-        if (!isNaN(ft)) fechaTerminoStr = ft.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
-      } catch (e) {}
-      
-      let buttonsHtml = '';
-      if (st.includes('solicitado')) {
-        buttonsHtml += `<button onclick="startEditLoanManagement('${reg.id}', '${reg.tipo}', '${reg.cuotas}', '${reg.medio}')" class="text-blue-500 hover:bg-blue-50 p-1 rounded-lg" title="Editar"><span class="material-icons-round text-lg">edit</span></button>`;
+      // === ACTUALIZAR PARA GESTIÓN ADMIN (Donde salía UNDEFINED) ===
+      function renderManagementPrestamos(registros) {
+        const container = document.getElementById('mgmt-prestamos-content');
+        const empty = document.getElementById('mgmt-empty');
+        container.innerHTML = "";
+        
+        if (registros.length === 0 && currentManagementModule === 'prestamos') {
+          empty.classList.remove('hidden');
+        } else {
+          registros.forEach(reg => {
+            let statusColor = "bg-slate-100 text-slate-600";
+            const st = (reg.estado || "S/D").toLowerCase(); // Prevenir undefined
+            if (st.includes('vigente')) statusColor = "bg-green-100 text-green-600";
+            else if (st.includes('pagado')) statusColor = "bg-blue-100 text-blue-600";
+            else if (st.includes('rechazado')) statusColor = "bg-red-100 text-red-600";
+            else if (st.includes('solicitado')) statusColor = "bg-slate-100 text-slate-600";
+            else if (st.includes('enviado')) statusColor = "bg-orange-100 text-orange-600";
+            
+            let fechaStr = reg.fecha || "";
+            try {
+              const d = parseCustomDate(reg.fecha);
+              if (!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            } catch (e) {}
+            
+            let buttonsHtml = '';
+            if (st.includes('solicitado')) {
+              buttonsHtml += `<button onclick="startEditLoanManagement('${reg.id}', '${reg.tipo}', '${reg.cuotas}', '${reg.medio}')" class="text-blue-500 hover:bg-blue-50 p-1 rounded-lg" title="Editar"><span class="material-icons-round text-lg">edit</span></button>`;
+            }
+            if (st.includes('solicitado') || st.includes('pagado') || st.includes('rechazado')) {
+              buttonsHtml += `<button onclick="initDeleteManagement('loan', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg ml-1" title="Eliminar"><span class="material-icons-round text-lg">delete</span></button>`;
+            }
+            
+            const item = document.createElement('div');
+            item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
+            item.innerHTML = `
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <span class="font-bold text-slate-800 text-sm block">${reg.nombreSocio}</span>
+                  <span class="text-xs text-slate-500">${formatRut(reg.rutSocio)}</span>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${statusColor}">${reg.estado || "S/D"}</span>
+              </div>
+              <div class="flex justify-between items-center mb-2">
+                 <span class="text-xs text-slate-600 font-semibold">${reg.tipo}</span>
+                 <span class="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">${reg.monto || "$0"}</span>
+              </div>
+              <div class="flex justify-between items-center text-[10px] text-slate-500 mb-2">
+                <span><strong>Cuotas:</strong> ${reg.cuotas}</span>
+                <span><strong>Medio:</strong> ${reg.medio}</span>
+              </div>
+              <div class="flex justify-between items-center border-t border-slate-100 pt-2 mt-2">
+                <span class="text-[10px] text-slate-400"><strong>Solicitado:</strong> ${fechaStr}</span>
+                ${buttonsHtml ? `<div class="flex items-center gap-1">${buttonsHtml}</div>` : ''}
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1"><strong>Término:</strong> ${reg.fechaTermino || "S/D"}</div>
+            `;
+            container.appendChild(item);
+          });
+        }
       }
-      if (st.includes('solicitado') || st.includes('pagado') || st.includes('rechazado')) {
-        buttonsHtml += `<button onclick="initDeleteManagement('loan', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg ml-1" title="Eliminar"><span class="material-icons-round text-lg">delete</span></button>`;
-      }
-      
-      const item = document.createElement('div');
-      item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
-      item.innerHTML = `
-        <div class="flex justify-between items-start mb-2">
-          <div>
-            <span class="font-bold text-slate-800 text-sm block">${reg.nombreSocio}</span>
-            <span class="text-xs text-slate-500">${formatRut(reg.rutSocio)}</span>
-          </div>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${statusColor}">${reg.estado}</span>
-        </div>
-        <div class="text-xs text-slate-600 mb-2">
-          <span class="font-semibold">${reg.tipo}</span>
-        </div>
-        <div class="flex justify-between items-center text-[10px] text-slate-500 mb-2">
-          <span><strong>Cuotas:</strong> ${reg.cuotas}</span>
-          <span><strong>Medio:</strong> ${reg.medio}</span>
-        </div>
-        <div class="flex justify-between items-center border-t border-slate-100 pt-2 mt-2">
-          <span class="text-[10px] text-slate-400"><strong>Solicitado:</strong> ${fechaStr}</span>
-          ${buttonsHtml ? `<div class="flex items-center gap-1">${buttonsHtml}</div>` : ''}
-        </div>
-        ${fechaTerminoStr ? `<div class="text-[10px] text-slate-400 mt-1"><strong>Término:</strong> ${fechaTerminoStr}</div>` : ''}
-      `;
-      container.appendChild(item);
-    });
-  }
-}
 
-function renderManagementJustif(registros) {
-  const container = document.getElementById('mgmt-justif-content');
-  const empty = document.getElementById('mgmt-empty');
-  container.innerHTML = "";
-  
-  if (registros.length === 0 && currentManagementModule === 'justif') {
-    empty.classList.remove('hidden');
-  } else {
-    registros.forEach(reg => {
-      let statusColor = "bg-slate-100 text-slate-600";
-      const st = (reg.estado || "").toLowerCase();
-      if (st.includes('aceptado')) statusColor = "bg-green-100 text-green-600";
-      else if (st.includes('rechazado')) statusColor = "bg-red-100 text-red-600";
-      else if (st.includes('enviado')) statusColor = "bg-blue-100 text-blue-600";
-      
-      let fechaStr = reg.fecha || "";
-      try {
-        const d = parseCustomDate(reg.fecha);
-        if (!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
-      } catch (e) {}
-      
-      const hasUrl = reg.url && reg.url.includes('http');
-      let linkArchivo = "";
-      if (hasUrl) {
-        linkArchivo = `<a href="${reg.url}" target="_blank" class="text-xs text-green-600 hover:underline flex items-center gap-1 font-bold"><span class="material-icons-round text-sm">description</span>Ver Archivo</a>`;
+      function renderManagementJustif(registros) {
+        const container = document.getElementById('mgmt-justif-content');
+        const empty = document.getElementById('mgmt-empty');
+        container.innerHTML = "";
+        
+        if (registros.length === 0 && currentManagementModule === 'justif') {
+          empty.classList.remove('hidden');
+        } else {
+          registros.forEach(reg => {
+            let statusColor = "bg-slate-100 text-slate-600";
+            const st = (reg.estado || "").toLowerCase();
+            if (st.includes('aceptado')) statusColor = "bg-green-100 text-green-600";
+            else if (st.includes('rechazado')) statusColor = "bg-red-100 text-red-600";
+            else if (st.includes('enviado')) statusColor = "bg-blue-100 text-blue-600";
+            
+            let fechaStr = reg.fecha || "";
+            try {
+              const d = parseCustomDate(reg.fecha);
+              if (!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            } catch (e) {}
+            
+            const hasUrl = reg.url && reg.url.includes('http');
+            let linkArchivo = "";
+            if (hasUrl) {
+              linkArchivo = `<a href="${reg.url}" target="_blank" class="text-xs text-green-600 hover:underline flex items-center gap-1 font-bold"><span class="material-icons-round text-sm">description</span>Ver Archivo</a>`;
+            }
+            
+            let deleteBtn = "";
+            if (reg.estado === "Enviado") {
+              deleteBtn = `<button onclick="initDeleteManagement('justif', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg" title="Eliminar"><span class="material-icons-round text-lg">delete</span></button>`;
+            }
+            
+            const item = document.createElement('div');
+            item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
+            item.innerHTML = `
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <span class="font-bold text-slate-800 text-sm block">${reg.nombreSocio}</span>
+                  <span class="text-xs text-slate-500">${formatRut(reg.rutSocio)}</span>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${statusColor}">${reg.estado}</span>
+              </div>
+              <div class="text-xs text-slate-600 mb-2">
+                <span class="font-semibold">${reg.tipo}</span>
+              </div>
+              <p class="text-xs text-slate-600 mb-2 line-clamp-2">${reg.motivo || 'Sin motivo'}</p>
+              ${reg.obs ? `<div class="text-[10px] text-amber-600 bg-amber-50 p-2 rounded mb-2"><strong>Obs:</strong> ${reg.obs}</div>` : ''}
+              ${reg.asamblea ? `<div class="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-1 rounded inline-block mb-2"><strong>Asamblea:</strong> ${reg.asamblea}</div>` : ''}
+              <div class="flex justify-between items-center border-t border-slate-100 pt-2 mt-2">
+                <span class="text-[10px] text-slate-400"><strong>Ingresada:</strong> ${fechaStr}</span>
+                <div class="flex items-center gap-2">
+                  ${linkArchivo}
+                  ${deleteBtn}
+                </div>
+              </div>
+            `;
+            container.appendChild(item);
+          });
+        }
       }
-      
-      let deleteBtn = "";
-      if (reg.estado === "Enviado") {
-        deleteBtn = `<button onclick="initDeleteManagement('justif', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg" title="Eliminar"><span class="material-icons-round text-lg">delete</span></button>`;
-      }
-      
-      const item = document.createElement('div');
-      item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
-      item.innerHTML = `
-        <div class="flex justify-between items-start mb-2">
-          <div>
-            <span class="font-bold text-slate-800 text-sm block">${reg.nombreSocio}</span>
-            <span class="text-xs text-slate-500">${formatRut(reg.rutSocio)}</span>
-          </div>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${statusColor}">${reg.estado}</span>
-        </div>
-        <div class="text-xs text-slate-600 mb-2">
-          <span class="font-semibold">${reg.tipo}</span>
-        </div>
-        <p class="text-xs text-slate-600 mb-2 line-clamp-2">${reg.motivo || 'Sin motivo'}</p>
-        ${reg.obs ? `<div class="text-[10px] text-amber-600 bg-amber-50 p-2 rounded mb-2"><strong>Obs:</strong> ${reg.obs}</div>` : ''}
-        ${reg.asamblea ? `<div class="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-1 rounded inline-block mb-2"><strong>Asamblea:</strong> ${reg.asamblea}</div>` : ''}
-        <div class="flex justify-between items-center border-t border-slate-100 pt-2 mt-2">
-          <span class="text-[10px] text-slate-400"><strong>Ingresada:</strong> ${fechaStr}</span>
-          <div class="flex items-center gap-2">
-            ${linkArchivo}
-            ${deleteBtn}
-          </div>
-        </div>
-      `;
-      container.appendChild(item);
-    });
-  }
-}
 
-function renderManagementApel(registros) {
-  const container = document.getElementById('mgmt-apel-content');
-  const empty = document.getElementById('mgmt-empty');
-  container.innerHTML = "";
-  
-  if (registros.length === 0 && currentManagementModule === 'apel') {
-    empty.classList.remove('hidden');
-  } else {
-    registros.forEach(reg => {
-      let statusColor = "bg-slate-100 text-slate-600";
-      const st = (reg.estado || "").toLowerCase();
-      if (st.includes('aceptado')) statusColor = "bg-green-100 text-green-600";
-      else if (st.includes('rechazado')) statusColor = "bg-red-100 text-red-600";
-      else if (st.includes('enviado')) statusColor = "bg-blue-100 text-blue-600";
-      
-      let fechaStr = reg.fecha || "";
-      try {
-        const d = parseCustomDate(reg.fecha);
-        if (!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
-      } catch (e) {}
-      
-      let mesApelacionStr = reg.mesApelacion || "";
-      try {
-        const fechaMes = new Date(reg.mesApelacion + "-02");
-        if (!isNaN(fechaMes)) mesApelacionStr = fechaMes.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
-      } catch (e) {}
-      
-      const hasComprobante = reg.urlComprobante && reg.urlComprobante.includes('http');
-      const hasLiquidacion = reg.urlLiquidacion && reg.urlLiquidacion.includes('http');
-      const hasDevolucion = reg.urlComprobanteDevolucion && reg.urlComprobanteDevolucion.includes('http');
-      
-      let linksHtml = "";
-      if (hasComprobante) {
-        linksHtml += `<a href="${reg.urlComprobante}" target="_blank" class="text-xs text-green-600 hover:underline flex items-center gap-1"><span class="material-icons-round text-sm">receipt</span>Comprobante</a>`;
+      function renderManagementApel(registros) {
+        const container = document.getElementById('mgmt-apel-content');
+        const empty = document.getElementById('mgmt-empty');
+        container.innerHTML = "";
+        
+        if (registros.length === 0 && currentManagementModule === 'apel') {
+          empty.classList.remove('hidden');
+        } else {
+          registros.forEach(reg => {
+            let statusColor = "bg-slate-100 text-slate-600";
+            const st = (reg.estado || "").toLowerCase();
+            if (st.includes('aceptado')) statusColor = "bg-green-100 text-green-600";
+            else if (st.includes('rechazado')) statusColor = "bg-red-100 text-red-600";
+            else if (st.includes('enviado')) statusColor = "bg-blue-100 text-blue-600";
+            
+            let fechaStr = reg.fecha || "";
+            try {
+              const d = parseCustomDate(reg.fecha);
+              if (!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            } catch (e) {}
+            
+            let mesApelacionStr = reg.mesApelacion || "";
+            try {
+              const fechaMes = new Date(reg.mesApelacion + "-02");
+              if (!isNaN(fechaMes)) mesApelacionStr = fechaMes.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
+            } catch (e) {}
+            
+            const hasComprobante = reg.urlComprobante && reg.urlComprobante.includes('http');
+            const hasLiquidacion = reg.urlLiquidacion && reg.urlLiquidacion.includes('http');
+            const hasDevolucion = reg.urlComprobanteDevolucion && reg.urlComprobanteDevolucion.includes('http');
+            
+            let linksHtml = "";
+            if (hasComprobante) {
+              linksHtml += `<a href="${reg.urlComprobante}" target="_blank" class="text-xs text-green-600 hover:underline flex items-center gap-1"><span class="material-icons-round text-sm">receipt</span>Comprobante</a>`;
+            }
+            if (hasLiquidacion) {
+              linksHtml += `<a href="${reg.urlLiquidacion}" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center gap-1"><span class="material-icons-round text-sm">description</span>Liquidación</a>`;
+            }
+            if (hasDevolucion) {
+              linksHtml += `<a href="${reg.urlComprobanteDevolucion}" target="_blank" class="text-xs text-purple-600 hover:underline flex items-center gap-1"><span class="material-icons-round text-sm">payments</span>Devolución</a>`;
+            }
+            
+            let deleteBtn = "";
+            if (reg.estado === "Enviado") {
+              deleteBtn = `<button onclick="initDeleteManagement('appeal', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg" title="Eliminar"><span class="material-icons-round text-lg">delete</span></button>`;
+            }
+            
+            const item = document.createElement('div');
+            item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
+            item.innerHTML = `
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <span class="font-bold text-slate-800 text-sm block">${reg.nombreSocio}</span>
+                  <span class="text-xs text-slate-500">${formatRut(reg.rutSocio)}</span>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${statusColor}">${reg.estado}</span>
+              </div>
+              <div class="text-xs text-slate-600 mb-1">
+                <span class="font-semibold">${mesApelacionStr}</span>
+              </div>
+              <div class="text-xs text-slate-600 mb-2">
+                <strong>Motivo:</strong> ${reg.tipoMotivo}
+              </div>
+              ${reg.detalleMotivo ? `<p class="text-xs text-slate-600 mb-2 line-clamp-2">${reg.detalleMotivo}</p>` : ''}
+              ${reg.obs ? `<div class="text-[10px] text-amber-600 bg-amber-50 p-2 rounded mb-2"><strong>Obs:</strong> ${reg.obs}</div>` : ''}
+              ${linksHtml ? `<div class="flex flex-wrap gap-2 mb-2">${linksHtml}</div>` : ''}
+              <div class="flex justify-between items-center border-t border-slate-100 pt-2 mt-2">
+                <span class="text-[10px] text-slate-400"><strong>Ingresada:</strong> ${fechaStr}</span>
+                ${deleteBtn}
+              </div>
+            `;
+            container.appendChild(item);
+          });
+        }
       }
-      if (hasLiquidacion) {
-        linksHtml += `<a href="${reg.urlLiquidacion}" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center gap-1"><span class="material-icons-round text-sm">description</span>Liquidación</a>`;
-      }
-      if (hasDevolucion) {
-        linksHtml += `<a href="${reg.urlComprobanteDevolucion}" target="_blank" class="text-xs text-purple-600 hover:underline flex items-center gap-1"><span class="material-icons-round text-sm">payments</span>Devolución</a>`;
-      }
-      
-      let deleteBtn = "";
-      if (reg.estado === "Enviado") {
-        deleteBtn = `<button onclick="initDeleteManagement('appeal', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg" title="Eliminar"><span class="material-icons-round text-lg">delete</span></button>`;
-      }
-      
-      const item = document.createElement('div');
-      item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
-      item.innerHTML = `
-        <div class="flex justify-between items-start mb-2">
-          <div>
-            <span class="font-bold text-slate-800 text-sm block">${reg.nombreSocio}</span>
-            <span class="text-xs text-slate-500">${formatRut(reg.rutSocio)}</span>
-          </div>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${statusColor}">${reg.estado}</span>
-        </div>
-        <div class="text-xs text-slate-600 mb-1">
-          <span class="font-semibold">${mesApelacionStr}</span>
-        </div>
-        <div class="text-xs text-slate-600 mb-2">
-          <strong>Motivo:</strong> ${reg.tipoMotivo}
-        </div>
-        ${reg.detalleMotivo ? `<p class="text-xs text-slate-600 mb-2 line-clamp-2">${reg.detalleMotivo}</p>` : ''}
-        ${reg.obs ? `<div class="text-[10px] text-amber-600 bg-amber-50 p-2 rounded mb-2"><strong>Obs:</strong> ${reg.obs}</div>` : ''}
-        ${linksHtml ? `<div class="flex flex-wrap gap-2 mb-2">${linksHtml}</div>` : ''}
-        <div class="flex justify-between items-center border-t border-slate-100 pt-2 mt-2">
-          <span class="text-[10px] text-slate-400"><strong>Ingresada:</strong> ${fechaStr}</span>
-          ${deleteBtn}
-        </div>
-      `;
-      container.appendChild(item);
-    });
-  }
-}
 
-function renderManagementPermisos(registros) {
-  const container = document.getElementById('mgmt-permisos-content');
-  const empty = document.getElementById('mgmt-empty');
-  container.innerHTML = "";
-  
-  if (registros.length === 0 && currentManagementModule === 'permisos') {
-    empty.classList.remove('hidden');
-  } else {
-    registros.forEach(reg => {
-      let statusColor = "bg-slate-100 text-slate-600";
-      const st = (reg.estado || "").toLowerCase();
-      if (st.includes('documento')) statusColor = "bg-green-100 text-green-600";
-      else if (st.includes('solicitado')) statusColor = "bg-blue-100 text-blue-600";
-      
-      let fechaStr = reg.fecha || "";
-      try {
-        const d = parseCustomDate(reg.fecha);
-        if (!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
-      } catch (e) {}
-      
-      let fechaInicioStr = reg.fechaInicio || "No especificada";
-      try {
-        const fi = new Date(reg.fechaInicio);
-        if (!isNaN(fi)) fechaInicioStr = fi.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
-      } catch (e) {}
-      
-      const hasDocumento = reg.urlDocumento && reg.urlDocumento.includes('http');
-      
-      let linkDocumento = "";
-      let deleteBtn = "";
-      
-      if (hasDocumento) {
-        linkDocumento = `<a href="${reg.urlDocumento}" target="_blank" class="text-xs text-green-600 hover:underline flex items-center gap-1 font-bold"><span class="material-icons-round text-sm">check_circle</span>Ver Documento</a>`;
+      function renderManagementPermisos(registros) {
+        const container = document.getElementById('mgmt-permisos-content');
+        const empty = document.getElementById('mgmt-empty');
+        container.innerHTML = "";
+        
+        if (registros.length === 0 && currentManagementModule === 'permisos') {
+          empty.classList.remove('hidden');
+        } else {
+          registros.forEach(reg => {
+            let statusColor = "bg-slate-100 text-slate-600";
+            const st = (reg.estado || "").toLowerCase();
+            if (st.includes('documento')) statusColor = "bg-green-100 text-green-600";
+            else if (st.includes('solicitado')) statusColor = "bg-blue-100 text-blue-600";
+            
+            let fechaStr = reg.fecha || "";
+            try {
+              const d = parseCustomDate(reg.fecha);
+              if (!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            } catch (e) {}
+            
+            let fechaInicioStr = reg.fechaInicio || "No especificada";
+            try {
+              const fi = new Date(reg.fechaInicio);
+              if (!isNaN(fi)) fechaInicioStr = fi.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            } catch (e) {}
+            
+            const hasDocumento = reg.urlDocumento && reg.urlDocumento.includes('http');
+            
+            let linkDocumento = "";
+            let deleteBtn = "";
+            
+            if (hasDocumento) {
+              linkDocumento = `<a href="${reg.urlDocumento}" target="_blank" class="text-xs text-green-600 hover:underline flex items-center gap-1 font-bold"><span class="material-icons-round text-sm">check_circle</span>Ver Documento</a>`;
+            }
+            
+            if (reg.estado === "Solicitado") {
+              deleteBtn = `<button onclick="initDeleteManagement('permission', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg ml-2" title="Anular solicitud"><span class="material-icons-round text-lg">delete</span></button>`;
+            }
+            
+            const item = document.createElement('div');
+            item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
+            item.innerHTML = `
+              <div class="flex justify-between items-start mb-1">
+                <div>
+                  <span class="font-bold text-slate-800 text-sm block">${reg.nombreSocio}</span>
+                  <span class="text-xs text-slate-500">${formatRut(reg.rutSocio)}</span>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${statusColor}">${reg.estado}</span>
+              </div>
+              <div class="text-xs text-slate-600 mb-2">
+                <span class="font-semibold">${reg.tipoPermiso}</span>
+              </div>
+              <p class="text-xs text-slate-600 mb-2 line-clamp-2">${reg.motivo || 'Sin motivo'}</p>
+              <div class="text-[10px] text-slate-500 mb-2">
+                <strong>Inicio:</strong> ${fechaInicioStr}
+              </div>
+              <div class="flex justify-between items-center border-t border-slate-100 pt-2 mt-2">
+                <span class="text-[10px] text-slate-400"><strong>Solicitado:</strong> ${fechaStr}</span>
+                <div class="flex items-center gap-1">
+                  ${linkDocumento}
+                  ${deleteBtn}
+                </div>
+              </div>
+            `;
+            container.appendChild(item);
+          });
+        }
       }
-      
-      if (reg.estado === "Solicitado") {
-        deleteBtn = `<button onclick="initDeleteManagement('permission', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg ml-2" title="Anular solicitud"><span class="material-icons-round text-lg">delete</span></button>`;
-      }
-      
-      const item = document.createElement('div');
-      item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
-      item.innerHTML = `
-        <div class="flex justify-between items-start mb-1">
-          <div>
-            <span class="font-bold text-slate-800 text-sm block">${reg.nombreSocio}</span>
-            <span class="text-xs text-slate-500">${formatRut(reg.rutSocio)}</span>
-          </div>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${statusColor}">${reg.estado}</span>
-        </div>
-        <div class="text-xs text-slate-600 mb-2">
-          <span class="font-semibold">${reg.tipoPermiso}</span>
-        </div>
-        <p class="text-xs text-slate-600 mb-2 line-clamp-2">${reg.motivo || 'Sin motivo'}</p>
-        <div class="text-[10px] text-slate-500 mb-2">
-          <strong>Inicio:</strong> ${fechaInicioStr}
-        </div>
-        <div class="flex justify-between items-center border-t border-slate-100 pt-2 mt-2">
-          <span class="text-[10px] text-slate-400"><strong>Solicitado:</strong> ${fechaStr}</span>
-          <div class="flex items-center gap-1">
-            ${linkDocumento}
-            ${deleteBtn}
-          </div>
-        </div>
-      `;
-      container.appendChild(item);
-    });
-  }
-}
       
       function startEditLoanManagement(id, tipo, cuotas, medio) {
         currentEditingLoanId = id;
@@ -3257,6 +3848,283 @@ function renderManagementPermisos(registros) {
          deleteType = type;
          itemToDeleteId = id;
          document.getElementById('delete-generic-modal').classList.remove('hidden');
+      }
+
+      // ==========================================
+      // SISTEMA DE INFORMACIÓN DE ESTADOS
+      // ==========================================
+
+      let estadoActualOrganizacion = "";
+      let estadoActualNegociacion = "";
+
+      /**
+       * Muestra información detallada del estado seleccionado
+       */
+      function mostrarInfoEstado(tipoEstado) {
+        const modal = document.getElementById('info-estado-modal');
+        const titulo = document.getElementById('info-estado-titulo');
+        const icono = document.getElementById('info-estado-icon');
+        const badge = document.getElementById('info-estado-badge');
+        const descripcion = document.getElementById('info-estado-descripcion');
+        const nota = document.getElementById('info-estado-nota');
+        
+        if (tipoEstado === 'organizacion') {
+          // ESTADO EN ORGANIZACIÓN
+          titulo.innerText = "Estado en Organización";
+          icono.innerText = "business";
+          
+          if (estadoActualOrganizacion === "ACTIVO") {
+            badge.className = "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide bg-emerald-500 text-white shadow-lg";
+            badge.innerHTML = '<span class="material-icons-round text-base">check_circle</span> ACTIVO';
+            
+            descripcion.innerHTML = `
+              <div class="text-center mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 mb-3">
+                  <span class="material-icons-round text-emerald-600 text-4xl">verified_user</span>
+                </div>
+                <h4 class="text-lg font-bold text-emerald-700 mb-2">¡Socio Vigente!</h4>
+              </div>
+              <p class="text-slate-700 leading-relaxed">
+                Usted es un <strong>socio activo</strong> del Sindicato SLIM N°3. 
+                Esto significa que:
+              </p>
+              <ul class="mt-3 space-y-2 text-slate-700">
+                <li class="flex items-start gap-2">
+                  <span class="material-icons-round text-emerald-600 text-sm mt-0.5">check</span>
+                  <span>Tiene acceso completo a nuestras plataformas de formación e información laboral y sindical.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="material-icons-round text-emerald-600 text-sm mt-0.5">check</span>
+                  <span>Puede participar en asambleas y de todas nuestras actividades.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="material-icons-round text-emerald-600 text-sm mt-0.5">check</span>
+                  <span>Está cubierto por las gestiones de la organización.</span>
+                </li>
+              </ul>
+            `;
+          } else {
+            badge.className = "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide bg-red-500 text-white shadow-lg";
+            badge.innerHTML = '<span class="material-icons-round text-base">cancel</span> DESVINCULADO';
+            
+            descripcion.innerHTML = `
+              <div class="text-center mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-3">
+                  <span class="material-icons-round text-red-600 text-4xl">person_off</span>
+                </div>
+                <h4 class="text-lg font-bold text-red-700 mb-2">Socio Desvinculado</h4>
+              </div>
+              <p class="text-slate-700 leading-relaxed mb-3">
+                La empresa ha informado su <strong>desvinculación laboral</strong>, por lo tanto, 
+                también ha cesado su calidad de socio del sindicato.
+              </p>
+              <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <p class="text-xs text-slate-600 leading-relaxed">
+                  <strong>¿Crees que hay un error?</strong><br>
+                  Si consideras que esta información es incorrecta, por favor comunícate 
+                  de inmediato con la directiva del sindicato para verificar tu situación.
+                </p>
+              </div>
+            `;
+          }
+          
+          nota.classList.add('hidden');
+          
+        } else if (tipoEstado === 'negociacion') {
+          // ESTADO NEGOCIACIÓN COLECTIVA
+          titulo.innerText = "Negociación Colectiva 2026";
+          icono.innerText = "gavel";
+          
+          const estado = estadoActualNegociacion.toUpperCase();
+          
+          if (estado.includes("HABILITADO") || estado.includes("NEGOCIAR")) {
+            badge.className = "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide bg-blue-500 text-white shadow-lg";
+            badge.innerHTML = '<span class="material-icons-round text-base">how_to_vote</span> HABILITADO PARA NEGOCIAR';
+            
+            descripcion.innerHTML = `
+              <div class="text-center mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-3">
+                  <span class="material-icons-round text-blue-600 text-4xl">shield</span>
+                </div>
+                <h4 class="text-lg font-bold text-blue-700 mb-2">¡Inscrito en Negociación!</h4>
+              </div>
+              <p class="text-slate-700 leading-relaxed mb-3">
+                Usted está <strong>correctamente inscrito</strong> en la negociación colectiva 2026. 
+                Esto implica importantes derechos y responsabilidades:
+              </p>
+              
+              <div class="space-y-3">
+                <div class="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                  <h5 class="text-xs font-bold text-blue-900 mb-1 flex items-center gap-1">
+                    <span class="material-icons-round text-sm">security</span>
+                    FUERO SINDICAL
+                  </h5>
+                  <p class="text-xs text-blue-800 leading-relaxed">
+                    Desde el 19 de diciembre de 2024 hasta el término del proceso de negociación colectiva, 
+                    usted cuenta con <strong>protección especial</strong> contra el despido.
+                  </p>
+                </div>
+                
+                <div class="p-3 bg-purple-50 rounded-lg border-l-4 border-purple-500">
+                  <h5 class="text-xs font-bold text-purple-900 mb-1 flex items-center gap-1">
+                    <span class="material-icons-round text-sm">how_to_vote</span>
+                    DERECHO A VOTO
+                  </h5>
+                  <p class="text-xs text-purple-800 leading-relaxed">
+                    Debe participar activamente en el <strong>proceso de votación</strong> 
+                    de la huelga legal cuando corresponda.
+                  </p>
+                </div>
+                
+                <div class="p-3 bg-amber-50 rounded-lg border-l-4 border-amber-500">
+                  <h5 class="text-xs font-bold text-amber-900 mb-1 flex items-center gap-1">
+                    <span class="material-icons-round text-sm">front_hand</span>
+                    OBLIGACIÓN DE HUELGA
+                  </h5>
+                  <p class="text-xs text-amber-800 leading-relaxed">
+                    En caso de activarse la huelga legal, <strong>debe participar activamente</strong> 
+                    de esta etapa. Su participación es fundamenta y obligatoria.
+                  </p>
+                </div>
+              </div>
+            `;
+            nota.classList.remove('hidden');
+            
+          } else if (estado.includes("EXTENSION") || estado.includes("BENEFICIO")) {
+            badge.className = "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide bg-purple-500 text-white shadow-lg";
+            badge.innerHTML = '<span class="material-icons-round text-base">extension</span> EXTENSIÓN DE BENEFICIOS';
+            
+            descripcion.innerHTML = `
+              <div class="text-center mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 mb-3">
+                  <span class="material-icons-round text-purple-600 text-4xl">people_alt</span>
+                </div>
+                <h4 class="text-lg font-bold text-purple-700 mb-2">Extensión de Beneficios</h4>
+              </div>
+              <p class="text-slate-700 leading-relaxed mb-3">
+                Usted <strong>NO está inscrito</strong> para la negociación colectiva 2026. 
+                Sin embargo, actualmente recibe los beneficios aun vigentes y también recibirá los 
+                obtenidos posterior a la negociación colectiva 2026 mediante extensión.
+              </p>
+              
+              <div class="space-y-3">
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <h5 class="text-xs font-bold text-slate-900 mb-2">Restricciones Aplicables:</h5>
+                  <ul class="space-y-1.5 text-xs text-slate-700">
+                    <li class="flex items-start gap-2">
+                      <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
+                      <span>No cuenta con fuero sindical durante el proceso.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                      <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
+                      <span>No puede participar en la votación de la huelga.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                      <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
+                      <span>No puede participar de la huelga legal.</span>
+                    </li>
+                  </ul>
+                </div>
+                
+                <div class="p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
+                  <p class="text-xs text-green-800 leading-relaxed">
+                    <strong>Beneficio:</strong> Una vez concluida la negociación, recibirá automáticamente 
+                    los beneficios pactados mediante el mecanismo de extensión.
+                  </p>
+                </div>
+              </div>
+            `;
+            nota.classList.add('hidden');
+            
+          } else if (estado.includes("OTRO") || estado.includes("CONT")) {
+            badge.className = "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide bg-amber-500 text-white shadow-lg";
+            badge.innerHTML = '<span class="material-icons-round text-base">description</span> OTRO CONTRATO COLECTIVO';
+            
+            descripcion.innerHTML = `
+              <div class="text-center mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 mb-3">
+                  <span class="material-icons-round text-amber-600 text-4xl">assignment</span>
+                </div>
+                <h4 class="text-lg font-bold text-amber-700 mb-2">Contrato Colectivo Vigente</h4>
+              </div>
+              <p class="text-slate-700 leading-relaxed mb-3">
+                Usted mantiene un <strong>contrato colectivo vigente</strong> con su sindicato anterior. 
+                Esta situación implica las siguientes condiciones:
+              </p>
+              
+              <div class="space-y-3">
+                <div class="p-3 bg-amber-50 rounded-lg border-l-4 border-amber-500">
+                  <h5 class="text-xs font-bold text-amber-900 mb-1">Contrato Actual</h5>
+                  <p class="text-xs text-amber-800 leading-relaxed">
+                    Sus beneficios sindicales están regulados por el contrato colectivo de su organización 
+                    sindical anterior, el cual permanece vigente hasta su fecha de vencimiento.
+                  </p>
+                </div>
+                
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <h5 class="text-xs font-bold text-slate-900 mb-2">Limitaciones en Negociación 2026:</h5>
+                  <ul class="space-y-1.5 text-xs text-slate-700">
+                    <li class="flex items-start gap-2">
+                      <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
+                      <span>No cuenta con fuero sindical para esta negociación</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                      <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
+                      <span>No puede participar en la votación de huelga</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                      <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
+                      <span>No puede participar de la huelga legal</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            `;
+            nota.classList.add('hidden');
+            
+          } else {
+            // S/D o sin datos
+            badge.className = "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide bg-slate-400 text-white shadow-lg";
+            badge.innerHTML = '<span class="material-icons-round text-base">help_outline</span> SIN DATOS';
+            
+            descripcion.innerHTML = `
+              <div class="text-center mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-3">
+                  <span class="material-icons-round text-slate-400 text-4xl">info</span>
+                </div>
+                <h4 class="text-lg font-bold text-slate-700 mb-2">Información No Disponible</h4>
+              </div>
+              <p class="text-slate-700 leading-relaxed mb-3">
+                Actualmente no contamos con información sobre tu estado en la negociación colectiva 2026.
+              </p>
+              <div class="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                <p class="text-xs text-blue-900 leading-relaxed">
+                  <strong>¿Qué hacer?</strong><br>
+                  Por favor, comunícate con la directiva del sindicato para verificar tu situación 
+                  y asegurarte de estar correctamente registrado en el proceso de negociación.
+                </p>
+              </div>
+            `;
+            nota.classList.add('hidden');
+          }
+        }
+        
+        modal.classList.remove('hidden');
+
+        // Esperar un frame para que el navegador procese el display
+        requestAnimationFrame(() => {
+          const modalCard = modal.querySelector('.modal-card');
+          if (modalCard) {
+            modalCard.scrollTop = 0; // Resetear scroll al inicio
+          }
+        });
+      }
+
+      /**
+       * Cierra el modal de información de estado
+       */
+      function cerrarInfoEstado() {
+        document.getElementById('info-estado-modal').classList.add('hidden');
       }
 
     </script>
