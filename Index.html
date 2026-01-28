@@ -453,7 +453,7 @@
 
         <div class="flex-grow flex flex-col bg-slate-50/50 overflow-hidden">
            <div id="loans-menu" class="p-6 flex flex-col gap-4 h-full overflow-y-auto">
-              <div class="text-center mb-2"><h3 class="text-slate-800 font-bold text-lg">¿Qué necesitas hoy?</h3><p class="text-slate-500 text-sm">Selecciona una opción</p></div>
+              <div class="text-center mb-2"><h3 class="text-slate-800 font-bold text-lg">¿Cuánto necestias?</h3><p class="text-slate-500 text-sm">Selecciona una opción</p></div>
               
               <button onclick="showLoanForm('emergencia')" class="glass-card p-4 flex items-center gap-4 hover:bg-white hover:border-red-200 transition group">
                  <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition"><span class="material-icons-round">medical_services</span></div>
@@ -1279,7 +1279,7 @@
                   <div class="flex items-start gap-2">
                     <span class="material-icons-round text-amber-600 text-lg flex-shrink-0">warning</span>
                     <p class="text-xs text-amber-900 leading-relaxed">
-                        <strong>Importante:</strong> Esta información es válida desde el 19 de diciembre de 2024 hasta la finalización del proceso de negociación colectiva.
+                        <strong>Importante:</strong> Esta información es válida desde el 19 de diciembre de 2025 hasta la finalización del proceso de negociación colectiva.
                     </p>
                   </div>
               </div>
@@ -1652,7 +1652,7 @@
               document.getElementById('user-name-display').innerText = res.user;
               applyRolePermissions();
               switchView('dashboard-view');
-              mostrarAlertaNegociacionColectiva();
+              mostrarAlertasInicioSesion();
             } else {
               document.getElementById('error-text').innerText = res.message;
               document.getElementById('error-msg').classList.remove('hidden');
@@ -1780,7 +1780,7 @@
               </p>
               
               <p class="text-sm text-slate-600 mb-3">
-                Formas parte integral del proceso y tienes derecho a participar activamente en las decisiones laborales del sindicato.
+                Formas parte integral del proceso y tienes derecho a participar activamente en las decisiones colectivas del sindicato.
               </p>
               
               <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-lg">
@@ -4125,7 +4125,7 @@ divForm.classList.add('flex');
                     FUERO SINDICAL
                   </h5>
                   <p class="text-xs text-blue-800 leading-relaxed">
-                    Desde el 19 de diciembre de 2024 hasta el término del proceso de negociación colectiva, 
+                    Desde el 19 de diciembre de 2025 hasta el término del proceso de negociación colectiva, 
                     usted cuenta con <strong>protección especial</strong> contra el despido.
                   </p>
                 </div>
