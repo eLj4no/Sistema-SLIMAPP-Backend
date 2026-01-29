@@ -1495,15 +1495,8 @@
           // ⭐ NUEVO: Cargar también la contraseña si existe
           if(savedPass) {
             passwordInput.value = savedPass;
-            // ⭐ NUEVO: Actualizar la contraseña real almacenada
-            if (typeof window.updateRealPassword === 'function') {
-              window.updateRealPassword(savedPass);
-            }
           }
         }
-
-        // ⭐ NUEVO: Configurar el comportamiento de mostrar dígitos temporalmente
-        configurarMostrarDigitoTemporal();
       };
 
       // MOCK
@@ -1790,8 +1783,7 @@
         const originalContent = btn.innerHTML;
         const rut = document.getElementById('rut').value;
         
-        // ⭐ CAMBIO CLAVE: Obtener la contraseña real almacenada
-        const pass = window.getRealPassword();
+        const pass = document.getElementById('password').value;
         
         btn.disabled = true; 
         btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Ingresando...</span></div>';
@@ -1820,8 +1812,6 @@
               localStorage.removeItem('sindicato_pass');
             }
             
-            // ⭐ NUEVO: Limpiar la contraseña real almacenada
-            window.clearRealPassword();
             
             document.getElementById('user-name-display').innerText = res.user;
             applyRolePermissions();
@@ -1845,148 +1835,16 @@
       }
 
       function togglePasswordVisibility() {
-      const passwordInput = document.getElementById('password');
-      const eyeIcon = document.getElementById('password-eye-icon');
-      
-      if (passwordInput.type === 'password') {
-        // Mostrar contraseña completa
-        let realPass = window.getRealPassword();
-        
-        passwordInput.type = 'text';
-        passwordInput.value = realPass;
-        eyeIcon.textContent = 'visibility';
-      } else {
-        // Ocultar contraseña
-        const currentValue = passwordInput.value;
-        
-        passwordInput.type = 'password';
-        passwordInput.value = currentValue;
-        eyeIcon.textContent = 'visibility_off';
-        
-        // Actualizar la contraseña real
-        window.updateRealPassword(currentValue);
-      }
-    }
-
-      function configurarMostrarDigitoTemporal() {
         const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('password-eye-icon');
         
-        // Variable global para almacenar la contraseña real
-        let realPassword = '';
-        let timeoutId = null;
-        let isShowingChar = false;
-        
-        // Funciones globales para acceder y actualizar la contraseña real
-        window.getRealPassword = function() {
-          return realPassword || passwordInput.value;
-        };
-        
-        window.updateRealPassword = function(newValue) {
-          realPassword = newValue;
-        };
-        
-        window.clearRealPassword = function() {
-          realPassword = '';
-        };
-        
-        passwordInput.addEventListener('input', function(e) {
-          // No procesar si el ojo está activado
-          const eyeIcon = document.getElementById('password-eye-icon');
-          if (eyeIcon && eyeIcon.textContent === 'visibility') {
-            realPassword = passwordInput.value;
-            return;
-          }
-          
-          // No procesar si ya estamos mostrando un carácter
-          if (isShowingChar) {
-            return;
-          }
-          
-          const currentValue = e.target.value;
-          
-          // Limpiar timeout anterior
-          if (timeoutId) {
-            clearTimeout(timeoutId);
-          }
-          
-          // Detectar si está borrando
-          if (currentValue.length < realPassword.length) {
-            realPassword = currentValue;
-            return;
-          }
-          
-          // Si está escribiendo
-          if (currentValue.length > realPassword.length && passwordInput.type === 'password') {
-  
-          // ⭐ NUEVO: Si ya estábamos mostrando un carácter, ocultarlo primero
-          if (isShowingChar) {
-            passwordInput.type = 'password';
-            passwordInput.value = realPassword;
-            isShowingChar = false;
-          }
-          
-          isShowingChar = true;
-          
-          // Obtener el nuevo carácter
-          const newChar = currentValue.charAt(currentValue.length - 1);
-            
-            // Actualizar contraseña real
-            realPassword = currentValue;
-            
-            // Crear patrón enmascarado: •••X
-            const maskedValue = '•'.repeat(realPassword.length - 1) + newChar;
-            
-            // Mostrar el patrón temporalmente
-            passwordInput.type = 'text';
-            passwordInput.value = maskedValue;
-            
-            // Después de 500ms, ocultar
-            timeoutId = setTimeout(() => {
-              const eyeIconCheck = document.getElementById('password-eye-icon');
-              if (eyeIconCheck && eyeIconCheck.textContent === 'visibility_off') {
-                passwordInput.type = 'password';
-                passwordInput.value = realPassword;
-              }
-              isShowingChar = false;
-            }, 500);
-          }
-        });
-        
-        // Manejar borrado
-        passwordInput.addEventListener('keydown', function(e) {
-          if (e.key === 'Backspace' || e.key === 'Delete') {
-            if (timeoutId) {
-              clearTimeout(timeoutId);
-            }
-            
-            if (passwordInput.type === 'text' && !isShowingChar) {
-              const eyeIcon = document.getElementById('password-eye-icon');
-              if (eyeIcon && eyeIcon.textContent === 'visibility_off') {
-                setTimeout(() => {
-                  passwordInput.type = 'password';
-                  realPassword = passwordInput.value;
-                }, 10);
-              }
-            }
-            
-            isShowingChar = false;
-          }
-        });
-        
-        // Sincronizar al pegar
-        passwordInput.addEventListener('paste', function(e) {
-          setTimeout(() => {
-            realPassword = passwordInput.value;
-          }, 10);
-        });
-        
-        // Sincronizar al hacer focus
-        passwordInput.addEventListener('focus', function() {
-          const savedPass = localStorage.getItem('sindicato_pass');
-          if (savedPass && passwordInput.value === savedPass) {
-            realPassword = savedPass;
-          }
-        });
+        if (passwordInput.type === 'password') {
+          passwordInput.type = 'text';
+          eyeIcon.textContent = 'visibility';
+        } else {
+          passwordInput.type = 'password';
+          eyeIcon.textContent = 'visibility_off';
+        }
       }
 
     /**
