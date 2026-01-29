@@ -562,22 +562,30 @@ function validarUsuario(rutInput, passwordInput) {
         const rolUsuario = String(row[COL.ROL]).trim().toUpperCase(); // ✅ Normalizar
         const estadoUsuario = String(row[COL.ESTADO]).toUpperCase();
        
-        if (passDb === passwordInput) {
-        const resultado = {
-          success: true,
-          message: "Login exitoso",
-          user: nombreUsuario || "Socio",
-          role: rolUsuario || "SOCIO",
-          state: estadoUsuario || "ACTIVO",
-          estadoNegColect: String(row[COL.ESTADO_NEG_COLECT] || "").trim()
-        };
+        if (String(passDb).toUpperCase() === String(passwordInput).toUpperCase()) {
+          const resultado = {
+            success: true,
+            message: "Login exitoso",
+            user: nombreUsuario || "Socio",
+            role: rolUsuario || "SOCIO",
+            state: estadoUsuario || "ACTIVO",
+            estadoNegColect: String(row[COL.ESTADO_NEG_COLECT] || "").trim()
+          };
           return resultado;
         } else {
-          return { success: false, message: "Contraseña incorrecta." };
+          return { 
+            success: false, 
+            message: "Contraseña incorrecta",
+            errorType: "password"  // ⭐ NUEVO: Identificador del tipo de error
+          };
         }
       }
     }
-    return { success: false, message: "RUT no encontrado." };
+    return { 
+      success: false, 
+      message: "RUT no encontrado",
+      errorType: "rut"  // ⭐ NUEVO: Identificador del tipo de error
+    };
   } catch (e) {
     Logger.log('ERROR en validarUsuario: ' + e.toString());
     return { success: false, message: "Error Servidor: " + e.toString() };
