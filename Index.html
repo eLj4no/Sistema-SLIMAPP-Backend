@@ -3831,24 +3831,24 @@ divForm.classList.add('flex');
                      }
                      
                      const item = document.createElement('div');
-                      item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
-                      item.innerHTML = `
+                     item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
+                     item.innerHTML = `
                         <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-2">
-                              <span class="material-icons-round text-green-600">how_to_reg</span>
+                           <div class="flex items-center gap-2">
+                              <span class="material-icons-round ${tipoColor}">${tipoIcon}</span>
                               <span class="font-bold text-slate-800 text-sm">${reg.asamblea}</span>
-                            </div>
+                           </div>
                         </div>
-                        <div class="text-xs text-slate-600 space-y-1">
-                            <div><span class="font-semibold">Fecha:</span> ${reg.fecha}</div>
-                            <div><span class="font-semibold">Tipo:</span> ${reg.tipo}</div>
+                        <div class="text-xs text-slate-600">
+                           <span class="font-semibold">Tipo:</span> ${reg.tipo}
                         </div>
-                      `;
+                        ${gestionHtml}
+                     `;
                      list.appendChild(item);
                   });
                }
             }
-         }).obtenerHistorialAsistenciaQR(currentRut);
+         }).obtenerHistorialAsistencia(currentRut);
       }
 
       // === FUNCIONES PANEL ADMIN ===
