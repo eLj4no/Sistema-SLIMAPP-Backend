@@ -94,34 +94,59 @@
     </div>
 
     <script>
-        // ========================================
-        // CONFIGURACIÓN
-        // ========================================
-        // Leer parámetros directamente de la URL
-        function getUrlParams() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const paramsObj = {};
-            for (const [key, value] of urlParams) {
-                paramsObj[key] = value;
-            }
-            return paramsObj;
+    // ========================================
+    // CONFIGURACIÓN CON DEBUG MEJORADO
+    // ========================================
+    
+    console.log('=== DEBUG QR_Access.html ===');
+    console.log('URL actual:', window.location.href);
+    
+    // Leer parámetros directamente de la URL
+    function getUrlParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const paramsObj = {};
+        for (const [key, value] of urlParams) {
+            paramsObj[key] = value;
         }
+        console.log('Parámetros de URL directa:', paramsObj);
+        return paramsObj;
+    }
 
-        // Intentar primero los parámetros del servidor, si no existen, leer de la URL
-        let params;
-        try {
-            params = <?!= JSON.stringify(data) ?>; 
-            // Si params está vacío, leer de la URL
-            if (!params || Object.keys(params).length === 0) {
-                params = getUrlParams();
-            }
-        } catch(e) {
-            // Si falla el servidor, leer de la URL
+    // Intentar primero los parámetros del servidor
+    let params;
+    try {
+        params = <?!= JSON.stringify(data) ?>; 
+        console.log('Parámetros desde servidor:', params);
+        
+        // Si params está vacío, leer de la URL
+        if (!params || Object.keys(params).length === 0) {
+            console.log('Params del servidor vacíos, leyendo de URL...');
             params = getUrlParams();
         }
+    } catch(e) {
+        console.error('Error leyendo params del servidor:', e);
+        params = getUrlParams();
+    }
 
-        console.log('Parámetros detectados:', params);
-        const STORAGE_KEY = 'slim_qr_rut';
+    console.log('✅ Parámetros FINALES:', params);
+    console.log('Action:', params.action);
+    console.log('RUT:', params.rut);
+    console.log('Asamblea:', params.asamblea);
+    
+    // ⭐ MOSTRAR DEBUG EN PANTALLA
+    if (params && Object.keys(params).length > 0) {
+        setTimeout(() => {
+            const debugDiv = document.createElement('div');
+            debugDiv.className = 'bg-yellow-100 border-2 border-yellow-400 p-3 mb-3 rounded-lg text-xs';
+            debugDiv.innerHTML = `
+                <strong class="text-yellow-800">🔍 DEBUG:</strong><br>
+                <pre class="mt-1 text-yellow-900">${JSON.stringify(params, null, 2)}</pre>
+            `;
+            document.getElementById('content-area').prepend(debugDiv);
+        }, 100);
+    }
+    
+    const STORAGE_KEY = 'slim_qr_rut';
 
         // Elementos DOM
         const loader = document.getElementById('loader');
