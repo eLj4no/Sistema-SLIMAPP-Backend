@@ -20,76 +20,6 @@ function doGet(e) {
       .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
 }
 
-/**
- * Ejecuta la generación masiva de QR con confirmación
- */
-function ejecutarGenerarQRTodos() {
-  const ui = SpreadsheetApp.getUi();
-  
-  // Confirmación antes de ejecutar
-  const response = ui.alert(
-    'Generar QR de Registro',
-    '¿Estás seguro de que deseas generar los códigos QR para TODOS los usuarios?\n\n' +
-    'Esta acción sobrescribirá los datos actuales en las columnas P y Q.',
-    ui.ButtonSet.YES_NO
-  );
-  
-  if (response === ui.Button.YES) {
-    // Mostrar mensaje de procesamiento
-    const toast = SpreadsheetApp.getActiveSpreadsheet();
-    toast.toast('Generando QR... Por favor espera.', '⏳ Procesando', -1);
-    
-    // Ejecutar la función
-    const resultado = generarQRRegistroUsuarios();
-    
-    // Mostrar resultado
-    if (resultado.success) {
-      ui.alert('✅ Completado', resultado.message, ui.ButtonSet.OK);
-    } else {
-      ui.alert('❌ Error', resultado.message, ui.ButtonSet.OK);
-    }
-    
-    toast.toast('Proceso finalizado', '✅ Listo', 3);
-  }
-}
-
-/**
- * Muestra las instrucciones para configurar el sistema QR
- */
-function mostrarInstruccionesQR() {
-  const ui = SpreadsheetApp.getUi();
-  
-  const instrucciones = 
-    '📋 INSTRUCCIONES PARA CONFIGURAR QR DE ASISTENCIA\n\n' +
-    '1️⃣ Despliega la Web App:\n' +
-    '   • En Apps Script: Implementar → Nueva implementación\n' +
-    '   • Tipo: Aplicación web\n' +
-    '   • Ejecutar como: Yo\n' +
-    '   • Acceso: Cualquier persona\n\n' +
-    '2️⃣ Copia la URL generada (ejemplo: https://script.google.com/...)\n\n' +
-    '3️⃣ Pégala en Code.gs:\n' +
-    '   • Busca: CONFIG.WEB_APP.URL\n' +
-    '   • Reemplaza "REEMPLAZAR_CON_TU_URL" con tu URL\n\n' +
-    '4️⃣ Guarda el proyecto (Ctrl+S)\n\n' +
-    '5️⃣ Vuelve a este menú y ejecuta "Generar QR para TODOS"\n\n' +
-    '✅ Los códigos QR aparecerán en las columnas P y Q';
-  
-  ui.alert('📚 Instrucciones', instrucciones, ui.ButtonSet.OK);
-}
-
-/**
- * Función Web App para sistema QR de asistencia
- */
-function doGet(e) {
-  const template = HtmlService.createTemplateFromFile("QR_Access");
-  template.data = e.parameter || {}; // Parámetros de la URL
-  
-  return template.evaluate()
-    .setTitle("Control de Asistencia QR - SLIM")
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-}
-
 // ==========================================
 // CONFIGURACIÓN GLOBAL - IDs DE SPREADSHEETS Y CARPETAS
 // ==========================================
@@ -99,8 +29,7 @@ const CONFIG = {
     JUSTIFICACIONES: "1Hwbly__MXjl9uwJb-spXdah-R3v9SAMOCFHem92uOUg",
     APELACIONES: "11nrvVsf84THWQ7j6NfAr_unyIcBV7aykxACS8R27PwE",
     PRESTAMOS: "1h-_sJD4rOCuMjlfSouP7a6gfoodHyzI4MOBRUyOW5XU",
-    PERMISOS_MEDICOS: "1VYfm7cOgL3mVfVoI8DubIm8WG2srzQw9a6DtIEs3UMM",
-    ASISTENCIA: '1SRQ8Mlc6bBdb0mitAfn4I-EUAS4BOrZRbqS9YAmg3Sk'
+    PERMISOS_MEDICOS: "1VYfm7cOgL3mVfVoI8DubIm8WG2srzQw9a6DtIEs3UMM"
   },
   HOJAS: {
     USUARIOS: "BD_SLIMAPP",
@@ -216,24 +145,8 @@ const CONFIG = {
       NOMBRE_DIRIGENTE: 13,
       CORREO_DIRIGENTE: 14
     }
-  },
-  WEB_APP: {
-    URL: 'https://script.google.com/macros/s/AKfycbzrmy_GgdzMpOLfycvxxUPHU6iyuL9Jv6As_4kxG7mG8oQ4RbV-ALUZw0oeSJnqbvvc/exec'
   }
 };
-
-/**
- * Función Web App para sistema QR de asistencia
- */
-function doGet(e) {
-  const template = HtmlService.createTemplateFromFile("QR_Access");
-  template.data = e.parameter || {}; // Parámetros de la URL
-  
-  return template.evaluate()
-    .setTitle("Control de Asistencia QR - SLIM")
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-}
 
 /**
  * Función helper para obtener un spreadsheet específico
@@ -833,7 +746,7 @@ function crearSolicitudPrestamo(rutGestor, tipo, cuotas, medioPago, rutBeneficia
   var lock = LockService.getScriptLock();
   if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
     try {
-      const sheetUsers = getSheet('USUARIOS', 'BD_SLIMAPP');
+      const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
       const sheetPrestamos = getSheet('PRESTAMOS', 'PRESTAMOS');
       const COL_USER = CONFIG.COLUMNAS.USUARIOS;
       const COL_PRES = CONFIG.COLUMNAS.PRESTAMOS;
@@ -2006,7 +1919,7 @@ function verificarCambiosJustificaciones() {
         const rutUsuario = row[COL.RUT];
         
         // ⭐ VALIDACIÓN: Verificar que existe la hoja de usuarios
-        const sheetUsers = getSheet('USUARIOS', 'BD_SLIMAPP');
+        const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
         if (!sheetUsers) {
           console.error("❌ No se pudo acceder a la hoja de usuarios");
           continue;
@@ -2596,7 +2509,7 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
   const lock = LockService.getScriptLock();
   if (lock.tryLock(30000)) {
     try {
-      const sheetUsers = getSheet('USUARIOS', 'BD_SLIMAPP');
+      const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
       const sheetPermisos = getSheet('PERMISOS_MEDICOS', 'PERMISOS_MEDICOS');
       const COL_USER = CONFIG.COLUMNAS.USUARIOS;
       const COL_PERM = CONFIG.COLUMNAS.PERMISOS_MEDICOS;
@@ -3009,6 +2922,43 @@ function eliminarPermisoMedico(idPermiso) {
 }
 
 // ==========================================
+// MÓDULO: REGISTRO ASISTENCIA
+// ==========================================
+
+function obtenerHistorialAsistencia(rutInput) {
+  try {
+    // NOTA: El módulo de asistencia todavía está en el spreadsheet principal
+    // hasta que se cree su propio archivo
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("ASISTENCIA");
+    
+    if (!sheet) return { success: true, registros: [] };
+    
+    const data = sheet.getDataRange().getDisplayValues();
+    const rutLimpio = cleanRut(rutInput);
+    const registros = [];
+    
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      if (cleanRut(row[0]) === rutLimpio) {
+        registros.push({
+          asamblea: row[1] || "Asamblea",
+          tipo: row[2] || "Tipo no especificado",
+          gestion: row[3] || "Sistema",
+          dirigente: row[4] || ""
+        });
+      }
+    }
+    
+    registros.reverse();
+    return { success: true, registros: registros };
+    
+  } catch (e) {
+    return { success: false, message: "Error: " + e.toString() };
+  }
+}
+
+// ==========================================
 // GESTIÓN SOCIOS - PARA DIRIGENTES
 // ==========================================
 
@@ -3228,7 +3178,7 @@ function generarInformeAdministrador() {
     const blob = response.getBlob();
     blob.setName(`Informe_Prestamos_Solicitados_${new Date().toLocaleDateString('es-CL').replace(/\//g, '-')}.xlsx`);
     
-    const sheetUsers = getSheet('USUARIOS', 'BD_SLIMAPP');
+    const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
     const dataUsers = sheetUsers.getDataRange().getDisplayValues();
     const COL_USER = CONFIG.COLUMNAS.USUARIOS;
     let correoAdmin = "admin@sindicato.com";
@@ -3283,144 +3233,6 @@ function generarInformeAdministrador() {
   } catch (e) {
     return { success: false, message: "Error al generar informe: " + e.toString() };
   }
-}
-
-// ==========================================
-// GENERADOR AUTOMÁTICO DE QR DE REGISTRO
-// ==========================================
-
-/**
- * Genera automáticamente los Links y QR de registro para todos los usuarios
- * Se ejecuta desde el menú personalizado o manualmente
- */
-function generarQRRegistroUsuarios() {
-  try {
-    // Verificar que la URL de Web App esté configurada
-    if (CONFIG.WEB_APP.URL.includes('REEMPLAZAR')) {
-      throw new Error(
-        "⚠️ Primero debes configurar la URL de tu Web App en CONFIG.WEB_APP.URL\n\n" +
-        "Pasos:\n" +
-        "1. Despliega la Web App (Implementar → Nueva implementación)\n" +
-        "2. Copia la URL generada\n" +
-        "3. Reemplázala en CONFIG.WEB_APP.URL en Code.gs"
-      );
-    }
-    
-    const sheet = getSheet('USUARIOS', 'USUARIOS');
-    const data = sheet.getDataRange().getValues();
-    const COL = CONFIG.COLUMNAS.USUARIOS;
-    
-    // Columnas donde se guardarán los datos (ajusta según tu estructura)
-    const COL_LINK_REGISTRO = 15;  // Columna P (índice 15)
-    const COL_QR_REGISTRO = 16;    // Columna Q (índice 16)
-    
-    const urlBase = CONFIG.WEB_APP.URL;
-    const updates = [];
-    let contadorGenerados = 0;
-    
-    // Empezar desde fila 2 (índice 1) para saltar encabezados
-    for (let i = 1; i < data.length; i++) {
-      const rut = data[i][COL.RUT];
-      
-      if (!rut || rut === "") {
-        // Si no hay RUT, dejar en blanco
-        updates.push(["", ""]);
-        continue;
-      }
-      
-      // Limpiar el RUT (sin puntos ni guión)
-      const rutLimpio = cleanRut(rut);
-      
-      // Generar el link de registro
-      const linkRegistro = `${urlBase}?action=register&rut=${rutLimpio}`;
-      
-      // Generar la fórmula para el QR (usando QuickChart.io)
-      const formulaQR = `=IMAGE("https://quickchart.io/qr?size=300&text=${encodeURIComponent(linkRegistro)}")`;
-      
-      updates.push([linkRegistro, formulaQR]);
-      contadorGenerados++;
-    }
-    
-    // Escribir todos los datos de una sola vez (más eficiente)
-    if (updates.length > 0) {
-      const rangeToUpdate = sheet.getRange(
-        2, 
-        COL_LINK_REGISTRO + 1, 
-        updates.length, 
-        2
-      );
-      rangeToUpdate.setValues(updates);
-    }
-    
-    return {
-      success: true,
-      message: `✅ Se generaron ${contadorGenerados} links y códigos QR correctamente.`,
-      total: contadorGenerados
-    };
-    
-  } catch (e) {
-    return {
-      success: false,
-      message: "❌ Error: " + e.toString()
-    };
-  }
-}
-
-/**
- * Genera QR para un usuario específico (por RUT)
- * Útil para regenerar QR de un solo usuario sin afectar a los demás
- */
-function regenerarQRUsuario(rutInput) {
-  try {
-    if (CONFIG.WEB_APP.URL.includes('REEMPLAZAR')) {
-      throw new Error("Primero configura la URL de Web App en CONFIG.WEB_APP.URL");
-    }
-    
-    const sheet = getSheet('USUARIOS', 'USUARIOS');
-    const data = sheet.getDataRange().getValues();
-    const COL = CONFIG.COLUMNAS.USUARIOS;
-    const COL_LINK_REGISTRO = 15;
-    const COL_QR_REGISTRO = 16;
-    
-    const rutLimpio = cleanRut(rutInput);
-    
-    // Buscar el usuario
-    for (let i = 1; i < data.length; i++) {
-      if (cleanRut(data[i][COL.RUT]) === rutLimpio) {
-        const urlBase = CONFIG.WEB_APP.URL;
-        const linkRegistro = `${urlBase}?action=register&rut=${rutLimpio}`;
-        const formulaQR = `=IMAGE("https://quickchart.io/qr?size=300&text=${encodeURIComponent(linkRegistro)}")`;
-        
-        // Actualizar solo esa fila
-        sheet.getRange(i + 1, COL_LINK_REGISTRO + 1).setValue(linkRegistro);
-        sheet.getRange(i + 1, COL_QR_REGISTRO + 1).setValue(formulaQR);
-        
-        return {
-          success: true,
-          message: `✅ QR regenerado para ${data[i][COL.NOMBRE]}`
-        };
-      }
-    }
-    
-    return {
-      success: false,
-      message: "❌ Usuario no encontrado"
-    };
-    
-  } catch (e) {
-    return {
-      success: false,
-      message: "❌ Error: " + e.toString()
-    };
-  }
-}
-
-/**
- * Función auxiliar para encodear URL correctamente
- * (Apps Script no tiene encodeURIComponent nativo en todos los contextos)
- */
-function encodeURIComponent(str) {
-  return encodeURI(str).replace(/%20/g, '+');
 }
 
 // ==========================================
@@ -3699,128 +3511,65 @@ function validarUsuarioQR(rutInput) {
   }
 }
 
-// ==========================================
-// MÓDULO: ASISTENCIA QR
-// ==========================================
-
-/**
- * Valida que un RUT exista en BD_USUARIOS_SLIMAPP y esté ACTIVO
- */
-function validarRutParaQR(rutInput) {
-  try {
-    const sheetUsers = getSheet('USUARIOS', 'BD_SLIMAPP');
-    const data = sheetUsers.getDataRange().getDisplayValues();
-    const rutLimpio = cleanRut(rutInput);
-    const COL = CONFIG.COLUMNAS.USUARIOS;
-    
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      if (cleanRut(row[COL.RUT]) === rutLimpio) {
-        const estado = (row[COL.ESTADO] || "").toUpperCase();
-        
-        if (estado === "DESVINCULADO") {
-          return { 
-            success: false, 
-            error: "Usuario desvinculado. Contacta con la directiva." 
-          };
-        }
-        
-        return {
-          success: true,
-          nombre: row[COL.NOMBRE] || "Socio",
-          rut: row[COL.RUT]
-        };
-      }
-    }
-    
-    return { success: false, error: "RUT no encontrado en el sistema." };
-    
-  } catch (e) {
-    return { success: false, error: "Error del servidor: " + e.toString() };
-  }
-}
-
-/**
- * Verifica si un socio ya registró asistencia en una asamblea específica
- */
-function verificarDuplicadoAsamblea(rutInput, nombreAsamblea) {
-  try {
-    const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_IDS.ASISTENCIA);
-    const sheet = ss.getSheetByName("BD_ASISTENCIA");
-    
-    if (!sheet) return false; // No hay registros previos
-    
-    const data = sheet.getDataRange().getDisplayValues();
-    const rutLimpio = cleanRut(rutInput);
-    
-    // Columnas: A=FECHA_HORA, B=RUT, C=NOMBRE, D=ASAMBLEA, E=TIPO, F=GESTION
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const rutReg = cleanRut(row[1]); // Columna B
-      const asambleaReg = row[3]; // Columna D
-      
-      if (rutReg === rutLimpio && asambleaReg === nombreAsamblea) {
-        return true; // Ya existe registro
-      }
-    }
-    
-    return false; // No hay duplicado
-    
-  } catch (e) {
-    Logger.log("Error verificando duplicado: " + e.toString());
-    return false;
-  }
-}
-
-/**
- * Registra la asistencia de un socio en una asamblea (Check-in QR)
- */
-function registrarAsistenciaQR(rutInput, nombreAsamblea) {
-  const lock = LockService.getScriptLock();
-  
-  if (lock.tryLock(30000)) {
+function checkinQR(rutInput, nombreAsamblea) {
+  var lock = LockService.getScriptLock();
+  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
     try {
-      // 1. Validar que el usuario exista y esté activo
-      const validacion = validarRutParaQR(rutInput);
+      const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
       
-      if (!validacion.success) {
-        throw new Error(validacion.error);
+      // NOTA: El módulo de ASISTENCIA aún no está en la nueva estructura
+      // Por ahora usamos el spreadsheet principal
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      let sheetAsistencia = ss.getSheetByName("ASISTENCIA");
+      
+      if (!sheetAsistencia) {
+        sheetAsistencia = ss.insertSheet("ASISTENCIA");
+        sheetAsistencia.appendRow(["RUT", "ASAMBLEA", "TIPO ASISTENCIA", "GESTION", "DIRIGENTE"]);
       }
       
-      // 2. Verificar duplicado
-      if (verificarDuplicadoAsamblea(rutInput, nombreAsamblea)) {
-        throw new Error("Ya registraste tu asistencia en esta asamblea.");
+      const dataUsers = sheetUsers.getDataRange().getDisplayValues();
+      const rutLimpio = cleanRut(rutInput);
+      const COL = CONFIG.COLUMNAS.USUARIOS;
+      
+      let usuario = null;
+      for (let i = 1; i < dataUsers.length; i++) {
+        if (cleanRut(dataUsers[i][COL.RUT]) === rutLimpio) {
+          usuario = {
+            rut: dataUsers[i][COL.RUT],
+            nombre: dataUsers[i][COL.NOMBRE]
+          };
+          break;
+        }
       }
       
-      // 3. Registrar asistencia
-      const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_IDS.ASISTENCIA);
-      let sheet = ss.getSheetByName("BD_ASISTENCIA");
-      
-      if (!sheet) {
-        sheet = ss.insertSheet("BD_ASISTENCIA");
-        sheet.appendRow(["FECHA_HORA", "RUT", "NOMBRE", "ASAMBLEA", "TIPO_ASISTENCIA", "GESTION"]);
+      if (!usuario) {
+        throw new Error("Usuario no encontrado");
       }
       
-      const fechaHora = Utilities.formatDate(
-        new Date(), 
-        "America/Santiago", 
-        "dd/MM/yyyy HH:mm:ss"
-      );
+      // Verificar si ya registró asistencia en esta asamblea
+      const dataAsistencia = sheetAsistencia.getDataRange().getDisplayValues();
+      for (let i = 1; i < dataAsistencia.length; i++) {
+        const row = dataAsistencia[i];
+        if (cleanRut(row[0]) === rutLimpio && row[1] === nombreAsamblea) {
+          throw new Error("Ya registraste tu asistencia en esta asamblea.");
+        }
+      }
       
-      sheet.appendRow([
-        fechaHora,
-        validacion.rut,
-        validacion.nombre,
+      // Registrar asistencia
+      const fechaHora = new Date();
+      sheetAsistencia.appendRow([
+        usuario.rut,
         nombreAsamblea,
-        "Check-in QR",
-        "Sistema"
+        "Asistencia QR",
+        "Sistema",
+        ""
       ]);
       
       return {
         success: true,
-        nombre: validacion.nombre,
-        rut: validacion.rut,
-        fecha: fechaHora
+        nombre: usuario.nombre,
+        rut: usuario.rut,
+        fecha: fechaHora.toLocaleString('es-CL')
       };
       
     } catch (e) {
@@ -3830,42 +3579,6 @@ function registrarAsistenciaQR(rutInput, nombreAsamblea) {
     }
   } else {
     throw new Error("Sistema ocupado, intenta nuevamente.");
-  }
-}
-
-/**
- * Obtiene el historial de asistencia de un socio
- */
-function obtenerHistorialAsistenciaQR(rutInput) {
-  try {
-    const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_IDS.ASISTENCIA);
-    const sheet = ss.getSheetByName("BD_ASISTENCIA");
-    
-    if (!sheet) return { success: true, registros: [] };
-    
-    const data = sheet.getDataRange().getDisplayValues();
-    const rutLimpio = cleanRut(rutInput);
-    const registros = [];
-    
-    // Columnas: A=FECHA_HORA, B=RUT, C=NOMBRE, D=ASAMBLEA, E=TIPO, F=GESTION
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      if (cleanRut(row[1]) === rutLimpio) {
-        registros.push({
-          fecha: row[0] || "",
-          asamblea: row[3] || "Asamblea",
-          tipo: row[4] || "Check-in QR",
-          gestion: row[5] || "Sistema",
-          dirigente: "" // Por ahora no lo usamos
-        });
-      }
-    }
-    
-    registros.reverse(); // Más recientes primero
-    return { success: true, registros: registros };
-    
-  } catch (e) {
-    return { success: false, message: "Error: " + e.toString() };
   }
 }
 
