@@ -97,7 +97,30 @@
         // ========================================
         // CONFIGURACIÓN
         // ========================================
-        const params = <?!= JSON.stringify(data) ?>; 
+        // Leer parámetros directamente de la URL
+        function getUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const paramsObj = {};
+            for (const [key, value] of urlParams) {
+                paramsObj[key] = value;
+            }
+            return paramsObj;
+        }
+
+        // Intentar primero los parámetros del servidor, si no existen, leer de la URL
+        let params;
+        try {
+            params = <?!= JSON.stringify(data) ?>; 
+            // Si params está vacío, leer de la URL
+            if (!params || Object.keys(params).length === 0) {
+                params = getUrlParams();
+            }
+        } catch(e) {
+            // Si falla el servidor, leer de la URL
+            params = getUrlParams();
+        }
+
+        console.log('Parámetros detectados:', params);
         const STORAGE_KEY = 'slim_qr_rut';
 
         // Elementos DOM
@@ -128,8 +151,8 @@
                         <div class="text-xs space-y-1">
                             <p><span class="font-semibold text-slate-700">Nombre:</span> <span class="text-slate-600">${extraData.nombre}</span></p>
                             <p><span class="font-semibold text-slate-700">RUT:</span> <span class="text-slate-600">${extraData.rut}</span></p>
-                            <p><span class="font-semibold text-slate-700">Asamblea:</span> <span class="text-slate-600">${extraData.asamblea}</span></p>
-                            <p><span class="font-semibold text-slate-700">Hora:</span> <span class="text-slate-600">${extraData.hora}</span></p>
+                            ${extraData.asamblea ? `<p><span class="font-semibold text-slate-700">Asamblea:</span> <span class="text-slate-600">${extraData.asamblea}</span></p>` : ''}
+                            ${extraData.hora ? `<p><span class="font-semibold text-slate-700">Hora:</span> <span class="text-slate-600">${extraData.hora}</span></p>` : ''}
                         </div>
                     </div>
                 `;
@@ -177,9 +200,21 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Botón para volver a la app -->
+                    <button onclick="volverAplicacion()" class="mt-3 w-full py-2 px-4 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg">
+                        <span class="material-icons-round text-sm align-middle mr-1">arrow_back</span>
+                        Volver a la aplicación
+                    </button>
                 </div>
             `;
             contentArea.innerHTML += footerHTML;
+        }
+
+        function volverAplicacion() {
+            // URL de tu aplicación principal
+            const appUrl = 'https://script.google.com/macros/s/AKfycbzrmy_GgdzMpOLfycvxxUPHU6iyuL9Jv6As_4kxG7mG8oQ4RbV-ALUZw0oeSJnqbvvc/exec';
+            window.location.href = appUrl;
         }
 
         // ========================================
@@ -194,14 +229,15 @@
                     showLoader(false);
                     
                     if (response.success) {
-                        // Guardar RUT en localStorage
+                        // ✅ GUARDAR RUT EN LOCALSTORAGE
                         localStorage.setItem(STORAGE_KEY, rut);
                         deviceLabel.innerText = formatRutDisplay(rut);
                         deviceLabel.classList.add('text-green-600');
                         
+                        // Alerta de éxito
                         Swal.fire({
                             icon: 'success',
-                            title: '¡Registro Exitoso!',
+                            title: '¡Dispositivo Vinculado!',
                             html: `<div class="text-left text-sm">
                                     <p><strong>Nombre:</strong> ${response.nombre}</p>
                                     <p><strong>RUT:</strong> ${formatRutDisplay(response.rut)}</p>
@@ -210,13 +246,19 @@
                             showConfirmButton: false
                         });
                         
+                        // Mostrar confirmación
                         updateStatus(
                             'check_circle', 
-                            'Dispositivo Vinculado', 
-                            `Tu celular ha sido registrado exitosamente a nombre de <strong>${response.nombre}</strong>. Ahora puedes escanear códigos QR de asistencia en asambleas.`, 
-                            'text-green-600'
+                            '✅ Registro Exitoso', 
+                            `Tu celular ha sido vinculado exitosamente. Ahora puedes escanear códigos QR de asistencia en asambleas.`, 
+                            'text-green-600',
+                            {
+                                nombre: response.nombre,
+                                rut: formatRutDisplay(response.rut)
+                            }
                         );
                         
+                        // Agregar botón para volver
                         addSuccessFooter();
                     } else {
                         localStorage.removeItem(STORAGE_KEY);
@@ -274,7 +316,7 @@
                     
                     updateStatus(
                         'how_to_reg', 
-                        'Asistencia Registrada', 
+                        '✅ Asistencia Registrada', 
                         'Tu participación ha sido registrada correctamente.', 
                         'text-green-600',
                         {
@@ -285,6 +327,7 @@
                         }
                     );
                     
+                    // Agregar botón para volver
                     addSuccessFooter();
                 })
                 .withFailureHandler(function(err) {
