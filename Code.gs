@@ -1,4 +1,26 @@
 /**
+ * Servir HTML
+ */
+function doGet(e) {
+  // Verificar si viene de un QR (con parámetros action, rut o asamblea)
+  if (e.parameter.action || e.parameter.rut || e.parameter.asamblea) {
+    // Servir página QR con los parámetros
+    const template = HtmlService.createTemplateFromFile('QR_Access');
+    template.data = e.parameter; // Pasar parámetros a la página
+    return template.evaluate()
+        .setTitle('Control QR - Sindicato SLIM n°3')
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+        .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
+  }
+  
+  // Si no hay parámetros QR, servir página principal
+  return HtmlService.createHtmlOutputFromFile('Index')
+      .setTitle('Sindicato SLIM n°3 - App Socios')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
+}
+
+/**
  * Ejecuta la generación masiva de QR con confirmación
  */
 function ejecutarGenerarQRTodos() {
@@ -811,7 +833,7 @@ function crearSolicitudPrestamo(rutGestor, tipo, cuotas, medioPago, rutBeneficia
   var lock = LockService.getScriptLock();
   if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
     try {
-      const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
+      const sheetUsers = getSheet('USUARIOS', 'BD_SLIMAPP');
       const sheetPrestamos = getSheet('PRESTAMOS', 'PRESTAMOS');
       const COL_USER = CONFIG.COLUMNAS.USUARIOS;
       const COL_PRES = CONFIG.COLUMNAS.PRESTAMOS;
@@ -1984,7 +2006,7 @@ function verificarCambiosJustificaciones() {
         const rutUsuario = row[COL.RUT];
         
         // ⭐ VALIDACIÓN: Verificar que existe la hoja de usuarios
-        const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
+        const sheetUsers = getSheet('USUARIOS', 'BD_SLIMAPP');
         if (!sheetUsers) {
           console.error("❌ No se pudo acceder a la hoja de usuarios");
           continue;
@@ -2574,7 +2596,7 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
   const lock = LockService.getScriptLock();
   if (lock.tryLock(30000)) {
     try {
-      const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
+      const sheetUsers = getSheet('USUARIOS', 'BD_SLIMAPP');
       const sheetPermisos = getSheet('PERMISOS_MEDICOS', 'PERMISOS_MEDICOS');
       const COL_USER = CONFIG.COLUMNAS.USUARIOS;
       const COL_PERM = CONFIG.COLUMNAS.PERMISOS_MEDICOS;
@@ -3206,7 +3228,7 @@ function generarInformeAdministrador() {
     const blob = response.getBlob();
     blob.setName(`Informe_Prestamos_Solicitados_${new Date().toLocaleDateString('es-CL').replace(/\//g, '-')}.xlsx`);
     
-    const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
+    const sheetUsers = getSheet('USUARIOS', 'BD_SLIMAPP');
     const dataUsers = sheetUsers.getDataRange().getDisplayValues();
     const COL_USER = CONFIG.COLUMNAS.USUARIOS;
     let correoAdmin = "admin@sindicato.com";
@@ -3686,7 +3708,7 @@ function validarUsuarioQR(rutInput) {
  */
 function validarRutParaQR(rutInput) {
   try {
-    const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
+    const sheetUsers = getSheet('USUARIOS', 'BD_SLIMAPP');
     const data = sheetUsers.getDataRange().getDisplayValues();
     const rutLimpio = cleanRut(rutInput);
     const COL = CONFIG.COLUMNAS.USUARIOS;
