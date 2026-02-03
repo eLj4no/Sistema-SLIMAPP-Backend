@@ -1,17 +1,3 @@
-/**
- * Script vinculado a BD_PRESTAMOS para generar informes y notificaciones.
- */
-
-// 1. MENÚ PERSONALIZADO
-function onOpen() {
-  const ui = SpreadsheetApp.getUi();
-  ui.createMenu('Gestión Sindicato')
-      .addItem('📥 Generar Informe Semanal (Manual)', 'generarInformeConMonto')
-      .addSeparator()
-      .addItem('⚙️ Configurar Automatización (Lunes 16:30)', 'configurarDisparadorAutomatico')
-      .addToUi();
-}
-
 // 2. FUNCIÓN PRINCIPAL DE GENERACIÓN DE INFORME
 function generarInformeConMonto() {
   try {
