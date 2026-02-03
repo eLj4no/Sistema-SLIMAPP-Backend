@@ -212,9 +212,16 @@
         }
 
         function volverAplicacion() {
-            // URL de tu aplicación principal
-            const appUrl = 'https://script.google.com/macros/s/AKfycbzrmy_GgdzMpOLfycvxxUPHU6iyuL9Jv6As_4kxG7mG8oQ4RbV-ALUZw0oeSJnqbvvc/exec';
-            window.location.href = appUrl;
+            // Cerrar la ventana o mostrar mensaje
+            Swal.fire({
+                icon: 'success',
+                title: '✅ Todo listo',
+                text: 'Puedes cerrar esta ventana',
+                confirmButtonText: 'Cerrar',
+                confirmButtonColor: '#3b82f6'
+            }).then(() => {
+                window.close();
+            });
         }
 
         // ========================================
