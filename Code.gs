@@ -1,27 +1,4 @@
 /**
- * Crea menús personalizados en Google Sheets al abrir el archivo
- * IMPORTANTE: Esta es la ÚNICA función onOpen() del proyecto
- */
-function onOpen() {
-  const ui = SpreadsheetApp.getUi();
-  
-  // Menú principal de herramientas SLIM
-  ui.createMenu('🔧 SLIM - Herramientas')
-    .addSubMenu(ui.createMenu('📱 QR Asistencia')
-      .addItem('🔄 Generar QR para TODOS los usuarios', 'ejecutarGenerarQRTodos')
-      .addSeparator()
-      .addItem('📋 Instrucciones de configuración', 'mostrarInstruccionesQR')
-    )
-    .addSeparator()
-    .addSubMenu(ui.createMenu('📊 Informes')
-      .addItem('📥 Generar Informe Préstamos (Manual)', 'generarInformeConMonto')
-      .addSeparator()
-      .addItem('⚙️ Configurar Automatización (Lunes 16:30)', 'configurarDisparadorAutomatico')
-    )
-    .addToUi();
-}
-
-/**
  * Ejecuta la generación masiva de QR con confirmación
  */
 function ejecutarGenerarQRTodos() {
@@ -79,25 +56,16 @@ function mostrarInstruccionesQR() {
 }
 
 /**
- * Servir HTML
+ * Función Web App para sistema QR de asistencia
  */
 function doGet(e) {
-  // Verificar si viene de un QR (con parámetros action, rut o asamblea)
-  if (e.parameter.action || e.parameter.rut || e.parameter.asamblea) {
-    // Servir página QR con los parámetros
-    const template = HtmlService.createTemplateFromFile('QR_Access');
-    template.data = e.parameter; // Pasar parámetros a la página
-    return template.evaluate()
-        .setTitle('Control QR - Sindicato SLIM n°3')
-        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-        .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
-  }
+  const template = HtmlService.createTemplateFromFile("QR_Access");
+  template.data = e.parameter || {}; // Parámetros de la URL
   
-  // Si no hay parámetros QR, servir página principal
-  return HtmlService.createHtmlOutputFromFile('Index')
-      .setTitle('Sindicato SLIM n°3 - App Socios')
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
+  return template.evaluate()
+    .setTitle("Control de Asistencia QR - SLIM")
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 // ==========================================
