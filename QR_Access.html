@@ -3,34 +3,40 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Control de Asistencia QR - SLIM</title>
-    
-    <!-- Tailwind CSS -->
+    <title>Acceso QR - SLIM N°3</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Material Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Material+Icons+Round" rel="stylesheet">
-    
-    <!-- SweetAlert2 -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        
-        body { 
-            font-family: 'Inter', sans-serif; 
-        }
-        
+        body { font-family: 'Inter', sans-serif; }
         .glass-panel {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
         }
-        
-        .fade-in-up {
-            animation: fadeInUp 0.4s ease-out;
+        .animate-fade-in-up {
+            animation: fadeInUp 0.5s ease-out;
+        }<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Acceso QR - SLIM N°3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
         }
-        
+        .animate-fade-in-up {
+            animation: fadeInUp 0.5s ease-out;
+        }
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -40,19 +46,6 @@
                 opacity: 1;
                 transform: translateY(0);
             }
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .loader {
-            border: 3px solid #f3f4f6;
-            border-top: 3px solid #3b82f6;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 0.8s linear infinite;
         }
     </style>
 </head>
@@ -65,98 +58,40 @@
             <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
             <span class="material-icons-round text-4xl text-white mb-1 relative z-10">qr_code_scanner</span>
             <h1 class="text-white text-lg font-bold tracking-wide relative z-10">Control de Asistencia</h1>
-            <p class="text-blue-100 text-xs opacity-90 relative z-10">Sindicato SLIM n°3</p>
+            <p class="text-blue-100 text-xs opacity-90 relative z-10">Sindicato SLIM N°3</p>
         </div>
 
         <!-- Contenido Dinámico -->
-        <div class="p-6 text-center min-h-[300px] flex flex-col justify-center">
+        <div class="p-4 text-center">
             
             <!-- Loader -->
-            <div id="loader" class="hidden flex flex-col items-center justify-center py-8">
-                <div class="loader mb-4"></div>
-                <p class="text-slate-600 text-sm font-medium animate-pulse">Procesando solicitud...</p>
+            <div id="loader" class="hidden flex flex-col items-center justify-center py-3">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-3"></div>
+                <p class="text-slate-600 text-xs font-medium animate-pulse">Procesando solicitud...</p>
             </div>
 
             <!-- Estado Inicial / Resultados -->
-            <div id="content-area" class="space-y-4">
-                <p class="text-slate-500 italic">Cargando información...</p>
+            <div id="content-area" class="space-y-3">
+                <p class="text-slate-500 italic text-sm">Esperando acción...</p>
             </div>
 
         </div>
 
-        <!-- Footer con RUT del dispositivo -->
-        <div class="bg-slate-50 p-3 text-center border-t border-slate-200">
-            <p class="text-xs text-slate-400">
-                <span class="material-icons-round text-sm align-middle mr-1">smartphone</span>
-                Dispositivo: <span id="device-id" class="font-mono font-bold text-slate-600">No registrado</span>
+        <!-- Footer con ID del dispositivo -->
+        <div class="bg-slate-50 p-2 text-center border-t border-slate-200">
+            <p class="text-[10px] text-slate-400">
+                RUT Registrado: <span id="device-id" class="font-mono font-bold text-slate-600">No registrado</span>
             </p>
         </div>
-    </div>
 
     <script>
-    // ========================================
-    // CONFIGURACIÓN CON DEBUG MEJORADO
-    // ========================================
-    
-    console.log('=== DEBUG QR_Access.html ===');
-    console.log('URL actual:', window.location.href);
-    
-    // Leer parámetros directamente de la URL
-    function getUrlParams() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const paramsObj = {};
-        for (const [key, value] of urlParams) {
-            paramsObj[key] = value;
-        }
-        console.log('Parámetros de URL directa:', paramsObj);
-        return paramsObj;
-    }
+        const params = <?!= JSON.stringify(data) ?>; 
+        const STORAGE_KEY = 'qr_access_rut';
 
-    // Intentar primero los parámetros del servidor
-    let params;
-    try {
-        params = <?!= JSON.stringify(data) ?>; 
-        console.log('Parámetros desde servidor:', params);
-        
-        // Si params está vacío, leer de la URL
-        if (!params || Object.keys(params).length === 0) {
-            console.log('Params del servidor vacíos, leyendo de URL...');
-            params = getUrlParams();
-        }
-    } catch(e) {
-        console.error('Error leyendo params del servidor:', e);
-        params = getUrlParams();
-    }
-
-    console.log('✅ Parámetros FINALES:', params);
-    console.log('Action:', params.action);
-    console.log('RUT:', params.rut);
-    console.log('Asamblea:', params.asamblea);
-    
-    // ⭐ MOSTRAR DEBUG EN PANTALLA
-    if (params && Object.keys(params).length > 0) {
-        setTimeout(() => {
-            const debugDiv = document.createElement('div');
-            debugDiv.className = 'bg-yellow-100 border-2 border-yellow-400 p-3 mb-3 rounded-lg text-xs';
-            debugDiv.innerHTML = `
-                <strong class="text-yellow-800">🔍 DEBUG:</strong><br>
-                <pre class="mt-1 text-yellow-900">${JSON.stringify(params, null, 2)}</pre>
-            `;
-            document.getElementById('content-area').prepend(debugDiv);
-        }, 100);
-    }
-    
-    const STORAGE_KEY = 'slim_qr_rut';
-
-        // Elementos DOM
         const loader = document.getElementById('loader');
         const contentArea = document.getElementById('content-area');
         const deviceLabel = document.getElementById('device-id');
 
-        // ========================================
-        // FUNCIONES UI
-        // ========================================
-        
         function showLoader(show) {
             if (show) {
                 loader.classList.remove('hidden');
@@ -167,55 +102,62 @@
             }
         }
 
-        function updateStatus(icon, title, message, colorClass, extraData = null) {
-            let extraHtml = '';
+        function updateStatus(icon, title, message, colorClass, detailedInfo = null) {
+            let detailsHTML = '';
             
-            if (extraData) {
-                extraHtml = `
-                    <div class="mt-4 bg-slate-50 rounded-lg p-3 text-left">
-                        <div class="text-xs space-y-1">
-                            <p><span class="font-semibold text-slate-700">Nombre:</span> <span class="text-slate-600">${extraData.nombre}</span></p>
-                            <p><span class="font-semibold text-slate-700">RUT:</span> <span class="text-slate-600">${extraData.rut}</span></p>
-                            ${extraData.asamblea ? `<p><span class="font-semibold text-slate-700">Asamblea:</span> <span class="text-slate-600">${extraData.asamblea}</span></p>` : ''}
-                            ${extraData.hora ? `<p><span class="font-semibold text-slate-700">Hora:</span> <span class="text-slate-600">${extraData.hora}</span></p>` : ''}
+            if (detailedInfo) {
+                detailsHTML = `
+                    <div class="bg-white rounded-xl p-2.5 mt-2 text-left shadow-md border border-slate-200">
+                        <div class="space-y-1">
+                            <div>
+                                <p class="text-[9px] text-slate-500 font-semibold mb-0">Nombre:</p>
+                                <p class="text-[11px] text-slate-800 font-bold leading-tight">${detailedInfo.nombre}</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] text-slate-500 font-semibold mb-0">RUT:</p>
+                                <p class="text-[11px] text-slate-800 font-bold">${detailedInfo.rut}</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] text-slate-500 font-semibold mb-0">Asamblea:</p>
+                                <p class="text-[11px] text-slate-800 font-bold leading-tight">${detailedInfo.asamblea}</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] text-slate-500 font-semibold mb-0">Hora:</p>
+                                <p class="text-[11px] text-slate-800 font-bold">${detailedInfo.hora}</p>
+                            </div>
                         </div>
                     </div>
                 `;
             }
             
             contentArea.innerHTML = `
-                <div class="flex flex-col items-center fade-in-up">
-                    <div class="rounded-full p-4 ${colorClass} bg-opacity-10 mb-3">
-                        <span class="material-icons-round text-4xl ${colorClass}">${icon}</span>
+                <div class="flex flex-col items-center animate-fade-in-up">
+                    <div class="rounded-full p-2 ${colorClass} bg-opacity-10 mb-1.5">
+                        <span class="material-icons-round text-2xl ${colorClass}">${icon}</span>
                     </div>
-                    <h2 class="text-lg font-bold text-slate-800 mb-2">${title}</h2>
-                    <p class="text-slate-600 text-sm leading-relaxed">${message}</p>
-                    ${extraHtml}
+                    <h2 class="text-sm font-bold text-slate-800 mb-0.5">${title}</h2>
+                    <p class="text-slate-600 text-[11px] leading-snug mb-1.5">${message}</p>
+                    ${detailsHTML}
                 </div>
             `;
         }
 
         function formatRutDisplay(rut) {
-            if (!rut) return "Sin RUT";
-            
-            const cleaned = rut.toString().replace(/[^0-9kK]/g, '');
-            
-            if (cleaned.length < 2) return cleaned;
-            
-            const dv = cleaned.slice(-1).toUpperCase();
-            const body = cleaned.slice(0, -1);
-            
+            if (!rut) return "";
+            let value = rut.replace(/[^0-9kK]/g, '').toUpperCase();
+            if (value.length < 2) return value;
+            const body = value.slice(0, -1);
+            const dv = value.slice(-1);
             let formattedBody = "";
-            for (let i = body.length - 1, count = 0; i >= 0; i--, count++) {
-                formattedBody = body[i] + (count > 0 && count % 3 === 0 ? "." : "") + formattedBody;
+            for (let i = body.length - 1, j = 0; i >= 0; i--, j++) {
+                formattedBody = body.charAt(i) + ((j > 0 && j % 3 === 0) ? "." : "") + formattedBody;
             }
-            
             return formattedBody + "-" + dv;
         }
 
-        function addSuccessFooter() {
-            const footerHTML = `
-                <div class="mt-4 pt-4 border-t border-slate-200">
+        function addBackButton() {
+            const backButtonHTML = `
+                <div class="mt-3 pt-3 border-t border-slate-200">
                     <div class="bg-green-50 border-l-4 border-green-400 p-3 rounded-lg">
                         <div class="flex items-start">
                             <span class="material-icons-round text-green-600 mr-2 text-xl">check_circle</span>
@@ -225,171 +167,14 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Botón para volver a la app -->
-                    <button onclick="volverAplicacion()" class="mt-3 w-full py-2 px-4 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg">
-                        <span class="material-icons-round text-sm align-middle mr-1">arrow_back</span>
-                        Volver a la aplicación
-                    </button>
                 </div>
             `;
-            contentArea.innerHTML += footerHTML;
+            contentArea.innerHTML += backButtonHTML;
         }
-
-        function volverAplicacion() {
-            // Cerrar la ventana o mostrar mensaje
-            Swal.fire({
-                icon: 'success',
-                title: '✅ Todo listo',
-                text: 'Puedes cerrar esta ventana',
-                confirmButtonText: 'Cerrar',
-                confirmButtonColor: '#3b82f6'
-            }).then(() => {
-                window.close();
-            });
-        }
-
-        // ========================================
-        // MANEJADORES DE EVENTOS
-        // ========================================
-
-        function handleRegistration(rut) {
-            showLoader(true);
-            
-            google.script.run
-                .withSuccessHandler(function(response) {
-                    showLoader(false);
-                    
-                    if (response.success) {
-                        // ✅ GUARDAR RUT EN LOCALSTORAGE
-                        localStorage.setItem(STORAGE_KEY, rut);
-                        deviceLabel.innerText = formatRutDisplay(rut);
-                        deviceLabel.classList.add('text-green-600');
-                        
-                        // Alerta de éxito
-                        Swal.fire({
-                            icon: 'success',
-                            title: '¡Dispositivo Vinculado!',
-                            html: `<div class="text-left text-sm">
-                                    <p><strong>Nombre:</strong> ${response.nombre}</p>
-                                    <p><strong>RUT:</strong> ${formatRutDisplay(response.rut)}</p>
-                                   </div>`,
-                            timer: 3000,
-                            showConfirmButton: false
-                        });
-                        
-                        // Mostrar confirmación
-                        updateStatus(
-                            'check_circle', 
-                            '✅ Registro Exitoso', 
-                            `Tu celular ha sido vinculado exitosamente. Ahora puedes escanear códigos QR de asistencia en asambleas.`, 
-                            'text-green-600',
-                            {
-                                nombre: response.nombre,
-                                rut: formatRutDisplay(response.rut)
-                            }
-                        );
-                        
-                        // Agregar botón para volver
-                        addSuccessFooter();
-                    } else {
-                        localStorage.removeItem(STORAGE_KEY);
-                        
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Acceso Denegado',
-                            text: response.error,
-                            confirmButtonColor: '#dc2626'
-                        });
-                        
-                        updateStatus(
-                            'cancel', 
-                            'Error de Registro', 
-                            response.error, 
-                            'text-red-600'
-                        );
-                    }
-                })
-                .withFailureHandler(function(err) {
-                    showLoader(false);
-                    Swal.fire('Error de Conexión', err.message || err, 'error');
-                    updateStatus(
-                        'error', 
-                        'Error del Sistema', 
-                        'No se pudo conectar con el servidor. Intenta nuevamente.', 
-                        'text-red-600'
-                    );
-                })
-                .validarRutParaQR(rut);
-        }
-
-        function handleCheckin(rut, asamblea) {
-            showLoader(true);
-            
-            google.script.run
-                .withSuccessHandler(function(response) {
-                    showLoader(false);
-                    
-                    // Extraer solo la hora del timestamp
-                    const horaRegistro = response.fecha.split(' ')[1] || response.fecha;
-                    
-                    Swal.fire({
-                        icon: 'success',
-                        title: '¡Asistencia Registrada!',
-                        html: `<div class="text-left text-sm">
-                                <p><strong>Nombre:</strong> ${response.nombre}</p>
-                                <p><strong>Asamblea:</strong> ${asamblea}</p>
-                                <p><strong>Hora:</strong> ${horaRegistro}</p>
-                               </div>`,
-                        timer: 4000,
-                        timerProgressBar: true,
-                        confirmButtonColor: '#16A34A'
-                    });
-                    
-                    updateStatus(
-                        'how_to_reg', 
-                        '✅ Asistencia Registrada', 
-                        'Tu participación ha sido registrada correctamente.', 
-                        'text-green-600',
-                        {
-                            nombre: response.nombre,
-                            rut: formatRutDisplay(response.rut),
-                            asamblea: asamblea,
-                            hora: horaRegistro
-                        }
-                    );
-                    
-                    // Agregar botón para volver
-                    addSuccessFooter();
-                })
-                .withFailureHandler(function(err) {
-                    showLoader(false);
-                    
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'No se pudo registrar',
-                        text: err.message || err,
-                        confirmButtonColor: '#dc2626'
-                    });
-                    
-                    updateStatus(
-                        'warning', 
-                        'Error de Registro', 
-                        err.message || err, 
-                        'text-orange-600'
-                    );
-                })
-                .registrarAsistenciaQR(rut, asamblea);
-        }
-
-        // ========================================
-        // INICIALIZACIÓN
-        // ========================================
 
         window.onload = function() {
             const localUser = localStorage.getItem(STORAGE_KEY);
             
-            // Actualizar footer si hay usuario registrado
             if (localUser) {
                 deviceLabel.innerText = formatRutDisplay(localUser);
                 deviceLabel.classList.add('text-green-600');
@@ -399,24 +184,20 @@
             const asamblea = params.asamblea;
             const rutFromUrl = params.rut;
 
-            // ========================================
-            // CASO 1: REGISTRO DEL DISPOSITIVO
-            // ========================================
+            // CASO 1: Registro del Dispositivo (QR Personal del Usuario)
             if (action === "register") {
                 if (rutFromUrl) {
                     handleRegistration(rutFromUrl);
                 } else {
                     updateStatus(
                         'qr_code_2', 
-                        'QR de Registro', 
-                        'Para vincular tu dispositivo, debes escanear tu código QR personal proporcionado por un dirigente del sindicato. Este proceso solo se realiza una vez.', 
-                        'text-slate-600'
+                        'Bienvenido', 
+                        'Para comenzar a registrar su asistencia con el sistema QR, debe solicitar presencialmente la vinculación de su teléfono al sistema a través de un dirigente de la organización. Este trámite solo se realiza una vez o cada vez que cambie de dispositivo.', 
+                        'text-slate-500'
                     );
                 }
             } 
-            // ========================================
-            // CASO 2: CHECK-IN EN ASAMBLEA
-            // ========================================
+            // CASO 2: Fichaje (QR en Punto de Control)
             else if (action === "checkin") {
                 if (!localUser) {
                     Swal.fire({
@@ -426,38 +207,443 @@
                         confirmButtonText: 'Entendido',
                         confirmButtonColor: '#2563EB'
                     });
-                    
                     updateStatus(
                         'smartphone', 
-                        'Dispositivo No Vinculado', 
-                        'Para registrar asistencia, primero debes vincular tu celular al sistema. Acércate a un dirigente para obtener tu código QR personal.', 
-                        'text-red-600'
+                        'No Registrado', 
+                        'Primero debes registrar tu dispositivo en el sistema del sindicato. Para esto, acércate presencialmente a una oficina de nuestra organización.', 
+                        'text-red-500'
                     );
                 } else {
-                    handleCheckin(localUser, asamblea || "Asamblea Ordinaria");
+                    handleCheckin(localUser, asamblea || "Asamblea Desconocida");
                 }
             } 
-            // ========================================
-            // CASO 3: VISTA DEFAULT (sin params)
-            // ========================================
+            // CASO 3: Vista por defecto
             else {
                 if (localUser) {
                     updateStatus(
-                        'verified_user', 
-                        'Dispositivo Configurado', 
-                        `Tu celular está registrado como <strong>${formatRutDisplay(localUser)}</strong>. Escanea un código QR de asamblea para registrar tu asistencia.`, 
-                        'text-blue-600'
+                        'account_circle', 
+                        'Dispositivo Vinculado', 
+                        `Hola, estás identificado como <b>${formatRutDisplay(localUser)}</b>.<br><br>Para registrar tu asistencia, escanea el código QR del punto de control. Serás dirigido al sistema de registro QR del Sindicato SLIM N°3.`, 
+                        'text-blue-500'
                     );
                 } else {
                     updateStatus(
-                        'qr_code_scanner', 
-                        'Sistema de Asistencia QR', 
-                        'Para comenzar, escanea tu código QR personal proporcionado por un dirigente.', 
-                        'text-slate-600'
+                        'qr_code_2', 
+                        'Bienvenido', 
+                        'Para comenzar, escanea tu código QR personal de registro.', 
+                        'text-slate-500'
                     );
                 }
             }
         };
+
+        function handleRegistration(rut) {
+            showLoader(true);
+            google.script.run
+                .withSuccessHandler(function(response) {
+                    showLoader(false);
+                    if (response.success) {
+                        localStorage.setItem(STORAGE_KEY, rut);
+                        deviceLabel.innerText = formatRutDisplay(rut);
+                        deviceLabel.classList.add('text-green-600');
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Bienvenido!',
+                            html: `Dispositivo registrado correctamente para:<br><strong>${response.nombre}</strong>`,
+                            timer: 3000,
+                            showConfirmButton: false
+                        });
+                        
+                        updateStatus(
+                            'check_circle', 
+                            'Registro Exitoso', 
+                            `Dispositivo vinculado a <b>${response.nombre}</b>.`, 
+                            'text-green-500'
+                        );
+                        
+                        addBackButton();
+                        
+                    } else {
+                        localStorage.removeItem(STORAGE_KEY);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Acceso Denegado',
+                            text: response.error,
+                        });
+                        updateStatus(
+                            'cancel', 
+                            'Error de Registro', 
+                            response.error, 
+                            'text-red-500'
+                        );
+                    }
+                })
+                .withFailureHandler(function(err) {
+                    showLoader(false);
+                    Swal.fire('Error', 'Error de conexión: ' + err, 'error');
+                })
+                .validarUsuarioQR(rut);
+        }
+
+        function handleCheckin(rut, asamblea) {
+            showLoader(true);
+            google.script.run
+                .withSuccessHandler(function(response) {
+                    showLoader(false);
+                    
+                    const horaRegistro = response.fecha.split(' ')[1] || new Date().toLocaleTimeString('es-CL');
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Registrado!',
+                        html: `<div class="text-left text-sm space-y-1">
+                                <p><b>Nombre:</b> ${response.nombre}</p>
+                                <p><b>RUT:</b> ${formatRutDisplay(response.rut)}</p>
+                                <p><b>Asamblea:</b> ${asamblea}</p>
+                                <p><b>Hora:</b> ${horaRegistro}</p>
+                               </div>`,
+                        timer: 4000,
+                        timerProgressBar: true,
+                        confirmButtonColor: '#16A34A'
+                    });
+                    
+                    updateStatus(
+                        'check_circle', 
+                        'Asistencia Registrada', 
+                        'Tu asistencia ha sido registrada exitosamente.', 
+                        'text-green-600',
+                        {
+                            nombre: response.nombre,
+                            rut: formatRutDisplay(response.rut),
+                            asamblea: asamblea,
+                            hora: horaRegistro
+                        }
+                    );
+                    
+                    addBackButton();
+                })
+                .withFailureHandler(function(err) {
+                    showLoader(false);
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Atención',
+                        text: err.message || err
+                    });
+                    updateStatus(
+                        'warning', 
+                        'No se pudo registrar', 
+                        err.message || err, 
+                        'text-red-500'
+                    );
+                })
+                .checkinQR(rut, asamblea);
+        }
+    </script>
+</body>
+</html>
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-900 min-h-screen flex items-center justify-center p-4">
+
+    <div class="glass-panel w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-slate-700/30">
+        
+        <!-- Encabezado -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-center relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+            <span class="material-icons-round text-4xl text-white mb-1 relative z-10">qr_code_scanner</span>
+            <h1 class="text-white text-lg font-bold tracking-wide relative z-10">Control de Asistencia</h1>
+            <p class="text-blue-100 text-xs opacity-90 relative z-10">Sindicato SLIM N°3</p>
+        </div>
+
+        <!-- Contenido Dinámico -->
+        <div class="p-4 text-center">
+            
+            <!-- Loader -->
+            <div id="loader" class="hidden flex flex-col items-center justify-center py-3">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-3"></div>
+                <p class="text-slate-600 text-xs font-medium animate-pulse">Procesando solicitud...</p>
+            </div>
+
+            <!-- Estado Inicial / Resultados -->
+            <div id="content-area" class="space-y-3">
+                <p class="text-slate-500 italic text-sm">Esperando acción...</p>
+            </div>
+
+        </div>
+
+        <!-- Footer con ID del dispositivo -->
+        <div class="bg-slate-50 p-2 text-center border-t border-slate-200">
+            <p class="text-[10px] text-slate-400">
+                RUT Registrado: <span id="device-id" class="font-mono font-bold text-slate-600">No registrado</span>
+            </p>
+        </div>
+
+    <script>
+        const params = <?!= JSON.stringify(data) ?>; 
+        const STORAGE_KEY = 'qr_access_rut';
+
+        const loader = document.getElementById('loader');
+        const contentArea = document.getElementById('content-area');
+        const deviceLabel = document.getElementById('device-id');
+
+        function showLoader(show) {
+            if (show) {
+                loader.classList.remove('hidden');
+                contentArea.classList.add('hidden');
+            } else {
+                loader.classList.add('hidden');
+                contentArea.classList.remove('hidden');
+            }
+        }
+
+        function updateStatus(icon, title, message, colorClass, detailedInfo = null) {
+            let detailsHTML = '';
+            
+            if (detailedInfo) {
+                detailsHTML = `
+                    <div class="bg-white rounded-xl p-2.5 mt-2 text-left shadow-md border border-slate-200">
+                        <div class="space-y-1">
+                            <div>
+                                <p class="text-[9px] text-slate-500 font-semibold mb-0">Nombre:</p>
+                                <p class="text-[11px] text-slate-800 font-bold leading-tight">${detailedInfo.nombre}</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] text-slate-500 font-semibold mb-0">RUT:</p>
+                                <p class="text-[11px] text-slate-800 font-bold">${detailedInfo.rut}</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] text-slate-500 font-semibold mb-0">Asamblea:</p>
+                                <p class="text-[11px] text-slate-800 font-bold leading-tight">${detailedInfo.asamblea}</p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] text-slate-500 font-semibold mb-0">Hora:</p>
+                                <p class="text-[11px] text-slate-800 font-bold">${detailedInfo.hora}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            contentArea.innerHTML = `
+                <div class="flex flex-col items-center animate-fade-in-up">
+                    <div class="rounded-full p-2 ${colorClass} bg-opacity-10 mb-1.5">
+                        <span class="material-icons-round text-2xl ${colorClass}">${icon}</span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-800 mb-0.5">${title}</h2>
+                    <p class="text-slate-600 text-[11px] leading-snug mb-1.5">${message}</p>
+                    ${detailsHTML}
+                </div>
+            `;
+        }
+
+        function formatRutDisplay(rut) {
+            if (!rut) return "";
+            let value = rut.replace(/[^0-9kK]/g, '').toUpperCase();
+            if (value.length < 2) return value;
+            const body = value.slice(0, -1);
+            const dv = value.slice(-1);
+            let formattedBody = "";
+            for (let i = body.length - 1, j = 0; i >= 0; i--, j++) {
+                formattedBody = body.charAt(i) + ((j > 0 && j % 3 === 0) ? "." : "") + formattedBody;
+            }
+            return formattedBody + "-" + dv;
+        }
+
+        function addBackButton() {
+            const backButtonHTML = `
+                <div class="mt-3 pt-3 border-t border-slate-200">
+                    <div class="bg-green-50 border-l-4 border-green-400 p-3 rounded-lg">
+                        <div class="flex items-start">
+                            <span class="material-icons-round text-green-600 mr-2 text-xl">check_circle</span>
+                            <div>
+                                <h3 class="text-xs font-bold text-green-800 mb-0.5">Operación completada</h3>
+                                <p class="text-[10px] text-green-700">Ya puedes cerrar esta ventana.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            contentArea.innerHTML += backButtonHTML;
+        }
+
+        window.onload = function() {
+            const localUser = localStorage.getItem(STORAGE_KEY);
+            
+            if (localUser) {
+                deviceLabel.innerText = formatRutDisplay(localUser);
+                deviceLabel.classList.add('text-green-600');
+            }
+
+            const action = params.action;
+            const asamblea = params.asamblea;
+            const rutFromUrl = params.rut;
+
+            // CASO 1: Registro del Dispositivo (QR Personal del Usuario)
+            if (action === "register") {
+                if (rutFromUrl) {
+                    handleRegistration(rutFromUrl);
+                } else {
+                    updateStatus(
+                        'qr_code_2', 
+                        'Bienvenido', 
+                        'Para comenzar a registrar su asistencia con el sistema QR, debe solicitar presencialmente la vinculación de su teléfono al sistema a través de un dirigente de la organización. Este trámite solo se realiza una vez o cada vez que cambie de dispositivo.', 
+                        'text-slate-500'
+                    );
+                }
+            } 
+            // CASO 2: Fichaje (QR en Punto de Control)
+            else if (action === "checkin") {
+                if (!localUser) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Dispositivo no registrado',
+                        text: 'Primero debes escanear tu código QR personal para configurar este dispositivo.',
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#2563EB'
+                    });
+                    updateStatus(
+                        'smartphone', 
+                        'No Registrado', 
+                        'Primero debes registrar tu dispositivo en el sistema del sindicato. Para esto, acércate presencialmente a una oficina de nuestra organización.', 
+                        'text-red-500'
+                    );
+                } else {
+                    handleCheckin(localUser, asamblea || "Asamblea Desconocida");
+                }
+            } 
+            // CASO 3: Vista por defecto
+            else {
+                if (localUser) {
+                    updateStatus(
+                        'account_circle', 
+                        'Dispositivo Vinculado', 
+                        `Hola, estás identificado como <b>${formatRutDisplay(localUser)}</b>.<br><br>Para registrar tu asistencia, escanea el código QR del punto de control. Serás dirigido al sistema de registro QR del Sindicato SLIM N°3.`, 
+                        'text-blue-500'
+                    );
+                } else {
+                    updateStatus(
+                        'qr_code_2', 
+                        'Bienvenido', 
+                        'Para comenzar, escanea tu código QR personal de registro.', 
+                        'text-slate-500'
+                    );
+                }
+            }
+        };
+
+        function handleRegistration(rut) {
+            showLoader(true);
+            google.script.run
+                .withSuccessHandler(function(response) {
+                    showLoader(false);
+                    if (response.success) {
+                        localStorage.setItem(STORAGE_KEY, rut);
+                        deviceLabel.innerText = formatRutDisplay(rut);
+                        deviceLabel.classList.add('text-green-600');
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Bienvenido!',
+                            html: `Dispositivo registrado correctamente para:<br><strong>${response.nombre}</strong>`,
+                            timer: 3000,
+                            showConfirmButton: false
+                        });
+                        
+                        updateStatus(
+                            'check_circle', 
+                            'Registro Exitoso', 
+                            `Dispositivo vinculado a <b>${response.nombre}</b>.`, 
+                            'text-green-500'
+                        );
+                        
+                        addBackButton();
+                        
+                    } else {
+                        localStorage.removeItem(STORAGE_KEY);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Acceso Denegado',
+                            text: response.error,
+                        });
+                        updateStatus(
+                            'cancel', 
+                            'Error de Registro', 
+                            response.error, 
+                            'text-red-500'
+                        );
+                    }
+                })
+                .withFailureHandler(function(err) {
+                    showLoader(false);
+                    Swal.fire('Error', 'Error de conexión: ' + err, 'error');
+                })
+                .validarUsuarioQR(rut);
+        }
+
+        function handleCheckin(rut, asamblea) {
+            showLoader(true);
+            google.script.run
+                .withSuccessHandler(function(response) {
+                    showLoader(false);
+                    
+                    const horaRegistro = response.fecha.split(' ')[1] || new Date().toLocaleTimeString('es-CL');
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Registrado!',
+                        html: `<div class="text-left text-sm space-y-1">
+                                <p><b>Nombre:</b> ${response.nombre}</p>
+                                <p><b>RUT:</b> ${formatRutDisplay(response.rut)}</p>
+                                <p><b>Asamblea:</b> ${asamblea}</p>
+                                <p><b>Hora:</b> ${horaRegistro}</p>
+                               </div>`,
+                        timer: 4000,
+                        timerProgressBar: true,
+                        confirmButtonColor: '#16A34A'
+                    });
+                    
+                    updateStatus(
+                        'check_circle', 
+                        'Asistencia Registrada', 
+                        'Tu asistencia ha sido registrada exitosamente.', 
+                        'text-green-600',
+                        {
+                            nombre: response.nombre,
+                            rut: formatRutDisplay(response.rut),
+                            asamblea: asamblea,
+                            hora: horaRegistro
+                        }
+                    );
+                    
+                    addBackButton();
+                })
+                .withFailureHandler(function(err) {
+                    showLoader(false);
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Atención',
+                        text: err.message || err
+                    });
+                    updateStatus(
+                        'warning', 
+                        'No se pudo registrar', 
+                        err.message || err, 
+                        'text-red-500'
+                    );
+                })
+                .checkinQR(rut, asamblea);
+        }
     </script>
 </body>
 </html>
