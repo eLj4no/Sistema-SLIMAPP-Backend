@@ -1,14 +1,22 @@
 /**
- * Crea un menú personalizado en Google Sheets al abrir el archivo
+ * Crea menús personalizados en Google Sheets al abrir el archivo
+ * IMPORTANTE: Esta es la ÚNICA función onOpen() del proyecto
  */
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
   
+  // Menú principal de herramientas SLIM
   ui.createMenu('🔧 SLIM - Herramientas')
     .addSubMenu(ui.createMenu('📱 QR Asistencia')
       .addItem('🔄 Generar QR para TODOS los usuarios', 'ejecutarGenerarQRTodos')
       .addSeparator()
       .addItem('📋 Instrucciones de configuración', 'mostrarInstruccionesQR')
+    )
+    .addSeparator()
+    .addSubMenu(ui.createMenu('📊 Informes')
+      .addItem('📥 Generar Informe Préstamos (Manual)', 'generarInformeConMonto')
+      .addSeparator()
+      .addItem('⚙️ Configurar Automatización (Lunes 16:30)', 'configurarDisparadorAutomatico')
     )
     .addToUi();
 }
