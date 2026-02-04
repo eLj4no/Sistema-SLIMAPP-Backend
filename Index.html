@@ -4603,6 +4603,13 @@ divForm.classList.add('flex');
         google.script.run
           .withSuccessHandler(function(response) {
             loader.classList.add('hidden');
+
+            // ⭐ DEBUGGING: Ver qué datos llegan
+            console.log('=== RESPUESTA COMPLETA ===');
+            console.log(response);
+            console.log('QR Registro:', response.qrRegistro);
+            console.log('Tipo de QR:', typeof response.qrRegistro);
+            console.log('Longitud QR:', response.qrRegistro ? response.qrRegistro.length : 0);
             
             if (response.success) {
               // CASO EXITOSO: Mostrar ID Credencial y QR
@@ -4641,7 +4648,7 @@ divForm.classList.add('flex');
                       <div class="font-mono text-2xl font-bold text-teal-900 tracking-wide">${response.idCredencial || 'S/D'}</div>
                     </div>
                     
-                    ${response.qrRegistro ? `
+                    ${response.qrRegistro && response.qrRegistro.trim().length > 0 ? `
                     <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-300 p-4 mt-4">
                       <label class="block text-[10px] font-bold text-purple-700 uppercase tracking-wider mb-3 flex items-center gap-1">
                         <span class="material-icons-round text-sm">qr_code_2</span>
