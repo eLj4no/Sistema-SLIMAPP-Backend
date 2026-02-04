@@ -1,3984 +1,4710 @@
-/**
- * Servir HTML
- */
-function doGet(e) {
-  // Verificar si viene de un QR (con parámetros action, rut o asamblea)
-  if (e.parameter.action || e.parameter.rut || e.parameter.asamblea) {
-    // Servir página QR con los parámetros
-    const template = HtmlService.createTemplateFromFile('QR_Access');
-    template.data = e.parameter; // Pasar parámetros a la página
-    return template.evaluate()
-        .setTitle('Control QR - Sindicato SLIM n°3')
-        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-        .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
-  }
-  
-  // Si no hay parámetros QR, servir página principal
-  return HtmlService.createHtmlOutputFromFile('Index')
-      .setTitle('Sindicato SLIM n°3 - App Socios')
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
-}
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
-// ==========================================
-// CONFIGURACIÓN GLOBAL - IDs DE SPREADSHEETS Y CARPETAS
-// ==========================================
-const CONFIG = {
-  SPREADSHEETS: {
-    USUARIOS: "1m7KLd3b3BzKOAI10I5E32MVf_L34XWAGFonhTg37TVM",
-    JUSTIFICACIONES: "1Hwbly__MXjl9uwJb-spXdah-R3v9SAMOCFHem92uOUg",
-    APELACIONES: "11nrvVsf84THWQ7j6NfAr_unyIcBV7aykxACS8R27PwE",
-    PRESTAMOS: "1h-_sJD4rOCuMjlfSouP7a6gfoodHyzI4MOBRUyOW5XU",
-    PERMISOS_MEDICOS: "1VYfm7cOgL3mVfVoI8DubIm8WG2srzQw9a6DtIEs3UMM"
-  },
-  HOJAS: {
-    USUARIOS: "BD_SLIMAPP",
-    JUSTIFICACIONES: "BD_JUSTIFICACIONES",
-    CONFIG_JUSTIFICACIONES: "CONFIG_JUSTIFICACIONES",
-    APELACIONES: "BD_APELACIONES",
-    PRESTAMOS: "BD_PRESTAMOS",
-    VALIDACION_PRESTAMOS: "Validación-Prestamos",
-    PERMISOS_MEDICOS: "BD_Permisos medicos"
-  },
-  CARPETAS: {
-    JUSTIFICACIONES: "1UD9hQz1FuacSb3QYrahRl7IfvlpKn8v6",
-    APELACIONES_COMPROBANTES: "15BmK5pf5Txrxdzdrny23S5q35NDxLy4P",
-    APELACIONES_LIQUIDACIONES: "1dR7fM6TW99tunNaMZliyvXc-L23nHKVY",
-    APELACIONES_DEVOLUCIONES: "1LGLKA3fiCJXf2ouIqlxq3jk_ZSxI3IyM",
-    PERMISOS_MEDICOS: "1nCYxD5sJLszBBA6s2DquGW8vlKGZp4ty"
-  },
-  CORREOS: {
-    REPRESENTANTE_LEGAL: "penailillo.fetrasiss@gmail.com"
-  },
-  COLUMNAS: {
-    USUARIOS: {
-      RUT: 0,
-      RUT_VALIDADO: 1,
-      FECHA_INGRESO: 2,
-      NOMBRE: 3,
-      CARGO: 4,
-      CORREO: 5,
-      SITE: 6,
-      REGION: 7,
-      SEXO: 8,
-      ESTADO: 9,
-      DETALLE_DESVINCULACION: 10,
-      ID_CREDENCIAL: 11,
-      CORREO_REGISTRADO: 12,
-      CONTACTO: 13,
-      ROL: 14,
-      LINK_REGISTRO: 15,
-      QR_REGISTRO: 16,
-      BANCO: 17,
-      TIPO_CUENTA: 18,
-      NUMERO_CUENTA: 19,
-      ESTADO_NEG_COLECT: 20
-    },
-    JUSTIFICACIONES: {
-      ID: 0,
-      FECHA: 1,
-      RUT: 2,
-      NOMBRE: 3,
-      REGION: 4,
-      MOTIVO: 5,
-      ARGUMENTO: 6,
-      RESPALDO: 7,
-      ESTADO: 8,
-      OBSERVACION: 9,
-      NOTIFICACION: 10,
-      ASAMBLEA: 11,
-      GESTION: 12,
-      DIRIGENTE: 13,
-      CORREO_DIRIGENTE: 14
-    },
-    APELACIONES: {
-      ID: 0,
-      FECHA_SOLICITUD: 1,
-      RUT: 2,
-      NOMBRE: 3,
-      CORREO: 4,
-      MES_APELACION: 5,
-      TIPO_MOTIVO: 6,
-      DETALLE_MOTIVO: 7,
-      URL_COMPROBANTE: 8,
-      URL_LIQUIDACION: 9,
-      ESTADO: 10,
-      OBSERVACION: 11,
-      NOTIFICADO: 12,
-      GESTION: 13,
-      NOMBRE_DIRIGENTE: 14,
-      CORREO_DIRIGENTE: 15,
-      URL_COMPROBANTE_DEVOLUCION: 16
-    },
-    PRESTAMOS: {
-      ID: 0,
-      FECHA: 1,
-      RUT: 2,
-      NOMBRE: 3,
-      CORREO: 4,
-      TIPO: 5,
-      MONTO: 6,
-      CUOTAS: 7,
-      MEDIO_PAGO: 8,
-      ESTADO: 9,
-      FECHA_TERMINO: 10,
-      GESTION: 11,
-      NOMBRE_DIRIGENTE: 12,
-      CORREO_DIRIGENTE: 13,
-      INFORME: 14,
-      OBSERVACION: 15
-    },
-    PERMISOS_MEDICOS: {
-      ID: 0,
-      FECHA_SOLICITUD: 1,
-      RUT: 2,
-      NOMBRE: 3,
-      CORREO: 4,
-      TIPO_PERMISO: 5,
-      FECHA_INICIO: 6,
-      MOTIVO_DETALLE: 7,
-      URL_DOCUMENTO: 8,
-      ESTADO: 9,
-      FECHA_SUBIDA: 10,
-      NOTIFICADO_REP_LEGAL: 11,
-      GESTION: 12,
-      NOMBRE_DIRIGENTE: 13,
-      CORREO_DIRIGENTE: 14
+    <style>
+      body { font-family: 'Inter', sans-serif; background: #0f172a; background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%); background-size: cover; background-attachment: fixed; min-height: 100vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+      .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.3); }
+      .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.5); transition: all 0.3s ease; }
+      .glass-card:active { transform: scale(0.98); }
+      .fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(20px); }
+      @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+      .animate-bounce-short { animation: bounceShort 0.5s; }
+      @keyframes bounceShort { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+      .loader { border: 3px solid rgba(59, 130, 246, 0.3); border-radius: 50%; border-top: 3px solid #3b82f6; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+      .btn-spinner { border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 2px solid #ffffff; width: 16px; height: 16px; animation: spin 1s linear infinite; }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      .input-modern { background: #f8fafc; border: 1px solid #e2e8f0; transition: all 0.2s; }
+      .input-modern:focus { background: #fff; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+      .input-readonly { background-color: #e2e8f0 !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; border-color: #cbd5e1 !important; font-weight: 600; opacity: 1 !important; }
+      .region-option, .select-option, .quota-option, .motive-option, .month-option, .permission-option { transition: all 0.2s; }
+      .region-option, .select-option { border: 1px solid #e2e8f0; }
+      .quota-option, .motive-option, .month-option, .permission-option { border-bottom: 1px solid #374151; color: #d1d5db; }
+      .quota-option:last-child, .motive-option:last-child, .month-option:last-child, .permission-option:last-child { border-bottom: none; }
+      .region-option.selected, .select-option.selected { background-color: #eff6ff; border-color: #3b82f6; color: #1d4ed8; font-weight: 600; }
+      .quota-option.selected, .motive-option.selected, .month-option.selected, .permission-option.selected { background-color: #374151; color: #60a5fa; font-weight: bold; }
+      .custom-scroll::-webkit-scrollbar { width: 6px; }
+      .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+      .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+      
+      /* Switch Toggle */
+      .toggle-switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+      .toggle-switch input { opacity: 0; width: 0; height: 0; }
+      .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 24px; }
+      .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+      input:checked + .toggle-slider { background-color: #10b981; }
+      input:checked + .toggle-slider:before { transform: translateX(26px); }
+      input:disabled + .toggle-slider { opacity: 0.5; cursor: not-allowed; }
+      
+      /* ESTILOS MODALES */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      padding: 20px;
     }
-  }
-};
 
-/**
- * Función helper para obtener un spreadsheet específico
- * @param {string} spreadsheetKey - Clave del spreadsheet en CONFIG.SPREADSHEETS
- * @returns {Spreadsheet} - Objeto Spreadsheet
- */
-function getSpreadsheet(spreadsheetKey) {
-  const spreadsheetId = CONFIG.SPREADSHEETS[spreadsheetKey];
-  if (!spreadsheetId) {
-    throw new Error(`Spreadsheet key "${spreadsheetKey}" no encontrado en CONFIG`);
-  }
-  return SpreadsheetApp.openById(spreadsheetId);
-}
-
-// ==========================================
-// SISTEMA CENTRALIZADO DE PERMISOS DE ARCHIVOS
-// Agregar DESPUÉS de la sección CONFIG
-// ==========================================
-
-/**
- * Valida si un correo electrónico es válido para otorgar permisos
- * @param {string} correo - Correo a validar
- * @returns {boolean} true si es válido
- */
-function esCorreoValido(correo) {
-  if (!correo || typeof correo !== 'string') return false;
-  const correoLimpio = correo.trim().toLowerCase();
-  const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return regexCorreo.test(correoLimpio);
-}
-
-/**
- * Valida los correos de los usuarios involucrados antes de procesar archivos
- * @param {Object} beneficiario - Objeto con datos del beneficiario {rut, nombre, correo}
- * @param {Object} gestor - Objeto con datos del gestor (puede ser null si es el mismo)
- * @param {boolean} esGestionDirigente - true si la gestión es realizada por un dirigente/admin
- * @returns {Object} {valido: boolean, alertas: [], correosParaPermisos: []}
- */
-function validarCorreosParaPermisos(beneficiario, gestor, esGestionDirigente) {
-  const resultado = {
-    valido: true,
-    alertas: [],
-    correosParaPermisos: [],
-    alertaBeneficiario: false,
-    alertaGestor: false
-  };
-  
-  // Validar correo del beneficiario
-  const correoBeneficiarioValido = esCorreoValido(beneficiario.correo);
-  
-  if (correoBeneficiarioValido) {
-    resultado.correosParaPermisos.push({
-      correo: beneficiario.correo.trim().toLowerCase(),
-      tipo: 'beneficiario',
-      nombre: beneficiario.nombre
-    });
-  } else {
-    resultado.alertaBeneficiario = true;
-    if (esGestionDirigente) {
-      resultado.alertas.push({
-        tipo: 'warning',
-        mensaje: `El socio ${beneficiario.nombre} no tiene un correo electrónico válido registrado. No podrá acceder al archivo adjunto. Infórmele que debe actualizar sus datos en "Mis Datos".`
-      });
-    } else {
-      resultado.alertas.push({
-        tipo: 'warning',
-        mensaje: `No tienes un correo electrónico válido registrado. No podrás acceder al archivo adjunto desde tu correo. Por favor, actualiza tus datos en el módulo "Mis Datos".`
-      });
+    .modal-card {
+      background: white;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      position: relative;
     }
-  }
-  
-  // Validar correo del gestor (solo si es gestión de dirigente y es diferente al beneficiario)
-  if (esGestionDirigente && gestor) {
-    const correoGestorValido = esCorreoValido(gestor.correo);
-    
-    if (correoGestorValido) {
-      const yaExiste = resultado.correosParaPermisos.some(
-        c => c.correo === gestor.correo.trim().toLowerCase()
-      );
-      
-      if (!yaExiste) {
-        resultado.correosParaPermisos.push({
-          correo: gestor.correo.trim().toLowerCase(),
-          tipo: 'gestor',
-          nombre: gestor.nombre
-        });
-      }
-    } else {
-      resultado.alertaGestor = true;
-      resultado.alertas.push({
-        tipo: 'info',
-        mensaje: `Tu correo electrónico no está registrado correctamente. El archivo se procesará, pero no recibirás acceso directo. Actualiza tus datos en "Mis Datos".`
-      });
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-  }
-  
-  return resultado;
-}
 
-/**
- * Sube un archivo a Google Drive y otorga permisos de lectura
- * @param {Object} archivoData - {base64, mimeType, fileName}
- * @param {string} carpetaId - ID de la carpeta de destino
- * @param {string} nombreArchivo - Nombre personalizado para el archivo
- * @param {Array} correosParaPermisos - [{correo, tipo, nombre}, ...]
- * @param {Array} correosAdicionales - Correos adicionales (ej: representante legal)
- * @returns {Object} {success, url, permisosOtorgados: [], permisosError: []}
- */
-function subirArchivoConPermisos(archivoData, carpetaId, nombreArchivo, correosParaPermisos, correosAdicionales) {
-  correosAdicionales = correosAdicionales || [];
-  
-  const resultado = {
-    success: false,
-    url: '',
-    permisosOtorgados: [],
-    permisosError: [],
-    mensajeError: ''
-  };
-  
-  try {
-    // Validar tamaño del archivo
-    const sizeInBytes = (archivoData.base64.length * 3) / 4;
-    if (sizeInBytes > 5 * 1024 * 1024) {
-      resultado.mensajeError = "El archivo es demasiado grande (máximo 5MB).";
-      return resultado;
+    .modal-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #1e293b;
     }
-    
-    // Obtener carpeta
-    const folder = DriveApp.getFolderById(carpetaId);
-    
-    // Crear blob
-    const blob = Utilities.newBlob(
-      Utilities.base64Decode(archivoData.base64),
-      archivoData.mimeType,
-      archivoData.fileName
-    );
-    
-    // Obtener extensión original
-    let extension = "";
-    const nameParts = archivoData.fileName.split('.');
-    if (nameParts.length > 1) {
-      extension = "." + nameParts.pop();
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      padding: 4px;
     }
-    
-    // Establecer nombre del archivo
-    blob.setName(nombreArchivo + extension);
-    
-    // Crear archivo
-    const file = folder.createFile(blob);
-    
-    // Esperar a que Drive procese el archivo
-    Utilities.sleep(1500);
-    
-    // Configurar como privado primero
-    file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
-    
-    // Esperar un poco más
-    Utilities.sleep(1000);
-    
-    // Combinar correos para permisos
-    const todosLosCorreos = [...correosParaPermisos];
-    
-    // Agregar correos adicionales
-    if (correosAdicionales && correosAdicionales.length > 0) {
-      correosAdicionales.forEach(function(correo) {
-        if (esCorreoValido(correo)) {
-          const yaExiste = todosLosCorreos.some(function(c) {
-            return c.correo === correo.trim().toLowerCase();
-          });
-          if (!yaExiste) {
-            todosLosCorreos.push({
-              correo: correo.trim().toLowerCase(),
-              tipo: 'adicional',
-              nombre: 'Usuario adicional'
-            });
-          }
-        }
-      });
+
+    .modal-close:hover {
+      color: #1e293b;
     }
-    
-    // Otorgar permisos SILENCIOSOS a cada correo usando Drive API Avanzada
-    var fileId = file.getId(); // Obtenemos el ID para usar la API avanzada
 
-    todosLosCorreos.forEach(function(item) {
-      try {
-        // CAMBIO PRINCIPAL: Usamos Drive.Permissions en lugar de file.addViewer
-        var recursoPermiso = {
-          'role': 'reader',
-          'type': 'user',
-          'value': item.correo
-        };
-        
-        // El segundo parámetro (fileId) es obligatorio.
-        // El tercer parámetro desactiva el correo automático de Google.
-        Drive.Permissions.insert(recursoPermiso, fileId, {
-          sendNotificationEmails: false
-        });
-
-        resultado.permisosOtorgados.push({
-          correo: item.correo,
-          tipo: item.tipo,
-          nombre: item.nombre
-        });
-        Logger.log("✅ Permiso silencioso otorgado a " + item.tipo + ": " + item.correo);
-        
-      } catch (permError) {
-        // Fallback: Si falla la API avanzada, intentamos con el método tradicional (aunque envíe correo)
-        try {
-           console.warn("Fallo API Avanzada, usando método tradicional para: " + item.correo);
-           file.addViewer(item.correo);
-           resultado.permisosOtorgados.push({
-              correo: item.correo,
-              tipo: item.tipo,
-              nombre: item.nombre
-           });
-        } catch (finalError) {
-           resultado.permisosError.push({
-             correo: item.correo,
-             tipo: item.tipo,
-             nombre: item.nombre,
-             error: finalError.toString()
-           });
-           Logger.log("⚠️ Error fatal al otorgar permiso a " + item.tipo + " (" + item.correo + "): " + finalError);
-        }
-      }
-    });
-    
-    resultado.success = true;
-    resultado.url = file.getUrl();
-    
-    Logger.log("📊 Archivo subido: " + nombreArchivo);
-    Logger.log("   - URL: " + resultado.url);
-    Logger.log("   - Permisos exitosos: " + resultado.permisosOtorgados.length);
-    Logger.log("   - Permisos fallidos: " + resultado.permisosError.length);
-    
-    return resultado;
-    
-  } catch (error) {
-    Logger.log("❌ Error al subir archivo: " + error.toString());
-    resultado.mensajeError = "Error al subir el archivo: " + error.toString();
-    return resultado;
-  }
-}
-
-/**
- * Genera el mensaje de alerta para mostrar al usuario sobre permisos
- */
-function generarAlertaPermisos(validacionCorreos, resultadoSubida) {
-  const alerta = {
-    mostrarAlerta: false,
-    tipoAlerta: 'info',
-    mensajeAlerta: '',
-    detalles: []
-  };
-  
-  // Agregar alertas de validación de correos
-  if (validacionCorreos.alertas && validacionCorreos.alertas.length > 0) {
-    alerta.mostrarAlerta = true;
-    validacionCorreos.alertas.forEach(function(a) {
-      alerta.detalles.push(a.mensaje);
-    });
-    
-    if (validacionCorreos.alertaBeneficiario) {
-      alerta.tipoAlerta = 'warning';
+    .modal-body {
+      padding: 20px;
     }
-  }
-  
-  // Agregar errores de permisos si los hay
-  if (resultadoSubida && resultadoSubida.permisosError && resultadoSubida.permisosError.length > 0) {
-    alerta.mostrarAlerta = true;
-    alerta.tipoAlerta = 'warning';
-    resultadoSubida.permisosError.forEach(function(err) {
-      alerta.detalles.push("No se pudo otorgar acceso a " + err.nombre + " (" + err.correo + ")");
-    });
-  }
-  
-  // Construir mensaje final
-  if (alerta.mostrarAlerta) {
-    alerta.mensajeAlerta = alerta.detalles.join('\n\n');
-  }
-  
-  return alerta;
-}
 
-/**
- * Obtener datos de usuario por RUT - Función auxiliar centralizada
- */
-function obtenerUsuarioPorRut(rutInput) {
-  var cache = CacheService.getScriptCache();
-  var rutLimpio = cleanRut(rutInput);
-  var cacheKey = 'user_' + rutLimpio;
-  
-  var cached = cache.get(cacheKey);
-  if (cached) {
-    try {
-      return JSON.parse(cached);
-    } catch (e) {
-      Logger.log('Error parsing cache: ' + e);
+    .modal-footer {
+      padding: 20px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
     }
-  }
-  
-  var sheet = getSheet('USUARIOS', 'USUARIOS');
-  var COL = CONFIG.COLUMNAS.USUARIOS;
-  
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) return { encontrado: false };
-  
-  var data = sheet.getRange(2, 1, lastRow - 1, COL.ESTADO_NEG_COLECT + 1).getDisplayValues();  // ← MODIFICADO
-  
-  for (var i = 0; i < data.length; i++) {
-    if (cleanRut(data[i][COL.RUT]) === rutLimpio) {
-      var usuario = {
-        encontrado: true,
-        rut: data[i][COL.RUT],
-        nombre: data[i][COL.NOMBRE],
-        correo: data[i][COL.CORREO],
-        region: data[i][COL.REGION],
-        cargo: data[i][COL.CARGO],
-        site: data[i][COL.SITE],
-        estado: data[i][COL.ESTADO],
-        rol: data[i][COL.ROL],
-        contacto: data[i][COL.CONTACTO],
-        estadoNegColect: data[i][COL.ESTADO_NEG_COLECT] || "",
-        banco: data[i][COL.BANCO] || "",
-        tipoCuenta: data[i][COL.TIPO_CUENTA] || "",
-        numeroCuenta: data[i][COL.NUMERO_CUENTA] || ""
-      };
-      
-      try {
-        cache.put(cacheKey, JSON.stringify(usuario), 600);
-      } catch (e) {
-        Logger.log('Error guardando en cache: ' + e);
-      }
-      
-      return usuario;
+
+    .btn-secondary {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: white;
+      color: #475569;
+      font-weight: 600;
+      cursor: pointer;
     }
-  }
-  
-  return { encontrado: false };
-}
 
-/**
- * Genera el código de asamblea en formato YYYY_MM
- * @param {Date} fecha - Fecha de la solicitud
- * @return {string} Código de asamblea (ejemplo: "2026_01")
- */
-function generarCodigoAsamblea(fecha) {
-  if (!fecha || !(fecha instanceof Date)) {
-    fecha = new Date(); // Si no hay fecha, usa la actual
-  }
-  
-  const year = fecha.getFullYear();
-  const month = String(fecha.getMonth() + 1).padStart(2, '0'); // Mes con 2 dígitos
-  
-  return `${year}_${month}`;
-}
-
-/**
- * Función helper mejorada para obtener hoja específica con manejo de errores
- * @param {string} spreadsheetKey - Clave del spreadsheet en CONFIG.SPREADSHEETS
- * @param {string} sheetKey - Clave de la hoja en CONFIG.HOJAS
- * @param {boolean} createIfNotExists - Si true, crea la hoja si no existe (default: false)
- * @returns {Sheet|null} - Objeto Sheet o null si no existe
- */
-function getSheet(spreadsheetKey, sheetKey, createIfNotExists = false) {
-  try {
-    const ss = getSpreadsheet(spreadsheetKey);
-    const sheetName = CONFIG.HOJAS[sheetKey];
-    
-    if (!sheetName) {
-      console.error(`❌ Clave de hoja "${sheetKey}" no encontrada en CONFIG.HOJAS`);
-      return null;
+    .btn-secondary:hover {
+      background: #f1f5f9;
     }
-    
-    let sheet = ss.getSheetByName(sheetName);
-    
-    // Si no existe y se solicita creación automática
-    if (!sheet && createIfNotExists) {
-      console.warn(`⚠️ Hoja "${sheetName}" no existe. Creándola...`);
-      sheet = ss.insertSheet(sheetName);
-      console.log(`✅ Hoja "${sheetName}" creada exitosamente`);
+
+    .btn-primary {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      background: #7c3aed;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
     }
-    
-    if (!sheet) {
-      console.error(`❌ Hoja "${sheetName}" no encontrada en spreadsheet ${spreadsheetKey}`);
-      return null;
+
+    .btn-primary:hover {
+      background: #6d28d9;
     }
-    
-    return sheet;
-    
-  } catch (e) {
-    console.error(`❌ Error obteniendo hoja ${sheetKey} de ${spreadsheetKey}: ${e.toString()}`);
-    return null;
-  }
-}
 
-/**
- * Validar Usuario (Login)
- */
-function validarUsuario(rutInput, passwordInput) {
-  try {
-    const sheet = getSheet('USUARIOS', 'USUARIOS');
-    const data = sheet.getDataRange().getDisplayValues();
-    const rutLimpioInput = cleanRut(rutInput);
-    const COL = CONFIG.COLUMNAS.USUARIOS;
-
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      
-      if (cleanRut(row[COL.RUT]) === rutLimpioInput) {      
-        const passDb = String(row[COL.ID_CREDENCIAL]);
-        const nombreUsuario = row[COL.NOMBRE];
-        const rolUsuario = String(row[COL.ROL]).trim().toUpperCase(); // ✅ Normalizar
-        const estadoUsuario = String(row[COL.ESTADO]).toUpperCase();
-       
-        if (String(passDb).toUpperCase() === String(passwordInput).toUpperCase()) {
-          const resultado = {
-            success: true,
-            message: "Login exitoso",
-            user: nombreUsuario || "Socio",
-            role: rolUsuario || "SOCIO",
-            state: estadoUsuario || "ACTIVO",
-            estadoNegColect: String(row[COL.ESTADO_NEG_COLECT] || "").trim()
-          };
-          return resultado;
-        } else {
-          return { 
-            success: false, 
-            message: "Contraseña incorrecta",
-            errorType: "password"  // ⭐ NUEVO: Identificador del tipo de error
-          };
-        }
+    /* Animaciones para alertas de inicio de sesión */
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
       }
-    }
-    return { 
-      success: false, 
-      message: "RUT no encontrado",
-      errorType: "rut"  // ⭐ NUEVO: Identificador del tipo de error
-    };
-  } catch (e) {
-    Logger.log('ERROR en validarUsuario: ' + e.toString());
-    return { success: false, message: "Error Servidor: " + e.toString() };
-  }
-}
-
-/**
- * Obtener Datos Completos del Usuario
- */
-function obtenerDatosUsuario(rutInput) {
-  try {
-    const sheet = getSheet('USUARIOS', 'USUARIOS');
-    const data = sheet.getDataRange().getDisplayValues();
-    const rutLimpioInput = cleanRut(rutInput);
-    const COL = CONFIG.COLUMNAS.USUARIOS;
-
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      if (cleanRut(row[COL.RUT]) === rutLimpioInput) {
-        return {
-          success: true,
-          datos: {
-            rut: row[COL.RUT] || "---",          
-            nombre: row[COL.NOMBRE] || "Sin Nombre",
-            cargo: row[COL.CARGO] || "---",        
-            site: row[COL.SITE] || "---",          
-            region: row[COL.REGION],                
-            estado: String(row[COL.ESTADO]).toUpperCase(),
-            correo: row[COL.CORREO],
-            contacto: row[COL.CONTACTO],
-            estadoNegColect: row[COL.ESTADO_NEG_COLECT] || "",
-            banco: row[COL.BANCO] || "",
-            tipoCuenta: row[COL.TIPO_CUENTA] || "",
-            numeroCuenta: row[COL.NUMERO_CUENTA] || ""
-          }
-        };
-      }
-    }
-    return { success: false, message: "Datos no encontrados." };
-  } catch (e) {
-    return { success: false, message: "Error Datos: " + e.toString() };
-  }
-}
-
-/**
- * Actualizar Dato Usuario
- */
-function actualizarDatoUsuario(rutInput, campo, valor) {
-  var lock = LockService.getScriptLock();
-  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
-    try {
-      const sheet = getSheet('USUARIOS', 'USUARIOS');
-      const data = sheet.getDataRange().getValues();
-      const rutLimpioInput = cleanRut(rutInput);
-      const COL = CONFIG.COLUMNAS.USUARIOS;
-     
-      let colIndex = -1;
-      if (campo === 'region') colIndex = COL.REGION;        
-      else if (campo === 'correo') colIndex = COL.CORREO;
-      else if (campo === 'contacto') colIndex = COL.CONTACTO;
-      else if (campo === 'banco') colIndex = COL.BANCO;
-      else if (campo === 'tipoCuenta') colIndex = COL.TIPO_CUENTA;
-      else if (campo === 'numeroCuenta') colIndex = COL.NUMERO_CUENTA;
-     
-      if (colIndex === -1) return { success: false, message: "Campo inválido" };
-
-      for (let i = 1; i < data.length; i++) {
-        if (cleanRut(String(data[i][COL.RUT])) === rutLimpioInput) {
-          sheet.getRange(i + 1, colIndex + 1).setValue(valor);
-          
-          // ✅ NUEVO: Invalidar caché del usuario
-          var cache = CacheService.getScriptCache();
-          cache.remove('user_' + rutLimpioInput);
-          
-          return { success: true, message: "OK" };
-        }
-      }
-      return { success: false, message: "Usuario no hallado para editar" };
-    } catch (e) {
-      return { success: false, message: "Error Update: " + e.toString() };
-    } finally {
-      lock.releaseLock();
-    }
-  } else {
-    return { success: false, message: "Servidor ocupado." };
-  }
-}
-
-/**
- * RECUPERAR CONTRASEÑA
- */
-function recuperarContrasena(rutInput) {
-  try {
-    const sheet = getSheet('USUARIOS', 'USUARIOS');
-    const data = sheet.getDataRange().getDisplayValues();
-    const rutLimpio = cleanRut(rutInput);
-    const COL = CONFIG.COLUMNAS.USUARIOS;
-    
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      if (cleanRut(row[COL.RUT]) === rutLimpio) {
-        const correo = row[COL.CORREO];
-        return { success: true, correo: correo || "No registrado" };
-      }
-    }
-    
-    return { success: false, message: "Usuario no encontrado." };
-  } catch (e) {
-    return { success: false, message: "Error: " + e.toString() };
-  }
-}
-
-function enviarContrasenaCorreo(rutInput) {
-  try {
-    const sheet = getSheet('USUARIOS', 'USUARIOS');
-    const data = sheet.getDataRange().getDisplayValues();
-    const rutLimpio = cleanRut(rutInput);
-    const COL = CONFIG.COLUMNAS.USUARIOS;
-    
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      if (cleanRut(row[COL.RUT]) === rutLimpio) {
-        const nombre = row[COL.NOMBRE];
-        const correo = row[COL.CORREO];
-        const password = row[COL.ID_CREDENCIAL];
-        
-        if (!correo || !correo.includes("@")) {
-          return { success: false, message: "No tienes un correo registrado. Contacta con la directiva." };
-        }
-        
-        enviarCorreoEstilizado(
-          correo,
-          "Recuperación de Contraseña - Sindicato SLIM n°3",
-          "Recuperación de Contraseña",
-          `Hola ${nombre}, has solicitado recuperar tu contraseña de acceso al portal.`,
-          {
-            "Tu contraseña es": password,
-            "RUT": row[COL.RUT]
-          },
-          "#3b82f6"
-        );
-        
-        return { success: true, message: "Contraseña enviada exitosamente." };
-      }
-    }
-    
-    return { success: false, message: "Usuario no encontrado." };
-  } catch (e) {
-    return { success: false, message: "Error: " + e.toString() };
-  }
-}
-
-// ==========================================
-// LÓGICA DE PRÉSTAMOS
-// ==========================================
-
-function crearSolicitudPrestamo(rutGestor, tipo, cuotas, medioPago, rutBeneficiario) {
-  var lock = LockService.getScriptLock();
-  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
-    try {
-      const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
-      const sheetPrestamos = getSheet('PRESTAMOS', 'PRESTAMOS');
-      const COL_USER = CONFIG.COLUMNAS.USUARIOS;
-      const COL_PRES = CONFIG.COLUMNAS.PRESTAMOS;
-
-      const dataUsers = sheetUsers.getDataRange().getDisplayValues();
-      
-      // 1. Identificar al Gestor
-      let gestor = null;
-      const rutLimpioGestor = cleanRut(rutGestor);
-      for (let i = 1; i < dataUsers.length; i++) {
-        if (cleanRut(dataUsers[i][COL_USER.RUT]) === rutLimpioGestor) {
-          gestor = {
-             rut: dataUsers[i][COL_USER.RUT],
-             nombre: dataUsers[i][COL_USER.NOMBRE],
-             correo: dataUsers[i][COL_USER.CORREO]
-          };
-          break;
-        }
-      }
-      if (!gestor) return { success: false, message: "Error de sesión." };
-
-      // 2. Identificar al Beneficiario
-      let rutTarget = rutBeneficiario ? cleanRut(rutBeneficiario) : rutLimpioGestor;
-      let beneficiario = null;
-      let esGestionDirigente = (rutTarget !== rutLimpioGestor);
-
-      if (!esGestionDirigente) {
-         beneficiario = gestor;
-      } else {
-         for (let i = 1; i < dataUsers.length; i++) {
-            if (cleanRut(dataUsers[i][COL_USER.RUT]) === rutTarget) {
-               beneficiario = {
-                  rut: dataUsers[i][COL_USER.RUT],
-                  nombre: dataUsers[i][COL_USER.NOMBRE],
-                  correo: dataUsers[i][COL_USER.CORREO]
-               };
-               break;
-            }
-         }
-         if (!beneficiario) return { success: false, message: "RUT del socio no encontrado." };
-      }
-
-      // 3. Validar préstamos activos (LÓGICA NUEVA: Por Tipo)
-      const dataPrestamos = sheetPrestamos.getDataRange().getDisplayValues();
-      for (let i = 1; i < dataPrestamos.length; i++) {
-        const row = dataPrestamos[i];
-        const rowRut = cleanRut(row[COL_PRES.RUT]);
-        const rowEstado = row[COL_PRES.ESTADO];
-        const rowTipo = row[COL_PRES.TIPO]; // Leemos el tipo de la fila
-        
-        const estadosActivos = ["Solicitado", "Enviado", "Vigente"];
-        
-        // CAMBIO AQUI: Validamos RUT + ESTADO + TIPO IGUAL
-        // Usamos .includes() para ser flexibles (ej: "Préstamo de Emergencia" vs "Emergencia")
-        if (rowRut === cleanRut(beneficiario.rut) && 
-            estadosActivos.includes(rowEstado) && 
-            rowTipo.includes(tipo)) {
-              
-          return { success: false, message: `El socio ${beneficiario.nombre} ya tiene un préstamo de tipo "${tipo}" en estado "${rowEstado}".` };
-        }
-      }
-
-      // --- LOGICA DEL MONTO ---
-      let montoTexto = "$0";
-      if (tipo.includes('Emergencia')) {
-        montoTexto = "$200.000";
-      } else { 
-        montoTexto = "$150.000";
-      }
-
-      // 4. Preparar Datos y CALCULAR FECHA TÉRMINO (Lógica Contable)
-      const fechaSolicitud = new Date();
-      const diaSolicitud = fechaSolicitud.getDate();
-      const idUnico = Utilities.getUuid();
-      
-      let fechaInicioPago = new Date(fechaSolicitud);
-      
-      if (diaSolicitud > 24) {
-        fechaInicioPago.setMonth(fechaInicioPago.getMonth() + 1);
-      }
-      
-      let fechaTermino = new Date(fechaInicioPago);
-      let numCuotas = parseInt(cuotas);
-      
-      if (!isNaN(numCuotas)) {
-        fechaTermino.setMonth(fechaTermino.getMonth() + numCuotas);
-        fechaTermino = new Date(fechaTermino.getFullYear(), fechaTermino.getMonth() + 1, 0);
-      }
-
-      let gestion = esGestionDirigente ? "Dirigente" : "Socio";
-      let nomDirigente = esGestionDirigente ? gestor.nombre : "";
-      let correoDirigente = esGestionDirigente ? gestor.correo : "";
-
-      // 5. Guardar en Base de Datos
-      const newRow = [];
-      newRow[COL_PRES.ID] = idUnico;
-      newRow[COL_PRES.FECHA] = fechaSolicitud;
-      newRow[COL_PRES.RUT] = beneficiario.rut;
-      newRow[COL_PRES.NOMBRE] = beneficiario.nombre;
-      newRow[COL_PRES.CORREO] = beneficiario.correo;
-      newRow[COL_PRES.TIPO] = tipo;
-      newRow[COL_PRES.MONTO] = "'" + montoTexto; 
-      newRow[COL_PRES.CUOTAS] = cuotas;
-      newRow[COL_PRES.MEDIO_PAGO] = medioPago;
-      newRow[COL_PRES.ESTADO] = "Solicitado";
-      newRow[COL_PRES.FECHA_TERMINO] = fechaTermino;
-      newRow[COL_PRES.GESTION] = gestion;
-      newRow[COL_PRES.NOMBRE_DIRIGENTE] = nomDirigente;
-      newRow[COL_PRES.CORREO_DIRIGENTE] = correoDirigente;
-      newRow[COL_PRES.INFORME] = ""; 
-
-      sheetPrestamos.appendRow(newRow);
-
-      // 6. Enviar Correos
-      if (esCorreoValido(beneficiario.correo)) {
-        var datosCorreoSocio = {
-            "FECHA SOLICITUD": Utilities.formatDate(fechaSolicitud, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm"),
-            "RUT": formatRutServer(beneficiario.rut),
-            "NOMBRE": beneficiario.nombre,
-            "TIPO PRÉSTAMO": tipo,
-            "MONTO": montoTexto,
-            "CUOTAS": cuotas,
-            "MEDIO PAGO": medioPago,
-            "FECHA TÉRMINO": Utilities.formatDate(fechaTermino, Session.getScriptTimeZone(), "dd/MM/yyyy"), 
-            "GESTION": gestion,
-            "NOMBRE DIRIGENTE": nomDirigente || ""
-        };
-
-        enviarCorreoEstilizado(
-          beneficiario.correo,
-          "Solicitud de Préstamo - Sindicato SLIM n°3",
-          "Solicitud de Préstamo Ingresada",
-          `Hola <strong>${beneficiario.nombre}</strong>, se ha ingresado exitosamente una solicitud de préstamo a tu nombre.`,
-          datosCorreoSocio,
-          "#2563eb"
-        );
-      }
-
-      // Correo Dirigente
-      if (esGestionDirigente && esCorreoValido(correoDirigente) && correoDirigente !== beneficiario.correo) {
-        var datosCorreoDirigente = {
-            "FECHA SOLICITUD": Utilities.formatDate(fechaSolicitud, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm"),
-            "RUT SOCIO": formatRutServer(beneficiario.rut),
-            "NOMBRE SOCIO": beneficiario.nombre,
-            "TIPO PRÉSTAMO": tipo,
-            "MONTO": montoTexto,
-            "CUOTAS": cuotas,
-            "FECHA TÉRMINO": Utilities.formatDate(fechaTermino, Session.getScriptTimeZone(), "dd/MM/yyyy"),
-            "GESTION": "Dirigente"
-        };
-
-        enviarCorreoEstilizado(
-          gestor.correo,
-          "Respaldo Gestión Préstamo - Sindicato SLIM n°3",
-          "Solicitud de Préstamo Creada",
-          `Has ingresado una solicitud de préstamo para el socio <strong>${beneficiario.nombre}</strong>.`,
-          datosCorreoDirigente,
-          "#475569"
-        );
-      }
-
-      return { success: true, message: "Solicitud creada exitosamente." };
-    } catch (e) {
-      return { success: false, message: "Error al solicitar: " + e.toString() };
-    } finally {
-      lock.releaseLock();
-    }
-  } else {
-    return { success: false, message: "Servidor ocupado." };
-  }
-}
-
-// ==========================================
-// SINCRONIZACIÓN AUTOMÁTICA (Validación -> BD -> Notificación)
-// VERSIÓN ACTUALIZADA: Incluye MONTO en el correo + Corrección columna OK
-// ==========================================
-
-function procesarValidacionPrestamos() {
-  const lock = LockService.getScriptLock();
-  if (lock.tryLock(60000)) {
-    try {
-      const ss = getSpreadsheet('PRESTAMOS');
-      const sheetValidacion = ss.getSheetByName(CONFIG.HOJAS.VALIDACION_PRESTAMOS);
-      const sheetBD = getSheet('PRESTAMOS', 'PRESTAMOS');
-      
-      if (!sheetValidacion) {
-        console.warn("⚠️ La hoja 'Validación-Prestamos' no existe. Creándola...");
-        const nuevaHoja = ss.insertSheet(CONFIG.HOJAS.VALIDACION_PRESTAMOS);
-        nuevaHoja.appendRow(["ID", "Fecha", "RUT", "Nombre", "Validación", "Observación", "Nombre Informe"]);
-        console.log("✅ Hoja 'Validación-Prestamos' creada exitosamente");
-        return;
-      }
-      
-      if (!sheetBD) {
-        console.error("❌ No se encontró la hoja BD_PRESTAMOS.");
-        return;
-      }
-
-      const dataValidacion = sheetValidacion.getDataRange().getValues();
-      const dataBD = sheetBD.getDataRange().getValues();
-      const COL_BD = CONFIG.COLUMNAS.PRESTAMOS;
-      
-      // MAPEO DE COLUMNAS HOJA VALIDACIÓN:
-      // A(0): ID | B(1): Fecha | C(2): RUT | D(3): Nombre | E(4): Validación | F(5): Observación | G(6): Nombre Informe
-      const VAL_COL = { ID: 0, VALIDACION: 4, OBS: 5 }; 
-      
-      // ⭐ CORRECCIÓN: Columna O (índice 14) para marcar "OK" - NO la columna N
-      const COL_INFORME = 14; // ← CAMBIO AQUÍ (antes era 13)
-
-      let procesadosCount = 0;
-
-      // Recorrer hoja de Validación (saltando cabecera)
-      for (let i = 1; i < dataValidacion.length; i++) {
-        const idSolicitud = String(dataValidacion[i][VAL_COL.ID]).trim();
-        const resultadoValidacion = String(dataValidacion[i][VAL_COL.VALIDACION]).toUpperCase().trim();
-        const observacionAdmin = String(dataValidacion[i][VAL_COL.OBS]);
-
-        // Solo procesamos si hay ID y una decisión clara (ACEPTADO o RECHAZADO)
-        if (!idSolicitud || (resultadoValidacion !== "ACEPTADO" && resultadoValidacion !== "RECHAZADO")) {
-          continue;
-        }
-
-        // Buscar coincidencia en BD_PRESTAMOS
-        for (let j = 1; j < dataBD.length; j++) {
-          const idBD = String(dataBD[j][COL_BD.ID]).trim();
-          
-          // ⭐ Verificar columna O (Informe) para ver si ya fue procesado antes
-          const informeEnviado = String(dataBD[j][COL_INFORME]); 
-
-          if (idBD === idSolicitud) {
-            
-            // SI YA DICE "OK", SALTAMOS (Ya fue procesado históricamente)
-            if (informeEnviado === "OK") {
-               console.log(`ℹ️ ID ${idSolicitud}: Ya procesado anteriormente (OK en columna O)`);
-               continue; 
-            }
-
-            // Si llegamos aquí, es una solicitud nueva validada que requiere acción
-            let nuevoEstado = "";
-            let tituloCorreo = "";
-            let colorCorreo = "";
-            let mensajeIntro = "";
-
-            if (resultadoValidacion === "ACEPTADO") {
-              nuevoEstado = "Vigente"; 
-              tituloCorreo = "Solicitud Aprobada";
-              colorCorreo = "#15803d"; // Verde
-              mensajeIntro = `Nos complace informarte que tu solicitud de préstamo ha sido <strong>APROBADA</strong> por la empresa.`;
-            } else {
-              nuevoEstado = "Rechazado";
-              tituloCorreo = "Solicitud Rechazada";
-              colorCorreo = "#b91c1c"; // Rojo
-              mensajeIntro = `Te informamos que tu solicitud de préstamo ha sido <strong>RECHAZADA</strong> por la empresa.`;
-            }
-
-            // 1. Actualizar estado en BD_PRESTAMOS
-            sheetBD.getRange(j + 1, COL_BD.ESTADO + 1).setValue(nuevoEstado);
-            
-            // 2. Enviar Correo con MONTO incluido
-            const correoUsuario = dataBD[j][COL_BD.CORREO];
-            const nombreUsuario = dataBD[j][COL_BD.NOMBRE];
-            
-            if (esCorreoValido(correoUsuario)) {
-              // ⭐ PREPARAR FECHA TÉRMINO FORMATEADA
-              let fechaTerminoStr = "S/D";
-              const fechaTerminoRaw = dataBD[j][COL_BD.FECHA_TERMINO];
-              
-              if (fechaTerminoRaw) {
-                try {
-                  const fechaTermino = new Date(fechaTerminoRaw);
-                  if (!isNaN(fechaTermino.getTime())) {
-                    fechaTerminoStr = Utilities.formatDate(fechaTermino, Session.getScriptTimeZone(), "dd/MM/yyyy");
-                  }
-                } catch (e) {
-                  console.warn(`⚠️ Error formateando fecha término para ID ${idSolicitud}: ${e}`);
-                }
-              }
-              
-              // ⭐ AGREGAR FECHA TÉRMINO AL CORREO
-              const datosCorreo = {
-                "FECHA SOLICITUD": Utilities.formatDate(new Date(dataBD[j][COL_BD.FECHA]), Session.getScriptTimeZone(), "dd/MM/yyyy"),
-                "RUT": formatRutServer(dataBD[j][COL_BD.RUT]),
-                "NOMBRE": nombreUsuario,
-                "TIPO PRÉSTAMO": dataBD[j][COL_BD.TIPO],
-                "MONTO": dataBD[j][COL_BD.MONTO] || "$0",
-                "ESTADO": nuevoEstado.toUpperCase(),
-                "FECHA TÉRMINO": fechaTerminoStr, // ← NUEVO CAMPO
-                "OBSERVACIÓN": observacionAdmin || "Sin observaciones",
-                "RESULTADO": resultadoValidacion
-              };
-
-              enviarCorreoEstilizado(
-                correoUsuario,
-                `Resultado Solicitud Préstamo - Sindicato SLIM n°3`,
-                tituloCorreo,
-                `Hola <strong>${nombreUsuario}</strong>, ${mensajeIntro}`,
-                datosCorreo,
-                colorCorreo
-              );
-              
-              // ⭐ 3. MARCAR COMO PROCESADO en Columna O (índice 14)
-              sheetBD.getRange(j + 1, COL_INFORME + 1).setValue("OK");
-              console.log(`✅ ID ${idSolicitud}: Procesado como ${nuevoEstado}, notificado y marcado OK en columna O.`);
-              procesadosCount++;
-              
-            } else {
-              sheetBD.getRange(j + 1, COL_INFORME + 1).setValue("ERROR_NO_MAIL");
-              console.warn(`⚠️ ID ${idSolicitud}: Procesado sin correo válido.`);
-            }
-            
-            break; // Terminar búsqueda en BD para este ID específico
-          }
-        }
-      }
-      
-      if (procesadosCount > 0) {
-         console.log(`✅ Resumen final: ${procesadosCount} solicitudes nuevas procesadas correctamente.`);
-      } else {
-         console.log("ℹ️ No hay solicitudes nuevas para procesar en este momento.");
-      }
-
-    } catch (e) {
-      console.error("❌ Error en sincronización de validación de préstamos: " + e.toString());
-    } finally {
-      lock.releaseLock();
-    }
-  } else {
-    console.warn("⚠️ No se pudo obtener el lock del script. Servidor ocupado.");
-  }
-}
-
-function obtenerHistorialPrestamos(rutInput) {
-  try {
-    var sheet = getSheet('PRESTAMOS', 'PRESTAMOS');
-    var COL = CONFIG.COLUMNAS.PRESTAMOS;
-    
-    // ✅ VALIDACIÓN 1: Verificar que la hoja existe
-    if (!sheet) {
-      Logger.log('❌ Hoja PRESTAMOS no encontrada');
-      return { success: false, message: "Hoja no encontrada" };
-    }
-    
-    var lastRow = sheet.getLastRow();
-    Logger.log('📊 Préstamos - Total de filas: ' + lastRow);
-    
-    if (lastRow < 2) return { success: true, registros: [] };
-    
-    // ✅ CORRECCIÓN 2: Leer TODAS las columnas que existen en la hoja
-    var lastCol = sheet.getLastColumn();
-    Logger.log('📊 Préstamos - Total de columnas: ' + lastCol);
-    
-    var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getDisplayValues();
-    Logger.log('📊 Datos leídos: ' + data.length + ' filas');
-    
-    var rutLimpio = cleanRut(rutInput);
-    Logger.log('🔍 Buscando préstamos para RUT: ' + rutLimpio);
-    
-    var registros = [];
-
-    // ✅ CORRECCIÓN 3: Empezar desde índice 0 (data ya no incluye header)
-    for (let i = 0; i < data.length; i++) {
-      const row = data[i];
-      
-      // ✅ VALIDACIÓN 4: Verificar que la fila tiene datos
-      if (!row[COL.RUT]) {
-        Logger.log('⚠️ Fila ' + (i + 2) + ' sin RUT, saltando...');
-        continue;
-      }
-      
-      const rutFila = cleanRut(row[COL.RUT]);
-      
-      // ✅ LOGGING para debugging
-      if (i < 5) { // Solo loguear las primeras 5 para no saturar
-        Logger.log('Fila ' + (i + 2) + ' - RUT: ' + rutFila + ' | Buscado: ' + rutLimpio + ' | Coincide: ' + (rutFila === rutLimpio));
-      }
-      
-      if (rutFila !== rutLimpio) continue;
-      
-      // ✅ EXTRACCIÓN de datos con valores por defecto
-      const tipo = row[COL.TIPO] || "Préstamo";
-      const cuotas = row[COL.CUOTAS] || "S/D";
-      const medio = row[COL.MEDIO_PAGO] || "S/D";
-      const monto = row[COL.MONTO] || "$0";
-      const observacion = row[COL.OBSERVACION] || "";
-      
-      // ✅ FORMATEO de fecha de término
-      let fechaTerminoStr = "S/D";
-      const ftRaw = row[COL.FECHA_TERMINO];
-      if (ftRaw) {
-         try {
-           const d = new Date(ftRaw);
-           if (!isNaN(d.getTime())) {
-             fechaTerminoStr = Utilities.formatDate(d, Session.getScriptTimeZone(), "dd/MM/yyyy");
-           } else {
-             fechaTerminoStr = String(ftRaw).split(' ')[0]; 
-           }
-         } catch(e) { 
-           fechaTerminoStr = String(ftRaw).split(' ')[0]; 
-         }
-      }
-
-      registros.push({
-        id: row[COL.ID] || "",
-        fecha: row[COL.FECHA] || "",
-        tipo: tipo,
-        monto: monto,
-        cuotas: cuotas,
-        medio: medio,
-        estado: row[COL.ESTADO] || "Solicitado",
-        observacion: observacion,
-        fechaTermino: fechaTerminoStr,
-        gestion: row[COL.GESTION] || "Socio",
-        nomDirigente: row[COL.NOMBRE_DIRIGENTE] || ""
-      });
-      
-      Logger.log('✅ Préstamo agregado: ' + row[COL.ID] + ' - ' + tipo);
-    }
-    
-    Logger.log('📦 Total de préstamos encontrados: ' + registros.length);
-    
-    registros.reverse();
-    return { success: true, registros: registros };
-
-  } catch (e) {
-    Logger.log('❌ ERROR en obtenerHistorialPrestamos: ' + e.toString());
-    Logger.log('Stack: ' + e.stack);
-    return { success: false, message: "Error: " + e.toString() };
-  }
-}
-
-// ==========================================
-// FUNCIÓN ELIMINAR PRÉSTAMO (Con Respaldo Histórico)
-// ==========================================
-
-function eliminarSolicitud(idSolicitud) {
-  var lock = LockService.getScriptLock();
-  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
-    try {
-      const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEETS.PRESTAMOS);
-      const sheet = ss.getSheetByName("BD_PRESTAMOS");
-      const data = sheet.getDataRange().getValues();
-      const COL = CONFIG.COLUMNAS.PRESTAMOS;
-      
-      for (let i = 1; i < data.length; i++) {
-        if (String(data[i][COL.ID]) === String(idSolicitud)) {
-          
-          // RESPALDO: Guardamos copia SIEMPRE antes de borrar
-          const sheetEliminados = ss.getSheetByName("Registros-eliminados");
-          if (sheetEliminados) {
-            sheetEliminados.appendRow(data[i]);
-          } else {
-            return { success: false, message: "Error crítico: No existe la hoja de respaldo." };
-          }
-          
-          // Eliminar fila
-          sheet.deleteRow(i + 1);
-          return { success: true, message: "Registro eliminado y respaldado correctamente." };
-        }
-      }
-      return { success: false, message: "No encontrado." };
-    } catch (e) { return { success: false, message: "Error: " + e.toString() }; }
-    finally { lock.releaseLock(); }
-  } else { return { success: false, message: "Servidor ocupado." }; }
-}
-
-function modificarSolicitud(idSolicitud, nuevasCuotas, nuevoMedio) {
-  var lock = LockService.getScriptLock();
-  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
-    try {
-      const sheet = getSheet('PRESTAMOS', 'PRESTAMOS');
-      const data = sheet.getDataRange().getValues();
-      const COL = CONFIG.COLUMNAS.PRESTAMOS;
-      
-      for (let i = 1; i < data.length; i++) {
-        if (String(data[i][COL.ID]) === String(idSolicitud)) {
-          const estado = String(data[i][COL.ESTADO]);
-          if (estado !== "Solicitado") return { success: false, message: "No se puede editar. Estado: " + estado };
-          
-          // Recalcular Fecha Término con lógica financiera
-          const fechaSolicitud = new Date(data[i][COL.FECHA]);
-          const diaSolicitud = fechaSolicitud.getDate();
-          
-          let fechaInicioPago = new Date(fechaSolicitud);
-          if (diaSolicitud > 24) {
-             fechaInicioPago.setMonth(fechaInicioPago.getMonth() + 1);
-          }
-          
-          let fechaTermino = new Date(fechaInicioPago);
-          fechaTermino.setMonth(fechaTermino.getMonth() + parseInt(nuevasCuotas));
-          
-          // Ajustar al último día del mes
-          fechaTermino = new Date(fechaTermino.getFullYear(), fechaTermino.getMonth() + 1, 0);
-          
-          sheet.getRange(i + 1, COL.FECHA_TERMINO + 1).setValue(fechaTermino);
-
-          return { success: true, message: "Modificado correctamente." };
-        }
-      }
-      return { success: false, message: "No encontrado." };
-    } catch (e) { return { success: false, message: "Error: " + e.toString() }; }
-    finally { lock.releaseLock(); }
-  } else { return { success: false, message: "Servidor ocupado." }; }
-}
-
-/**
- * Verificar y actualizar préstamos que ya cumplieron su fecha de término
- * Cambia de "Vigente" → "Pagado" automáticamente
- */
-function verificarCambiosPrestamos() {
-  try {
-    // ⭐ CORRECCIÓN: Usar getSheet() en lugar de getActiveSpreadsheet()
-    const sheet = getSheet('PRESTAMOS', 'PRESTAMOS');
-    
-    if (!sheet) {
-      console.error("❌ No se pudo acceder a la hoja BD_PRESTAMOS");
-      return { success: false, error: "Hoja no encontrada" };
-    }
-    
-    const data = sheet.getDataRange().getValues();
-    const COL = CONFIG.COLUMNAS.PRESTAMOS;
-    
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    
-    let prestamosActualizados = 0;
-    
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const estado = String(row[COL.ESTADO]).trim();
-      const fechaTerminoRaw = row[COL.FECHA_TERMINO];
-      
-      if (estado !== "Vigente") continue;
-      
-      if (!fechaTerminoRaw) {
-        console.warn(`⚠️ Fila ${i + 1}: Préstamo vigente sin fecha de término`);
-        continue;
-      }
-      
-      let fechaTermino;
-      try {
-        fechaTermino = new Date(fechaTerminoRaw);
-        fechaTermino.setHours(0, 0, 0, 0);
-      } catch (e) {
-        console.error(`❌ Fila ${i + 1}: Error al convertir fecha: ${fechaTerminoRaw}`);
-        continue;
-      }
-      
-      if (isNaN(fechaTermino.getTime())) {
-        console.error(`❌ Fila ${i + 1}: Fecha de término inválida: ${fechaTerminoRaw}`);
-        continue;
-      }
-      
-      if (hoy > fechaTermino) {
-        sheet.getRange(i + 1, COL.ESTADO + 1).setValue("Pagado");
-        
-        const correo = row[COL.CORREO];
-        const nombre = row[COL.NOMBRE];
-        const tipo = row[COL.TIPO];
-        const monto = row[COL.MONTO];
-        const cuotas = row[COL.CUOTAS];
-        const idPrestamo = row[COL.ID];
-        
-        console.log(`✅ Fila ${i + 1}: Préstamo ID ${idPrestamo} cambiado a "Pagado"`);
-        
-        if (esCorreoValido(correo)) {
-          try {
-            enviarCorreoEstilizado(
-              correo,
-              "Préstamo Completado - Sindicato SLIM n°3",
-              "Préstamo Finalizado",
-              `Hola <strong>${nombre}</strong>, tu préstamo ha sido completado exitosamente.`,
-              { 
-                "ID": idPrestamo,
-                "TIPO PRÉSTAMO": tipo,
-                "MONTO": monto,
-                "CUOTAS": cuotas,
-                "ESTADO": "PAGADO",
-                "FECHA TÉRMINO": Utilities.formatDate(fechaTermino, Session.getScriptTimeZone(), 'dd/MM/yyyy'),
-                "FECHA FINALIZACIÓN": Utilities.formatDate(hoy, Session.getScriptTimeZone(), 'dd/MM/yyyy')
-              },
-              "#10b981"
-            );
-          } catch (mailError) {
-            console.error(`⚠️ Error enviando correo: ${mailError}`);
-          }
-        }
-        
-        prestamosActualizados++;
-      }
-    }
-    
-    if (prestamosActualizados > 0) {
-      console.log(`📊 RESUMEN: ${prestamosActualizados} préstamo(s) actualizado(s) a "Pagado"`);
-    } else {
-      console.log("ℹ️ No hay préstamos que actualizar.");
-    }
-    
-    return { success: true, prestamosActualizados: prestamosActualizados };
-    
-  } catch (e) {
-    console.error("❌ Error verificando préstamos: " + e.toString());
-    return { success: false, error: e.toString() };
-  }
-}
-
-// ==========================================
-// LÓGICA DE JUSTIFICACIONES (CON SWITCH)
-// ==========================================
-
-/**
- * Obtener estado del switch de justificaciones
- */
-function obtenerEstadoSwitchJustificaciones() {
-  try {
-    var cache = CacheService.getScriptCache();
-    var cached = cache.get('justif_switch_state');
-    if (cached) {
-      try {
-        return JSON.parse(cached);
-      } catch (e) {
-        Logger.log('Error parsing switch cache: ' + e);
+      to {
+        opacity: 1;
+        transform: scale(1);
       }
     }
 
-    const ss = getSpreadsheet('JUSTIFICACIONES');
-    let sheetConfig = ss.getSheetByName(CONFIG.HOJAS.CONFIG_JUSTIFICACIONES);
-    
-    if (!sheetConfig) {
-      sheetConfig = ss.insertSheet(CONFIG.HOJAS.CONFIG_JUSTIFICACIONES);
-      sheetConfig.appendRow(["Habilitado", "Fecha Límite"]);
-      sheetConfig.appendRow([false, ""]);
-    }
-    
-    const data = sheetConfig.getRange(2, 1, 1, 2).getValues();
-    const habilitado = data[0][0] === true || data[0][0] === "TRUE" || data[0][0] === "true";
-    const fechaLimiteValue = data[0][1];
-    
-    if (habilitado && fechaLimiteValue) {
-      // Convertir ambas fechas a UTC para comparación justa
-      const ahora = new Date();
-      const limite = new Date(fechaLimiteValue);
-      
-      // Log para debug (puedes comentar después)
-      Logger.log("Fecha actual (UTC): " + ahora.toISOString());
-      Logger.log("Fecha límite (UTC): " + limite.toISOString());
-      Logger.log("Fecha actual > Fecha límite: " + (ahora > limite));
-      
-      if (ahora > limite) {
-        // Ya pasó la fecha límite, deshabilitar automáticamente
-        sheetConfig.getRange(2, 1).setValue(false);
-        var resultado = { 
-        habilitado: habilitado, 
-        fechaLimite: fechaLimiteValue 
-      };
-      
-      // ✅ Guardar en caché por 5 minutos
-      try {
-        cache.put('justif_switch_state', JSON.stringify(resultado), 300);
-      } catch (e) {
-        Logger.log('Error caching switch state: ' + e);
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
       }
-      
-      return resultado;
+      to {
+        opacity: 0;
       }
     }
-    
-    return { 
-      habilitado: habilitado, 
-      fechaLimite: fechaLimiteValue 
-    };
-    
-  } catch (e) {
-    Logger.error("Error en obtenerEstadoSwitchJustificaciones: " + e.toString());
-    return { 
-      habilitado: false, 
-      fechaLimite: "", 
-      error: e.toString() 
-    };
-  }
-}
 
-/**
- * Actualizar estado del switch de justificaciones
- */
-function actualizarSwitchJustificaciones(nuevoEstado, fechaLimite) {
-  var lock = LockService.getScriptLock();
-  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
-    try {
-      const ss = getSpreadsheet('JUSTIFICACIONES');
-      let sheetConfig = ss.getSheetByName(CONFIG.HOJAS.CONFIG_JUSTIFICACIONES);
-      
-      if (!sheetConfig) {
-        sheetConfig = ss.insertSheet(CONFIG.HOJAS.CONFIG_JUSTIFICACIONES);
-        sheetConfig.appendRow(["Habilitado", "Fecha Límite"]);
-        sheetConfig.appendRow([false, ""]);
-      }
-      
-      sheetConfig.getRange(2, 1).setValue(nuevoEstado);
-      if (fechaLimite) {
-        sheetConfig.getRange(2, 2).setValue(fechaLimite);
-      }
-      
-      return { success: true, message: "Estado actualizado correctamente." };
-      
-    } catch (e) {
-      return { success: false, message: "Error: " + e.toString() };
-    } finally {
-      lock.releaseLock();
+    .animate-scale-in {
+      animation: scaleIn 0.3s ease-out;
     }
-  } else {
-    return { success: false, message: "Servidor ocupado." };
-  }
-}
 
-function verificarDisponibilidadJustificaciones() {
-  const estadoSwitch = obtenerEstadoSwitchJustificaciones();
-  
-  if (!estadoSwitch.habilitado) {
-    return { 
-      habilitado: false, 
-      mensaje: "Módulo de justificaciones temporalmente deshabilitado.\nConsulte con la directiva." 
-    };
-  }
-  
-  return { habilitado: true };
-}
+    .fade-out {
+      animation: fadeOut 0.3s ease-out;
+    }
 
-/**
- * Valida si el usuario puede enviar una justificación para el mes actual
- * @param {string} rut - RUT del usuario
- * @returns {Object} {permitido: boolean, mensaje: string, justificacionExistente: Object|null}
- */
-function validarJustificacionMesActual(rut) {
-  try {
-    const sheet = getSheet('JUSTIFICACIONES', 'JUSTIFICACIONES');
-    const data = sheet.getDataRange().getValues();
-    const COL = CONFIG.COLUMNAS.JUSTIFICACIONES;
-    
-    // Obtener mes y año actual
-    const hoy = new Date();
-    const mesActual = hoy.getMonth(); // 0-11
-    const yearActual = hoy.getFullYear();
-    
-    // Buscar justificaciones del mismo RUT en el mes actual
-    const justificacionesDelMes = [];
-    
-    for (let i = 1; i < data.length; i++) {
-      const filaRut = data[i][COL.RUT];
-      const filaFecha = new Date(data[i][COL.FECHA]);
-      const filaMes = filaFecha.getMonth();
-      const filaYear = filaFecha.getFullYear();
-      const filaEstado = data[i][COL.ESTADO];
-      const filaAsamblea = data[i][COL.ASAMBLEA];
-      
-      if (cleanRut(filaRut) === cleanRut(rut) && 
-          filaMes === mesActual && 
-          filaYear === yearActual) {
-        justificacionesDelMes.push({
-          id: data[i][COL.ID],
-          estado: filaEstado,
-          tipo: data[i][COL.MOTIVO],
-          fecha: Utilities.formatDate(filaFecha, Session.getScriptTimeZone(), "dd/MM/yyyy"),
-          asamblea: filaAsamblea || ""
-        });
+    /* Scroll personalizado para contenido de alertas */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 10px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Animación de fade-in para el modal */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Animación de fade-out para el modal */
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    /* Animación de escala para el contenido del modal */
+    @keyframes scaleIn {
+      from {
+        transform: scale(0.9);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
       }
     }
-    
-    // Si no hay justificaciones para este mes, permitir
-    if (justificacionesDelMes.length === 0) {
-      return {
-        permitido: true,
-        mensaje: "Puede enviar la justificación",
-        justificacionExistente: null
-      };
+
+    /* Clases de animación */
+    .animate-fade-in {
+      animation: fadeIn 0.2s ease-out;
     }
-    
-    // Verificar el estado de las justificaciones existentes
-    const hayEnviada = justificacionesDelMes.some(j => j.estado === 'Enviado');
-    const hayAceptada = justificacionesDelMes.some(j => j.estado === 'Aceptado' || j.estado === 'Aceptado/Obs');
-    const todasRechazadas = justificacionesDelMes.every(j => j.estado === 'Rechazado');
-    
-    // Obtener nombre del mes actual
-    const nombreMes = hoy.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
-    
-    // Si hay una justificación Enviada, bloquear
-    if (hayEnviada) {
-      const justificacion = justificacionesDelMes.find(j => j.estado === 'Enviado');
-      return {
-        permitido: false,
-        mensaje: `Ya tienes una justificación pendiente para ${nombreMes}`,
-        justificacionExistente: justificacion,
-        tipoBloqueo: 'enviada'
-      };
+
+    .animate-fade-out {
+      animation: fadeOut 0.2s ease-out;
     }
-    
-    // Si hay una justificación Aceptada, bloquear
-    if (hayAceptada) {
-      const justificacion = justificacionesDelMes.find(j => j.estado === 'Aceptado' || j.estado === 'Aceptado/Obs');
-      return {
-        permitido: false,
-        mensaje: `Ya tienes una justificación aceptada para ${nombreMes}`,
-        justificacionExistente: justificacion,
-        tipoBloqueo: 'aceptada'
-      };
+
+    .animate-scale-in {
+      animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    
-    // Si todas están rechazadas, permitir nuevo intento
-    if (todasRechazadas) {
-      return {
-        permitido: true,
-        mensaje: "Puede reintentar (anterior rechazada)",
-        justificacionExistente: justificacionesDelMes[0]
-      };
+
+    /* Asegurar que el botón de ojo no interfiera con el input */
+    #toggle-password-btn {
+      cursor: pointer;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
     }
-    
-    // Caso por defecto (no debería llegar aquí)
-    return {
-      permitido: true,
-      mensaje: "Verificación completada",
-      justificacionExistente: null
-    };
-    
-  } catch (error) {
-    Logger.log('Error en validarJustificacionMesActual: ' + error.toString());
-    return {
-      permitido: false,
-      mensaje: "Error al validar: " + error.message,
-      justificacionExistente: null
-    };
-  }
-}
 
-// ==========================================
-// FUNCIÓN ENVIAR JUSTIFICACIÓN - VERSIÓN MEJORADA
-// Reemplazar la función existente completamente
-// ==========================================
-
-function enviarJustificacion(rutGestor, tipo, motivo, archivoData, rutBeneficiario) {
-  var CARPETA_ID = CONFIG.CARPETAS.JUSTIFICACIONES;
-  
-  // Verificar disponibilidad del módulo
-  var disp = verificarDisponibilidadJustificaciones();
-  if (!disp.habilitado) return { success: false, message: disp.mensaje };
-  
-  var lock = LockService.getScriptLock();
-  if (lock.tryLock(30000)) {
-    try {
-      var sheetJustif = getSheet('JUSTIFICACIONES', 'JUSTIFICACIONES');
-      var COL_JUST = CONFIG.COLUMNAS.JUSTIFICACIONES;
-      
-      // Obtener datos del gestor
-      var gestor = obtenerUsuarioPorRut(rutGestor);
-      if (!gestor.encontrado) return { success: false, message: "Error de sesión." };
-      
-      // Determinar beneficiario
-      var beneficiario;
-      var rutTarget = rutBeneficiario ? cleanRut(rutBeneficiario) : cleanRut(rutGestor);
-      var esGestionDirigente = rutTarget !== cleanRut(rutGestor);
-      
-      if (!esGestionDirigente) {
-        beneficiario = gestor;
-      } else {
-        beneficiario = obtenerUsuarioPorRut(rutBeneficiario);
-        if (!beneficiario.encontrado) return { success: false, message: "RUT del socio no encontrado." };
-      }
-      
-      // Validar justificación del mes
-      var validacion = validarJustificacionMesActual(beneficiario.rut);
-      if (!validacion.permitido) {
-        return {
-          success: false,
-          message: validacion.mensaje,
-          tipoError: 'restriccion_mes',
-          justificacionExistente: validacion.justificacionExistente,
-          tipoBloqueo: validacion.tipoBloqueo
-        };
-      }
-      
-      // ========== VALIDAR CORREOS ANTES DE SUBIR ARCHIVO ==========
-      var validacionCorreos = validarCorreosParaPermisos(
-        { rut: beneficiario.rut, nombre: beneficiario.nombre, correo: beneficiario.correo },
-        esGestionDirigente ? { rut: gestor.rut, nombre: gestor.nombre, correo: gestor.correo } : null,
-        esGestionDirigente
-      );
-      
-      var idUnico = Utilities.getUuid();
-      var fileUrl = "Sin archivo";
-      var alertaPermisos = null;
-      
-      // ========== SUBIR ARCHIVO SI EXISTE ==========
-      if (archivoData && archivoData.base64) {
-        var nombreArchivo = "JUSTIF-" + idUnico + "-" + cleanRut(beneficiario.rut);
-        
-        var resultadoSubida = subirArchivoConPermisos(
-          archivoData,
-          CARPETA_ID,
-          nombreArchivo,
-          validacionCorreos.correosParaPermisos,
-          [] // Sin correos adicionales para justificaciones
-        );
-        
-        if (!resultadoSubida.success) {
-          return { success: false, message: resultadoSubida.mensajeError };
-        }
-        
-        fileUrl = resultadoSubida.url;
-        
-        // Generar alerta de permisos si hay problemas
-        alertaPermisos = generarAlertaPermisos(validacionCorreos, resultadoSubida);
-      } else {
-        // Si no hay archivo, igual verificar si hay alertas de correo
-        alertaPermisos = generarAlertaPermisos(validacionCorreos, null);
-      }
-      
-      // ========== CREAR REGISTRO EN LA BASE DE DATOS ==========
-      var fechaHoy = new Date();
-      var estado = "Enviado";
-      var codigoAsamblea = generarCodigoAsamblea(fechaHoy);
-      
-      var gestion = "Socio";
-      var nomDirigente = "";
-      var correoDirigente = "";
-      
-      if (esGestionDirigente) {
-        gestion = "Dirigente";
-        nomDirigente = gestor.nombre;
-        correoDirigente = gestor.correo;
-      }
-      
-      var newRow = [];
-      newRow[COL_JUST.ID] = idUnico;
-      newRow[COL_JUST.FECHA] = fechaHoy;
-      newRow[COL_JUST.RUT] = beneficiario.rut;
-      newRow[COL_JUST.NOMBRE] = beneficiario.nombre;
-      newRow[COL_JUST.REGION] = beneficiario.region;
-      newRow[COL_JUST.MOTIVO] = tipo;
-      newRow[COL_JUST.ARGUMENTO] = motivo;
-      newRow[COL_JUST.RESPALDO] = fileUrl;
-      newRow[COL_JUST.ESTADO] = estado;
-      newRow[COL_JUST.OBSERVACION] = "";
-      newRow[COL_JUST.NOTIFICACION] = estado;
-      newRow[COL_JUST.ASAMBLEA] = codigoAsamblea;
-      newRow[COL_JUST.GESTION] = gestion;
-      newRow[COL_JUST.DIRIGENTE] = nomDirigente;
-      newRow[COL_JUST.CORREO_DIRIGENTE] = correoDirigente;
-      
-      sheetJustif.appendRow(newRow);
-      
-      // Agregar validación de datos
-      var lastRow = sheetJustif.getLastRow();
-      var cellEstado = sheetJustif.getRange(lastRow, COL_JUST.ESTADO + 1);
-      var rule = SpreadsheetApp.newDataValidation()
-        .requireValueInList(['Enviado', 'Aceptado', 'Aceptado/Obs', 'Rechazado'], true)
-        .setAllowInvalid(false)
-        .build();
-      cellEstado.setDataValidation(rule);
-      
-      // ========== ENVIAR CORREOS ==========
-      if (esCorreoValido(beneficiario.correo)) {
-        
-        // Construimos el link del archivo o S/D si no hay URL válida
-        let respaldoDisplay = "";
-        if (fileUrl && fileUrl.includes("http")) {
-           respaldoDisplay = `<a href="${fileUrl}" style="color: ${'#ea580c'}; text-decoration: none; font-weight: bold;">Ver Documento Adjunto</a>`;
-        } else {
-           respaldoDisplay = ""; // Se convertirá en S/D automáticamente
-        }
-
-        // Datos formateados exactamente como se solicitaron
-        var datosCorreo = {
-            "FECHA": Utilities.formatDate(fechaHoy, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm"),
-            "RUT": formatRutServer(beneficiario.rut),
-            "NOMBRE": beneficiario.nombre,
-            "REGION": beneficiario.region, // Asegúrate que este dato venga de 'obtenerUsuarioPorRut'
-            "MOTIVO": tipo,
-            "ARGUMENTO": motivo,
-            "RESPALDO": respaldoDisplay,
-            "OBSERVACION": "", // Observación inicial suele estar vacía
-            "ASAMBLEA": codigoAsamblea,
-            "GESTION": gestion,
-            "DIRIGENTE": nomDirigente
-        };
-
-        enviarCorreoEstilizado(
-          beneficiario.correo,
-          "Justificación Ingresada - Sindicato SLIM n°3",
-          "Comprobante de Justificación",
-          `Hola <strong>${beneficiario.nombre}</strong>, tu justificación ha sido ingresada correctamente en el sistema. A continuación los detalles registrados:`,
-          datosCorreo,
-          "#ea580c" // Color naranja para justificaciones
-        );
-      }
-      
-      // Correo de respaldo al dirigente (si aplica)
-      if (esGestionDirigente && esCorreoValido(correoDirigente) && correoDirigente !== beneficiario.correo) {
-         
-         // 1. Construimos el enlace específicamente para el diseño del dirigente (color #475569)
-         let respaldoDisplayDirigente = "";
-         if (fileUrl && fileUrl.includes("http")) {
-            respaldoDisplayDirigente = `<a href="${fileUrl}" style="color: #475569; text-decoration: none; font-weight: bold;">Ver Documento Adjunto</a>`;
-         } else {
-            respaldoDisplayDirigente = ""; // Se convertirá en S/D automáticamente
-         }
-
-         // 2. Construimos el objeto de datos con el enlace incluido
-         var datosCorreoDirigente = {
-            "FECHA": Utilities.formatDate(fechaHoy, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm"),
-            "RUT": formatRutServer(beneficiario.rut),
-            "NOMBRE": beneficiario.nombre,
-            "REGION": beneficiario.region,
-            "MOTIVO": tipo,
-            "ARGUMENTO": motivo,
-            "RESPALDO": respaldoDisplayDirigente, // <--- AQUI ESTA EL CAMBIO (Antes decía "Documento Cargado")
-            "OBSERVACION": "",
-            "ASAMBLEA": codigoAsamblea,
-            "GESTION": gestion,
-            "DIRIGENTE": nomDirigente
-        };
-
-        enviarCorreoEstilizado(
-          correoDirigente,
-          "Respaldo Gestión Justificación - Sindicato SLIM n°3",
-          "Gestión Realizada",
-          `Has ingresado exitosamente una justificación para el socio <strong>${beneficiario.nombre}</strong>.`,
-          datosCorreoDirigente,
-          "#475569" // Color gris/azul para administración
-        );
-      }
-      
-      // ========== PREPARAR RESPUESTA ==========
-      var respuesta = {
-        success: true,
-        message: "Justificación enviada exitosamente."
-      };
-      
-      // Agregar alerta si hay problemas con permisos
-      if (alertaPermisos && alertaPermisos.mostrarAlerta) {
-        respuesta.mostrarAlerta = true;
-        respuesta.tipoAlerta = alertaPermisos.tipoAlerta;
-        respuesta.mensajeAlerta = alertaPermisos.mensajeAlerta;
-      }
-      
-      return respuesta;
-      
-    } catch (e) {
-      Logger.log("Error en enviarJustificacion: " + e.toString());
-      return { success: false, message: "Error: " + e.toString() };
-    } finally {
-      lock.releaseLock();
+    #toggle-password-btn:focus {
+      outline: none;
     }
-  } else {
-    return { success: false, message: "Servidor ocupado." };
-  }
-}
+    </style>
+  </head>
+  <body class="text-slate-800 antialiased selection:bg-blue-200 selection:text-blue-900">
 
-function eliminarJustificacion(idJustif) {
-  var lock = LockService.getScriptLock();
-  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
-    try {
-      const sheet = getSheet('JUSTIFICACIONES', 'JUSTIFICACIONES');
-      const data = sheet.getDataRange().getValues();
-      const COL = CONFIG.COLUMNAS.JUSTIFICACIONES;
-      
-      const estadoSwitch = obtenerEstadoSwitchJustificaciones();
-      
-      for (let i = 1; i < data.length; i++) {
-        if (String(data[i][COL.ID]) === String(idJustif)) {
-          const estado = String(data[i][COL.ESTADO]);
-          
-          if (!estadoSwitch.habilitado && estado === "Enviado") {
-            return { 
-              success: false, 
-              message: "El plazo para agregar o modificar información ha vencido. Si al final del mes aparece con multa puede realizar la apelación." 
-            };
-          }
-          
-          if (estado !== "Enviado") {
-            return { success: false, message: "No se puede eliminar." };
-          }
-          
-          sheet.deleteRow(i + 1); 
-          return { success: true, message: "Eliminado." };
-        }
-      }
-      return { success: false, message: "No encontrado." };
-    } catch (e) { 
-      return { success: false, message: "Error: " + e.toString() }; 
-    } finally { 
-      lock.releaseLock(); 
-    }
-  } else { 
-    return { success: false, message: "Ocupado." }; 
-  }
-} 
+    <main class="min-h-screen w-full flex flex-col items-center justify-center p-4 py-6 sm:p-6 relative">
+      <div class="fixed top-[-10%] left-[-10%] w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob pointer-events-none"></div>
+      <div class="fixed top-[-10%] right-[-10%] w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000 pointer-events-none"></div>
 
-function obtenerHistorialJustificaciones(rutInput) {
-  try {
-    const sheet = getSheet('JUSTIFICACIONES', 'JUSTIFICACIONES');
-    const COL = CONFIG.COLUMNAS.JUSTIFICACIONES;
-    
-    var lastRow = sheet.getLastRow();
-    if (lastRow < 2) return { success: true, registros: [] };
-    
-    // ⭐ CORRECCIÓN: Calcular correctamente el número de columnas
-    var lastCol = sheet.getLastColumn();
-    var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getDisplayValues();
-    
-    const rutLimpio = cleanRut(rutInput);
-    const registros = [];
-
-    for (let i = 0; i < data.length; i++) { // ⭐ CAMBIO: Empezar en 0 porque data ya no tiene header
-      const row = data[i];
-      if (cleanRut(row[COL.RUT]) === rutLimpio) {
-        registros.push({
-          id: row[COL.ID],
-          fecha: row[COL.FECHA],
-          tipo: row[COL.MOTIVO],
-          motivo: row[COL.ARGUMENTO],
-          url: row[COL.RESPALDO],
-          estado: row[COL.ESTADO],
-          obs: row[COL.OBSERVACION],
-          asamblea: row[COL.ASAMBLEA],
-          gestion: row[COL.GESTION],    
-          nomDirigente: row[COL.DIRIGENTE]
-        });
-      }
-    }
-    
-    registros.reverse();
-    return { success: true, registros: registros };
-  } catch (e) { 
-    Logger.log("❌ Error en obtenerHistorialJustificaciones: " + e.toString());
-    return { success: false, message: "Error: " + e.toString() }; 
-  }
-}
-
-function verificarCambiosJustificaciones() {
-  try {
-    // ⭐ VALIDACIÓN
-    const sheet = getSheet('JUSTIFICACIONES', 'JUSTIFICACIONES');
-    if (!sheet) {
-      console.error("❌ No se pudo acceder a la hoja de justificaciones");
-      return;
-    }
-    
-    const data = sheet.getDataRange().getValues();
-    const COL = CONFIG.COLUMNAS.JUSTIFICACIONES;
-    
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const idRegistro = String(row[COL.ID]);
-      const estadoActual = String(row[COL.ESTADO]);
-      const estadoNotif = String(row[COL.NOTIFICACION]);
-      const nombre = row[COL.NOMBRE];
-      const tipo = row[COL.MOTIVO];
-      const obs = row[COL.OBSERVACION];
-      const asamblea = row[COL.ASAMBLEA];
-      
-      // ⭐ Verificar y corregir código de asamblea si falta
-      const fechaSolicitud = row[COL.FECHA];
-      const asambleaActual = row[COL.ASAMBLEA];
-      
-      if (fechaSolicitud && !asambleaActual) {
-        const codigoAsamblea = generarCodigoAsamblea(new Date(fechaSolicitud));
-        sheet.getRange(i + 1, COL.ASAMBLEA + 1).setValue(codigoAsamblea);
-        console.log(`✅ Código de asamblea generado para fila ${i + 1}: ${codigoAsamblea}`);
-      }
-      
-      if (estadoActual !== estadoNotif) {
-        const rutUsuario = row[COL.RUT];
-        
-        // ⭐ VALIDACIÓN: Verificar que existe la hoja de usuarios
-        const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
-        if (!sheetUsers) {
-          console.error("❌ No se pudo acceder a la hoja de usuarios");
-          continue;
-        }
-        
-        const dataUsers = sheetUsers.getDataRange().getDisplayValues();
-        const COL_USER = CONFIG.COLUMNAS.USUARIOS;
-        let correoUsuario = "";
-        
-        for (let j = 1; j < dataUsers.length; j++) {
-          if (cleanRut(dataUsers[j][COL_USER.RUT]) === cleanRut(rutUsuario)) {
-            correoUsuario = dataUsers[j][COL_USER.CORREO];
-            break;
-          }
-        }
-        
-        if (correoUsuario && correoUsuario.includes("@")) {
-          let color = "#ea580c";
-          let titulo = "Actualización de Justificación";
-          
-          if (estadoActual.includes("Aceptado")) { 
-            color = "#15803d"; 
-            titulo = "Justificación Aceptada"; 
-          } else if (estadoActual.includes("Rechazado")) { 
-            color = "#b91c1c"; 
-            titulo = "Justificación Rechazada"; 
-          }
-          
-          enviarCorreoEstilizado(
-            correoUsuario, 
-            titulo + " - Sindicato SLIM n°3", 
-            titulo, 
-            `Hola ${nombre}, el estado de tu justificación ha cambiado.`, 
-            { 
-              "ID": idRegistro,
-              "Tipo": tipo, 
-              "Nuevo Estado": estadoActual, 
-              "Observación": obs || "Sin observaciones",
-              "Asamblea": asamblea || "Pendiente asignación"
-            }, 
-            color
-          );
-        }
-        
-        sheet.getRange(i + 1, COL.NOTIFICACION + 1).setValue(estadoActual);
-      }
-    }
-  } catch (e) { 
-    console.error("❌ Error verificando justificaciones: " + e.toString()); 
-  }
-}
-
-// ==========================================
-// LÓGICA DE APELACIONES
-// ==========================================
-
-function verificarDisponibilidadApelaciones(mesApelacion) {
-  try {
-    const hoy = new Date();
-    const diaActual = hoy.getDate();
-    
-    const limiteInferior = new Date(2025, 2, 1);
-    limiteInferior.setHours(0, 0, 0, 0);
-    
-    const partes = mesApelacion.split("-");
-    const yearSel = parseInt(partes[0]);
-    const monthSel = parseInt(partes[1]) - 1;
-    const fechaSeleccionada = new Date(yearSel, monthSel, 1);
-    fechaSeleccionada.setHours(0, 0, 0, 0);
-    
-    if (fechaSeleccionada < limiteInferior) {
-      return { 
-        habilitado: false, 
-        mensaje: "No se pueden apelar meses anteriores a Marzo 2025." 
-      };
-    }
-    
-    const mesActual = hoy.getMonth();
-    const yearActual = hoy.getFullYear();
-    
-    if (yearSel === yearActual && monthSel === mesActual) {
-      if (diaActual < 25) {
-        return {
-          habilitado: false,
-          mensaje: "Las apelaciones del mes en curso solo están disponibles a partir del día 25."
-        };
-      }
-    }
-    
-    const fechaHoy = new Date(yearActual, mesActual, 1);
-    fechaHoy.setHours(0, 0, 0, 0);
-    
-    if (fechaSeleccionada > fechaHoy) {
-      return {
-        habilitado: false,
-        mensaje: "No se pueden apelar meses futuros."
-      };
-    }
-    
-    return { habilitado: true };
-    
-  } catch (e) {
-    return { habilitado: false, mensaje: "Error validando disponibilidad: " + e.toString() };
-  }
-}
-
-// ==========================================
-// FUNCIÓN ENVIAR APELACIÓN - VERSIÓN ACTUALIZADA (DISEÑO + SILENCIO)
-// Reemplazar la función existente completamente
-// ==========================================
-
-function enviarApelacion(rutGestor, mesApelacion, tipoMotivo, detalleMotivo, archivoComprobante, archivoLiquidacion, rutBeneficiario) {
-  var CARPETA_COMPROBANTES_ID = CONFIG.CARPETAS.APELACIONES_COMPROBANTES;
-  var CARPETA_LIQUIDACIONES_ID = CONFIG.CARPETAS.APELACIONES_LIQUIDACIONES;
-  
-  // Validar disponibilidad
-  var validacion = verificarDisponibilidadApelaciones(mesApelacion);
-  if (!validacion.habilitado) {
-    return { success: false, message: validacion.mensaje };
-  }
-  
-  var lock = LockService.getScriptLock();
-  if (lock.tryLock(30000)) {
-    try {
-      var sheetApelaciones = getSheet('APELACIONES', 'APELACIONES');
-      var COL_APEL = CONFIG.COLUMNAS.APELACIONES;
-      
-      // Obtener datos del gestor
-      var gestor = obtenerUsuarioPorRut(rutGestor);
-      if (!gestor.encontrado) return { success: false, message: "Error de sesión." };
-      
-      // Determinar beneficiario
-      var beneficiario;
-      var rutTarget = rutBeneficiario ? cleanRut(rutBeneficiario) : cleanRut(rutGestor);
-      var esGestionDirigente = rutTarget !== cleanRut(rutGestor);
-      
-      if (!esGestionDirigente) {
-        beneficiario = gestor;
-      } else {
-        beneficiario = obtenerUsuarioPorRut(rutBeneficiario);
-        if (!beneficiario.encontrado) return { success: false, message: "RUT del socio no encontrado." };
-      }
-      
-      // Verificar apelaciones existentes
-      var dataApelaciones = sheetApelaciones.getDataRange().getDisplayValues();
-      for (var i = 1; i < dataApelaciones.length; i++) {
-        var row = dataApelaciones[i];
-        var estadoActual = String(row[COL_APEL.ESTADO]);
-        var estadosBloqueantes = ["Enviado", "Aceptado", "Aceptado-Obs"];
-        
-        if (cleanRut(row[COL_APEL.RUT]) === cleanRut(beneficiario.rut) &&
-            row[COL_APEL.MES_APELACION] === mesApelacion &&
-            estadosBloqueantes.indexOf(estadoActual) !== -1) {
-          
-          var mensajeError = "";
-          if (estadoActual === "Enviado") {
-            mensajeError = "Ya tienes una apelación pendiente para este mes. Verifica el estado en tu historial.";
-          } else {
-            mensajeError = "Este mes ya fue resuelto favorablemente. Verifica los detalles en tu historial.";
-          }
-          
-          return { success: false, message: mensajeError };
-        }
-      }
-      
-      // Validar liquidación obligatoria
-      if (!archivoLiquidacion || !archivoLiquidacion.base64) {
-        return { success: false, message: "La liquidación de sueldo es obligatoria." };
-      }
-      
-      // ========== VALIDAR CORREOS ANTES DE SUBIR ARCHIVOS ==========
-      var validacionCorreos = validarCorreosParaPermisos(
-        { rut: beneficiario.rut, nombre: beneficiario.nombre, correo: beneficiario.correo },
-        esGestionDirigente ? { rut: gestor.rut, nombre: gestor.nombre, correo: gestor.correo } : null,
-        esGestionDirigente
-      );
-      
-      var idUnico = Utilities.getUuid();
-      var urlComprobante = ""; // Se guardará vacío en BD si no hay
-      var urlLiquidacion = "";
-      var alertaPermisosGlobal = { mostrarAlerta: false, detalles: [] };
-      
-      // ========== SUBIR COMPROBANTE (Opcional) ==========
-      if (archivoComprobante && archivoComprobante.base64) {
-        var nombreArchivoComp = "APEL-COMP-" + idUnico + "-" + cleanRut(beneficiario.rut);
-        
-        var resultadoComp = subirArchivoConPermisos(
-          archivoComprobante,
-          CARPETA_COMPROBANTES_ID,
-          nombreArchivoComp,
-          validacionCorreos.correosParaPermisos, // Usa la función silenciosa automáticamente
-          []
-        );
-        
-        if (resultadoComp.success) {
-          urlComprobante = resultadoComp.url;
-          if (resultadoComp.permisosError && resultadoComp.permisosError.length > 0) {
-            alertaPermisosGlobal.mostrarAlerta = true;
-            resultadoComp.permisosError.forEach(function(err) {
-              alertaPermisosGlobal.detalles.push("Comprobante: No se pudo dar acceso a " + err.nombre);
-            });
-          }
-        } else {
-          // Si falla la subida opcional, registramos error pero continuamos
-          console.error("Error subiendo comprobante: " + resultadoComp.mensajeError);
-        }
-      }
-      
-      // ========== SUBIR LIQUIDACIÓN (Obligatoria) ==========
-      var nombreArchivoLiq = "APEL-LIQ-" + idUnico + "-" + cleanRut(beneficiario.rut);
-      
-      var resultadoLiq = subirArchivoConPermisos(
-        archivoLiquidacion,
-        CARPETA_LIQUIDACIONES_ID,
-        nombreArchivoLiq,
-        validacionCorreos.correosParaPermisos, // Usa la función silenciosa automáticamente
-        []
-      );
-      
-      if (!resultadoLiq.success) {
-        return { success: false, message: "Error al subir la liquidación: " + resultadoLiq.mensajeError };
-      }
-      
-      urlLiquidacion = resultadoLiq.url;
-      
-      if (resultadoLiq.permisosError && resultadoLiq.permisosError.length > 0) {
-        alertaPermisosGlobal.mostrarAlerta = true;
-        resultadoLiq.permisosError.forEach(function(err) {
-          alertaPermisosGlobal.detalles.push("Liquidación: No se pudo dar acceso a " + err.nombre);
-        });
-      }
-      
-      // Agregar alertas de validación de correos
-      if (validacionCorreos.alertas && validacionCorreos.alertas.length > 0) {
-        alertaPermisosGlobal.mostrarAlerta = true;
-        validacionCorreos.alertas.forEach(function(a) {
-          alertaPermisosGlobal.detalles.push(a.mensaje);
-        });
-      }
-      
-      // ========== CREAR REGISTRO EN LA BASE DE DATOS ==========
-      var fechaHoy = new Date();
-      var estado = "Enviado";
-      
-      var gestion = "Socio";
-      var nomDirigente = "";
-      var correoDirigente = "";
-      
-      if (esGestionDirigente) {
-        gestion = "Dirigente";
-        nomDirigente = gestor.nombre;
-        correoDirigente = gestor.correo;
-      }
-      
-      var newRow = [];
-      newRow[COL_APEL.ID] = idUnico;
-      newRow[COL_APEL.FECHA_SOLICITUD] = fechaHoy;
-      newRow[COL_APEL.RUT] = beneficiario.rut;
-      newRow[COL_APEL.NOMBRE] = beneficiario.nombre;
-      newRow[COL_APEL.CORREO] = beneficiario.correo;
-      newRow[COL_APEL.MES_APELACION] = mesApelacion;
-      newRow[COL_APEL.TIPO_MOTIVO] = tipoMotivo;
-      newRow[COL_APEL.DETALLE_MOTIVO] = detalleMotivo || "";
-      newRow[COL_APEL.URL_COMPROBANTE] = urlComprobante;
-      newRow[COL_APEL.URL_LIQUIDACION] = urlLiquidacion;
-      newRow[COL_APEL.ESTADO] = estado;
-      newRow[COL_APEL.OBSERVACION] = "";
-      newRow[COL_APEL.NOTIFICADO] = estado;
-      newRow[COL_APEL.GESTION] = gestion;
-      newRow[COL_APEL.NOMBRE_DIRIGENTE] = nomDirigente;
-      newRow[COL_APEL.CORREO_DIRIGENTE] = correoDirigente;
-      newRow[COL_APEL.URL_COMPROBANTE_DEVOLUCION] = "";
-      
-      sheetApelaciones.appendRow(newRow);
-      
-      // Validación de celda (opcional, para integridad)
-      var lastRow = sheetApelaciones.getLastRow();
-      var cellEstado = sheetApelaciones.getRange(lastRow, COL_APEL.ESTADO + 1);
-      var rule = SpreadsheetApp.newDataValidation()
-        .requireValueInList(['Enviado', 'Aceptado', 'Aceptado-Obs', 'Rechazado'], true)
-        .setAllowInvalid(false)
-        .build();
-      cellEstado.setDataValidation(rule);
-      
-      // Formatear mes para visualización
-      var fechaMes = new Date(mesApelacion + "-02");
-      var nombreMes = fechaMes.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
-      nombreMes = nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
-
-      // ========== ENVIAR CORREOS ==========
-      
-      // 1. Correo al Beneficiario
-      if (esCorreoValido(beneficiario.correo)) {
-        
-        // Construir enlaces HTML con color del tema apelaciones (Rojo #dc2626)
-        var linkComprobanteSocio = (urlComprobante && urlComprobante.includes("http")) 
-            ? `<a href="${urlComprobante}" style="color: #dc2626; text-decoration: none; font-weight: bold;">Ver Comprobante</a>` 
-            : "";
-            
-        var linkLiquidacionSocio = (urlLiquidacion && urlLiquidacion.includes("http")) 
-            ? `<a href="${urlLiquidacion}" style="color: #dc2626; text-decoration: none; font-weight: bold;">Ver Liquidación</a>` 
-            : "";
-
-        var datosCorreoSocio = {
-            "FECHA SOLICITUD": Utilities.formatDate(fechaHoy, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm"),
-            "RUT": formatRutServer(beneficiario.rut),
-            "NOMBRE": beneficiario.nombre,
-            "MES APELACION": nombreMes,
-            "TIPO MOTIVO": tipoMotivo,
-            "DETALLE MOTIVO": detalleMotivo || "", // Saldrá S/D si es vacío
-            "URL COMPROBANTE": linkComprobanteSocio, // Saldrá S/D si es vacío
-            "URL LIQUIDACIÓN": linkLiquidacionSocio, // Saldrá S/D si es vacío
-            "OBSERVACIÓN": "",
-            "GESTIÓN": gestion,
-            "NOMBRE DIRIGENTE": nomDirigente || "" // Saldrá S/D si es vacío
-        };
-
-        enviarCorreoEstilizado(
-          beneficiario.correo,
-          "Apelación Ingresada - Sindicato SLIM n°3",
-          "Comprobante de Apelación",
-          `Hola <strong>${beneficiario.nombre}</strong>, hemos recibido correctamente tu apelación de multa. A continuación los detalles registrados:`,
-          datosCorreoSocio,
-          "#dc2626" // Color rojo para apelaciones
-        );
-      }
-      
-      // 2. Correo al Dirigente (si gestiona a tercero)
-      if (esGestionDirigente && esCorreoValido(correoDirigente) && correoDirigente !== beneficiario.correo) {
-        
-        // Enlaces con color administrativo (#475569)
-        var linkComprobanteDirigente = (urlComprobante && urlComprobante.includes("http")) 
-            ? `<a href="${urlComprobante}" style="color: #475569; text-decoration: none; font-weight: bold;">Ver Comprobante</a>` 
-            : "";
-            
-        var linkLiquidacionDirigente = (urlLiquidacion && urlLiquidacion.includes("http")) 
-            ? `<a href="${urlLiquidacion}" style="color: #475569; text-decoration: none; font-weight: bold;">Ver Liquidación</a>` 
-            : "";
-
-        var datosCorreoDirigente = {
-            "FECHA SOLICITUD": Utilities.formatDate(fechaHoy, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm"),
-            "RUT": formatRutServer(beneficiario.rut),
-            "NOMBRE": beneficiario.nombre,
-            "MES APELACION": nombreMes,
-            "TIPO MOTIVO": tipoMotivo,
-            "DETALLE MOTIVO": detalleMotivo || "",
-            "URL COMPROBANTE": linkComprobanteDirigente,
-            "URL LIQUIDACIÓN": linkLiquidacionDirigente,
-            "OBSERVACIÓN": "",
-            "GESTIÓN": gestion,
-            "NOMBRE DIRIGENTE": nomDirigente
-        };
-
-        enviarCorreoEstilizado(
-          correoDirigente,
-          "Respaldo Gestión Apelación - Sindicato SLIM n°3",
-          "Gestión Realizada",
-          `Has ingresado exitosamente una apelación para el socio <strong>${beneficiario.nombre}</strong>.`,
-          datosCorreoDirigente,
-          "#475569" // Color gris/azul
-        );
-      }
-      
-      // ========== PREPARAR RESPUESTA ==========
-      var respuesta = {
-        success: true,
-        message: "Apelación enviada exitosamente."
-      };
-      
-      if (alertaPermisosGlobal.mostrarAlerta && alertaPermisosGlobal.detalles.length > 0) {
-        respuesta.mostrarAlerta = true;
-        respuesta.tipoAlerta = validacionCorreos.alertaBeneficiario ? 'warning' : 'info';
-        respuesta.mensajeAlerta = alertaPermisosGlobal.detalles.join('\n\n');
-      }
-      
-      return respuesta;
-      
-    } catch (e) {
-      return { success: false, message: "Error al enviar apelación: " + e.toString() };
-    } finally {
-      lock.releaseLock();
-    }
-  } else {
-    return { success: false, message: "Servidor ocupado." };
-  }
-}
-
-function obtenerHistorialApelaciones(rutInput) {
-  try {
-    const sheet = getSheet('APELACIONES', 'APELACIONES');
-    const COL = CONFIG.COLUMNAS.APELACIONES;
-    
-    var lastRow = sheet.getLastRow();
-    if (lastRow < 2) return { success: true, registros: [] };
-    
-    // ⭐ CORRECCIÓN: Calcular correctamente el número de columnas
-    var lastCol = sheet.getLastColumn();
-    var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getDisplayValues();
-    
-    const rutLimpio = cleanRut(rutInput);
-    const registros = [];
-    
-    for (let i = 0; i < data.length; i++) { // ⭐ CAMBIO: Empezar en 0
-      const row = data[i];
-      if (cleanRut(row[COL.RUT]) === rutLimpio) {
-        registros.push({
-          id: row[COL.ID],
-          fecha: row[COL.FECHA_SOLICITUD],
-          mesApelacion: row[COL.MES_APELACION],
-          tipoMotivo: row[COL.TIPO_MOTIVO],
-          detalleMotivo: row[COL.DETALLE_MOTIVO],
-          urlComprobante: row[COL.URL_COMPROBANTE],
-          urlLiquidacion: row[COL.URL_LIQUIDACION],
-          estado: row[COL.ESTADO],
-          obs: row[COL.OBSERVACION],
-          gestion: row[COL.GESTION],
-          nomDirigente: row[COL.NOMBRE_DIRIGENTE],
-          urlComprobanteDevolucion: row[COL.URL_COMPROBANTE_DEVOLUCION] || ""
-        });
-      }
-    }
-    
-    registros.reverse();
-    return { success: true, registros: registros };
-    
-  } catch (e) { 
-    Logger.log("❌ Error en obtenerHistorialApelaciones: " + e.toString());
-    return { success: false, message: "Error: " + e.toString() }; 
-  }
-}
-
-function eliminarApelacion(idApelacion) {
-  var lock = LockService.getScriptLock();
-  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
-    try {
-      const sheet = getSheet('APELACIONES', 'APELACIONES');
-      const data = sheet.getDataRange().getValues();
-      const COL = CONFIG.COLUMNAS.APELACIONES;
-      
-      for (let i = 1; i < data.length; i++) {
-        if (String(data[i][COL.ID]) === String(idApelacion)) {
-          const estado = String(data[i][COL.ESTADO]);
-          
-          // CAMBIO AQUI: Permitimos eliminar si es "Enviado" O "Rechazado"
-          if (estado !== "Enviado" && estado !== "Rechazado") {
-            return { success: false, message: "Solo se pueden eliminar apelaciones en estado 'Enviado' o 'Rechazado'." };
-          }
-          
-          sheet.deleteRow(i + 1);
-          return { success: true, message: "Apelación eliminada correctamente." };
-        }
-      }
-      
-      return { success: false, message: "Apelación no encontrada." };
-      
-    } catch (e) { 
-      return { success: false, message: "Error: " + e.toString() }; 
-    } finally { 
-      lock.releaseLock(); 
-    }
-  } else { 
-    return { success: false, message: "Servidor ocupado." }; 
-  }
-}
-
-function verificarCambiosApelaciones() {
-  try {
-    // ⭐ VALIDACIÓN
-    const sheet = getSheet('APELACIONES', 'APELACIONES');
-    if (!sheet) {
-      console.error("❌ No se pudo acceder a la hoja de apelaciones");
-      return;
-    }
-    
-    const data = sheet.getDataRange().getValues();
-    const COL = CONFIG.COLUMNAS.APELACIONES;
-    
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const idRegistro = String(row[COL.ID]);
-      const estadoActual = String(row[COL.ESTADO]);
-      const estadoNotif = String(row[COL.NOTIFICADO]);
-      const correo = row[COL.CORREO];
-      const nombre = row[COL.NOMBRE];
-      const mesApel = String(row[COL.MES_APELACION]);
-      const tipoMotivo = row[COL.TIPO_MOTIVO];
-      const obs = row[COL.OBSERVACION];
-      
-      if (estadoActual !== estadoNotif) {
-        if (correo && correo.includes("@")) {
-          let color = "#dc2626";
-          let titulo = "Actualización de Apelación";
-          
-          if (estadoActual.includes("Aceptado")) { 
-            color = "#15803d"; 
-            titulo = "Apelación Aceptada"; 
-          } else if (estadoActual.includes("Rechazado")) { 
-            color = "#b91c1c"; 
-            titulo = "Apelación Rechazada"; 
-          }
-          
-          const partesMes = mesApel.split("-");
-          const fechaMes = new Date(`${mesApel}-02`);
-          const nombreMes = fechaMes.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
-          
-          enviarCorreoEstilizado(
-            correo, 
-            titulo + " - Sindicato SLIM n°3", 
-            titulo, 
-            `Hola ${nombre}, el estado de tu apelación ha cambiado.`, 
-            { 
-              "ID": idRegistro,
-              "Mes Apelado": nombreMes.toUpperCase(),
-              "Motivo": tipoMotivo, 
-              "Nuevo Estado": estadoActual, 
-              "Observación": obs || "Sin observaciones" 
-            }, 
-            color
-          );
-        }
-        
-        sheet.getRange(i + 1, COL.NOTIFICADO + 1).setValue(estadoActual);
-      }
-    }
-  } catch (e) { 
-    console.error("❌ Error verificando apelaciones: " + e.toString()); 
-  }
-}
-
-function procesarPermisosComprobantesDevolucion() {
-  try {
-    // ⭐ VALIDACIÓN
-    const sheet = getSheet('APELACIONES', 'APELACIONES');
-    if (!sheet) {
-      console.error("❌ No se pudo acceder a la hoja de apelaciones");
-      return;
-    }
-    
-    const data = sheet.getDataRange().getValues();
-    const COL = CONFIG.COLUMNAS.APELACIONES;
-    
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const urlComprobanteDevolucion = String(row[COL.URL_COMPROBANTE_DEVOLUCION]);
-      const correoUsuario = row[COL.CORREO];
-      
-      if (urlComprobanteDevolucion && 
-          urlComprobanteDevolucion.includes("drive.google.com") && 
-          correoUsuario && 
-          correoUsuario.includes("@")) {
-        
-        try {
-          let fileId = "";
-          if (urlComprobanteDevolucion.includes("/d/")) {
-            fileId = urlComprobanteDevolucion.split("/d/")[1].split("/")[0];
-          } else if (urlComprobanteDevolucion.includes("id=")) {
-            fileId = urlComprobanteDevolucion.split("id=")[1].split("&")[0];
-          }
-          
-          if (fileId) {
-            const file = DriveApp.getFileById(fileId);
-            const viewers = file.getViewers();
-            const hasAccess = viewers.some(viewer => viewer.getEmail() === correoUsuario);
-            
-            if (!hasAccess) {
-              file.addViewer(correoUsuario);
-              console.log(`✅ Permiso otorgado a ${correoUsuario} para archivo ${fileId}`);
-            }
-          }
-        } catch (fileErr) {
-          console.error(`⚠️ Error procesando archivo para fila ${i + 1}: ${fileErr}`);
-        }
-      }
-    }
-  } catch (e) {
-    console.error("❌ Error en procesarPermisosComprobantesDevolucion: " + e.toString());
-  }
-}
-
-// ==========================================
-// MÓDULO: PERMISO MÉDICO
-// ==========================================
-
-function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rutBeneficiario) {
-  const CORREO_REPRESENTANTE_LEGAL = CONFIG.CORREOS.REPRESENTANTE_LEGAL;
-  
-  const lock = LockService.getScriptLock();
-  if (lock.tryLock(30000)) {
-    try {
-      const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
-      const sheetPermisos = getSheet('PERMISOS_MEDICOS', 'PERMISOS_MEDICOS');
-      const COL_USER = CONFIG.COLUMNAS.USUARIOS;
-      const COL_PERM = CONFIG.COLUMNAS.PERMISOS_MEDICOS;
-      
-      const dataUsers = sheetUsers.getDataRange().getDisplayValues();
-      
-      let gestor = null;
-      const rutLimpioGestor = cleanRut(rutGestor);
-      for (let i = 1; i < dataUsers.length; i++) {
-        if (cleanRut(dataUsers[i][COL_USER.RUT]) === rutLimpioGestor) {
-          gestor = { 
-            rut: dataUsers[i][COL_USER.RUT], 
-            nombre: dataUsers[i][COL_USER.NOMBRE], 
-            correo: dataUsers[i][COL_USER.CORREO] 
-          };
-          break;
-        }
-      }
-      if (!gestor) return { success: false, message: "Error de sesión." };
-      
-      let rutTarget = rutBeneficiario ? cleanRut(rutBeneficiario) : rutLimpioGestor;
-      let beneficiario = null;
-      
-      if (rutTarget === rutLimpioGestor) {
-        beneficiario = gestor;
-      } else {
-        for (let i = 1; i < dataUsers.length; i++) {
-          if (cleanRut(dataUsers[i][COL_USER.RUT]) === rutTarget) {
-            beneficiario = { 
-              rut: dataUsers[i][COL_USER.RUT], 
-              nombre: dataUsers[i][COL_USER.NOMBRE], 
-              correo: dataUsers[i][COL_USER.CORREO] 
-            };
-            break;
-          }
-        }
-        if (!beneficiario) return { success: false, message: "RUT del socio no encontrado." };
-      }
-      
-      const idUnico = Utilities.getUuid();
-      const fechaHoy = new Date();
-      const estado = "Solicitado";
-      
-      let gestion = "Socio";
-      let nomDirigente = "";
-      let correoDirigente = "";
-      
-      if (rutTarget !== rutLimpioGestor) {
-        gestion = "Dirigente";
-        nomDirigente = gestor.nombre;
-        correoDirigente = gestor.correo;
-      }
-      
-      // Preparar datos según nueva estructura
-      const newRow = [];
-      newRow[COL_PERM.ID] = idUnico;
-      newRow[COL_PERM.FECHA_SOLICITUD] = fechaHoy;
-      newRow[COL_PERM.RUT] = beneficiario.rut;
-      newRow[COL_PERM.NOMBRE] = beneficiario.nombre;
-      newRow[COL_PERM.CORREO] = beneficiario.correo;
-      newRow[COL_PERM.TIPO_PERMISO] = tipoPermiso;
-      newRow[COL_PERM.FECHA_INICIO] = fechaInicio;
-      newRow[COL_PERM.MOTIVO_DETALLE] = motivo;
-      newRow[COL_PERM.URL_DOCUMENTO] = "Sin documento";
-      newRow[COL_PERM.ESTADO] = estado;
-      newRow[COL_PERM.FECHA_SUBIDA] = "";
-      newRow[COL_PERM.NOTIFICADO_REP_LEGAL] = false;
-      newRow[COL_PERM.GESTION] = gestion;
-      newRow[COL_PERM.NOMBRE_DIRIGENTE] = nomDirigente;
-      newRow[COL_PERM.CORREO_DIRIGENTE] = correoDirigente;
-      
-      sheetPermisos.appendRow(newRow);
-      
-      if (beneficiario.correo && beneficiario.correo.includes("@")) {
-        let mensajeExtra = gestion === "Dirigente" ? `<br><em>(Ingresado por: ${nomDirigente})</em>` : "";
-        
-        const fechaInicioObj = new Date(fechaInicio);
-        const fechaInicioStr = fechaInicioObj.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' });
-        
-        enviarCorreoEstilizado(
-          beneficiario.correo,
-          "Solicitud Permiso Médico - Sindicato SLIM n°3",
-          "Permiso Médico Solicitado",
-          `Hola ${beneficiario.nombre}, se ha registrado tu solicitud de permiso médico. <strong>IMPORTANTE:</strong> Debes adjuntar el documento de respaldo en el historial del módulo a vez realizada la atención médica.`,
-          { 
-            "ID": idUnico,
-            "Tipo": tipoPermiso,
-            "Fecha Inicio": fechaInicioStr,
-            "Motivo": motivo,
-            "Gestión": gestion + mensajeExtra,
-            "Estado": estado,
-            "Acción Requerida": "Adjuntar documento de respaldo"
-          },
-          "#10b981"
-        );
-      }
-      
-      enviarCorreoEstilizado(
-        CORREO_REPRESENTANTE_LEGAL,
-        "Notificación Permiso Médico - Sindicato SLIM n°3",
-        "Nueva Solicitud de Permiso Médico",
-        `Se ha registrado una solicitud de permiso médico para el trabajador <strong>${beneficiario.nombre}</strong>.`,
-        { 
-          "ID": idUnico,
-          "Trabajador": beneficiario.nombre,
-          "RUT": beneficiario.rut,
-          "Tipo": tipoPermiso,
-          "Fecha Inicio": fechaInicio,
-          "Motivo": motivo,
-          "Fecha Solicitud": fechaHoy.toLocaleDateString()
-        },
-        "##10b981"
-      );
-      
-      if (gestion === "Dirigente" && correoDirigente && correoDirigente.includes("@") && correoDirigente !== beneficiario.correo) {
-        enviarCorreoEstilizado(
-          correoDirigente,
-          "Respaldo Gestión Permiso Médico - Sindicato SLIM n°3",
-          "Permiso Médico Ingresado",
-          `Has ingresado exitosamente un permiso médico para el socio <strong>${beneficiario.nombre}</strong>.`,
-          { "ID": idUnico, "Socio": beneficiario.nombre, "Tipo": tipoPermiso },
-          "#475569"
-        );
-      }
-      
-      return { success: true, message: "Permiso médico solicitado. No olvides adjuntar el documento de respaldo." };
-      
-    } catch (e) {
-      return { success: false, message: "Error: " + e.toString() };
-    } finally {
-      lock.releaseLock();
-    }
-  } else {
-    return { success: false, message: "Servidor ocupado." };
-  }
-}
-
-// ==========================================
-// FUNCIÓN ADJUNTAR DOCUMENTO PERMISO - VERSIÓN MEJORADA
-// Reemplazar la función existente completamente
-// ==========================================
-
-function adjuntarDocumentoPermiso(idPermiso, archivoData) {
-  var CARPETA_ID = CONFIG.CARPETAS.PERMISOS_MEDICOS;
-  var CORREO_REPRESENTANTE_LEGAL = CONFIG.CORREOS.REPRESENTANTE_LEGAL;
-  
-  var lock = LockService.getScriptLock();
-  if (lock.tryLock(30000)) {
-    try {
-      var sheetPermisos = getSheet('PERMISOS_MEDICOS', 'PERMISOS_MEDICOS');
-      var data = sheetPermisos.getDataRange().getValues();
-      var COL = CONFIG.COLUMNAS.PERMISOS_MEDICOS;
-      
-      var rowIndex = -1;
-      var beneficiario = null;
-      var tipoPermiso = "";
-      var gestionTipo = "";
-      var correoGestor = "";
-      
-      for (var i = 1; i < data.length; i++) {
-        if (String(data[i][COL.ID]) === String(idPermiso)) {
-          rowIndex = i + 1;
-          beneficiario = {
-            nombre: data[i][COL.NOMBRE],
-            correo: data[i][COL.CORREO],
-            rut: data[i][COL.RUT]
-          };
-          tipoPermiso = data[i][COL.TIPO_PERMISO];
-          gestionTipo = data[i][COL.GESTION];
-          correoGestor = data[i][COL.CORREO_DIRIGENTE];
-          break;
-        }
-      }
-      
-      if (rowIndex === -1) return { success: false, message: "Permiso no encontrado." };
-      
-      // ========== VALIDAR CORREOS ==========
-      var esGestionDirigente = gestionTipo === "Dirigente" && esCorreoValido(correoGestor);
-      
-      var correosParaPermisos = [];
-      var alertas = [];
-      
-      // Correo del beneficiario
-      if (esCorreoValido(beneficiario.correo)) {
-        correosParaPermisos.push({
-          correo: beneficiario.correo.trim().toLowerCase(),
-          tipo: 'beneficiario',
-          nombre: beneficiario.nombre
-        });
-      } else {
-        alertas.push("El socio " + beneficiario.nombre + " no tiene correo válido. No podrá acceder al documento.");
-      }
-      
-      // Correo del gestor
-      if (esGestionDirigente && correoGestor !== beneficiario.correo) {
-        correosParaPermisos.push({
-          correo: correoGestor.trim().toLowerCase(),
-          tipo: 'gestor',
-          nombre: 'Dirigente'
-        });
-      }
-      
-      // ========== SUBIR ARCHIVO ==========
-      var nombreArchivo = "PERMISO-" + idPermiso + "-" + cleanRut(beneficiario.rut);
-      
-      var resultadoSubida = subirArchivoConPermisos(
-        archivoData,
-        CARPETA_ID,
-        nombreArchivo,
-        correosParaPermisos,
-        [CORREO_REPRESENTANTE_LEGAL]
-      );
-      
-      if (!resultadoSubida.success) {
-        return { success: false, message: resultadoSubida.mensajeError };
-      }
-      
-      // ========== ACTUALIZAR REGISTRO ==========
-      var fechaSubida = new Date();
-      var nuevoEstado = "Documento Adjuntado";
-      
-      sheetPermisos.getRange(rowIndex, COL.URL_DOCUMENTO + 1).setValue(resultadoSubida.url);
-      sheetPermisos.getRange(rowIndex, COL.ESTADO + 1).setValue(nuevoEstado);
-      sheetPermisos.getRange(rowIndex, COL.FECHA_SUBIDA + 1).setValue(fechaSubida);
-      sheetPermisos.getRange(rowIndex, COL.NOTIFICADO_REP_LEGAL + 1).setValue(false);
-      
-      // ========== ENVIAR CORREOS ==========
-      if (esCorreoValido(beneficiario.correo)) {
-        enviarCorreoEstilizado(
-          beneficiario.correo,
-          "Documento Adjuntado - Sindicato SLIM n°3",
-          "Documento de Permiso Médico Adjuntado",
-          "Hola " + beneficiario.nombre + ", tu documento de respaldo ha sido adjuntado exitosamente.",
-          {
-            "ID": idPermiso,
-            "Tipo Permiso": tipoPermiso,
-            "Estado": nuevoEstado,
-            "Documento": '<a href="' + resultadoSubida.url + '" style="color: #10b981; text-decoration: none; font-weight: 600;">📎 Ver Documento</a>'  // ✅ CORRECCIÓN
-          },
-          "#10b981"
-        );
-      }
-      
-      enviarCorreoEstilizado(
-        CORREO_REPRESENTANTE_LEGAL,
-        "Documento Permiso Médico Adjuntado - Sindicato SLIM n°3",
-        "Documento de Permiso Médico Disponible",
-        "El trabajador <strong>" + beneficiario.nombre + "</strong> ha adjuntado el documento de respaldo para su permiso médico.",
-        {
-          "ID": idPermiso,
-          "Trabajador": beneficiario.nombre,
-          "RUT": beneficiario.rut,
-          "Tipo Permiso": tipoPermiso,
-          "Documento": '<a href="' + resultadoSubida.url + '" style="color: #10b981; font-weight: bold;">Disponible para revisión</a>',
-          "Fecha Adjunto": fechaSubida.toLocaleDateString()
-        },
-        "#475569"
-      );
-      
-      sheetPermisos.getRange(rowIndex, COL.NOTIFICADO_REP_LEGAL + 1).setValue(true);
-      
-      // ========== PREPARAR RESPUESTA ==========
-      var respuesta = {
-        success: true,
-        message: "Documento adjuntado y notificaciones enviadas."
-      };
-      
-      // Agregar alertas si hay problemas
-      if (alertas.length > 0 || (resultadoSubida.permisosError && resultadoSubida.permisosError.length > 0)) {
-        respuesta.mostrarAlerta = true;
-        respuesta.tipoAlerta = 'warning';
-        
-        var todosDetalles = alertas.slice(); // Copia del array
-        if (resultadoSubida.permisosError) {
-          resultadoSubida.permisosError.forEach(function(err) {
-            todosDetalles.push("No se pudo dar acceso a " + err.nombre);
-          });
-        }
-        
-        respuesta.mensajeAlerta = todosDetalles.join('\n\n');
-      }
-      
-      return respuesta;
-      
-    } catch (e) {
-      return { success: false, message: "Error: " + e.toString() };
-    } finally {
-      lock.releaseLock();
-    }
-  } else {
-    return { success: false, message: "Servidor ocupado." };
-  }
-}
-
-function obtenerHistorialPermisosMedicos(rutInput) {
-  try {
-    const sheet = getSheet('PERMISOS_MEDICOS', 'PERMISOS_MEDICOS');
-    const COL = CONFIG.COLUMNAS.PERMISOS_MEDICOS;
-    
-    var lastRow = sheet.getLastRow();
-    if (lastRow < 2) return { success: true, registros: [] };
-    
-    // ⭐ CORRECCIÓN: Calcular correctamente el número de columnas
-    var lastCol = sheet.getLastColumn();
-    var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getDisplayValues();
-    
-    const rutLimpio = cleanRut(rutInput);
-    const registros = [];
-    
-    for (let i = 0; i < data.length; i++) { // ⭐ CAMBIO: Empezar en 0
-      const row = data[i];
-      if (cleanRut(row[COL.RUT]) === rutLimpio) {
-        registros.push({
-          id: row[COL.ID],
-          fecha: row[COL.FECHA_SOLICITUD],
-          tipoPermiso: row[COL.TIPO_PERMISO],
-          fechaInicio: row[COL.FECHA_INICIO],
-          motivo: row[COL.MOTIVO_DETALLE],
-          urlDocumento: row[COL.URL_DOCUMENTO],
-          estado: row[COL.ESTADO],
-          gestion: row[COL.GESTION],
-          nomDirigente: row[COL.NOMBRE_DIRIGENTE]
-        });
-      }
-    }
-    
-    registros.reverse();
-    return { success: true, registros: registros };
-    
-  } catch (e) {
-    Logger.log("❌ Error en obtenerHistorialPermisosMedicos: " + e.toString());
-    return { success: false, message: "Error: " + e.toString() };
-  }
-}
-
-function eliminarPermisoMedico(idPermiso) {
-  const CORREO_REPRESENTANTE_LEGAL = CONFIG.CORREOS.REPRESENTANTE_LEGAL;
-  
-  var lock = LockService.getScriptLock();
-  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
-    try {
-      const sheet = getSheet('PERMISOS_MEDICOS', 'PERMISOS_MEDICOS');
-      const data = sheet.getDataRange().getDisplayValues();
-      const COL = CONFIG.COLUMNAS.PERMISOS_MEDICOS;
-      
-      for (let i = 1; i < data.length; i++) {
-        if (String(data[i][COL.ID]) === String(idPermiso)) {
-          const estado = String(data[i][COL.ESTADO]);
-          
-          if (estado !== "Solicitado") {
-            return { success: false, message: "Solo se pueden anular permisos en estado 'Solicitado'." };
-          }
-          
-          const beneficiario = {
-            nombre: data[i][COL.NOMBRE],
-            correo: data[i][COL.CORREO],
-            rut: data[i][COL.RUT]
-          };
-          const tipoPermiso = data[i][COL.TIPO_PERMISO];
-          const fechaInicio = data[i][COL.FECHA_INICIO];
-          
-          if (beneficiario.correo && beneficiario.correo.includes("@")) {
-            enviarCorreoEstilizado(
-              beneficiario.correo,
-              "Permiso Médico Anulado - Sindicato SLIM n°3",
-              "Solicitud de Permiso Anulada",
-              `Hola ${beneficiario.nombre}, tu solicitud de permiso médico ha sido anulada. No se hará uso de este permiso.`,
-              { 
-                "ID": idPermiso,
-                "Tipo Permiso": tipoPermiso,
-                "Fecha Inicio": fechaInicio,
-                "Estado": "Anulado",
-                "Acción": "Solicitud eliminada del sistema"
-              },
-              "#ef4444"
-            );
-          }
-          
-          enviarCorreoEstilizado(
-            CORREO_REPRESENTANTE_LEGAL,
-            "Permiso Médico Anulado - Sindicato SLIM n°3",
-            "Solicitud de Permiso Anulada",
-            `La solicitud de permiso médico del trabajador <strong>${beneficiario.nombre}</strong> ha sido anulada. No se hará uso de este permiso.`,
-            { 
-              "ID": idPermiso,
-              "Trabajador": beneficiario.nombre,
-              "RUT": beneficiario.rut,
-              "Tipo Permiso": tipoPermiso,
-              "Fecha Inicio": fechaInicio,
-              "Estado": "Anulado por el usuario"
-            },
-            "#475569"
-          );
-          
-          sheet.deleteRow(i + 1);
-          return { success: true, message: "Permiso anulado y notificaciones enviadas." };
-        }
-      }
-      
-      return { success: false, message: "Permiso no encontrado." };
-      
-    } catch (e) {
-      return { success: false, message: "Error: " + e.toString() };
-    } finally {
-      lock.releaseLock();
-    }
-  } else {
-    return { success: false, message: "Servidor ocupado." };
-  }
-}
-
-// ==========================================
-// MÓDULO: REGISTRO ASISTENCIA
-// ==========================================
-
-function obtenerHistorialAsistencia(rutInput) {
-  try {
-    // NOTA: El módulo de asistencia todavía está en el spreadsheet principal
-    // hasta que se cree su propio archivo
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName("ASISTENCIA");
-    
-    if (!sheet) return { success: true, registros: [] };
-    
-    const data = sheet.getDataRange().getDisplayValues();
-    const rutLimpio = cleanRut(rutInput);
-    const registros = [];
-    
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      if (cleanRut(row[0]) === rutLimpio) {
-        registros.push({
-          asamblea: row[1] || "Asamblea",
-          tipo: row[2] || "Tipo no especificado",
-          gestion: row[3] || "Sistema",
-          dirigente: row[4] || ""
-        });
-      }
-    }
-    
-    registros.reverse();
-    return { success: true, registros: registros };
-    
-  } catch (e) {
-    return { success: false, message: "Error: " + e.toString() };
-  }
-}
-
-// ==========================================
-// GESTIÓN SOCIOS - PARA DIRIGENTES
-// ==========================================
-
-function obtenerGestionesDirigente(rutDirigente) {
-  try {
-    const rutLimpio = cleanRut(rutDirigente);
-    
-    const resultado = {
-      prestamos: [],
-      justificaciones: [],
-      apelaciones: [],
-      permisosMedicos: []
-    };
-    
-    // 1. PRÉSTAMOS
-    const sheetPrestamos = getSheet('PRESTAMOS', 'PRESTAMOS');
-    const dataPrestamos = sheetPrestamos.getDataRange().getDisplayValues();
-    const COL_PRES = CONFIG.COLUMNAS.PRESTAMOS;
-    
-    for (let i = 1; i < dataPrestamos.length; i++) {
-      const row = dataPrestamos[i];
-      const tipo = row[COL_PRES.TIPO] || "Préstamo";
-      const cuotas = row[COL_PRES.CUOTAS] || "S/D";
-      const medio = row[COL_PRES.MEDIO_PAGO] || "S/D";
-      const monto = row[COL_PRES.MONTO] || "$0";
-      const observacion = row[COL_PRES.OBSERVACION] || "";
-      
-      // --- LIMPIEZA FECHA TÉRMINO ---
-      let fechaTerminoStr = "S/D";
-      const ftRaw = row[COL_PRES.FECHA_TERMINO];
-      if (ftRaw) {
-         try {
-            const d = new Date(ftRaw);
-            if (!isNaN(d.getTime())) {
-               fechaTerminoStr = Utilities.formatDate(d, Session.getScriptTimeZone(), "dd/MM/yyyy");
-            } else {
-               fechaTerminoStr = String(ftRaw).split(' ')[0];
-            }
-         } catch(e) { fechaTerminoStr = String(ftRaw).split(' ')[0]; }
-      }
-
-      resultado.prestamos.push({
-        id: row[COL_PRES.ID],
-        fecha: row[COL_PRES.FECHA],
-        rutSocio: row[COL_PRES.RUT],
-        nombreSocio: row[COL_PRES.NOMBRE],
-        tipo: tipo,
-        monto: monto,
-        cuotas: cuotas,
-        medio: medio,
-        estado: row[COL_PRES.ESTADO],
-        observacion: observacion,
-        fechaTermino: fechaTerminoStr
-      });
-    }
-    
-    // JUSTIFICACIONES
-    const sheetJustif = getSheet('JUSTIFICACIONES', 'JUSTIFICACIONES');
-    const dataJustif = sheetJustif.getDataRange().getDisplayValues();
-    const COL_JUST = CONFIG.COLUMNAS.JUSTIFICACIONES;
-    
-    for (let i = 1; i < dataJustif.length; i++) {
-      const row = dataJustif[i];
-      const gestion = row[COL_JUST.GESTION];
-      
-      if (gestion === "Dirigente") {
-        resultado.justificaciones.push({
-          id: row[COL_JUST.ID],
-          fecha: row[COL_JUST.FECHA],
-          rutSocio: row[COL_JUST.RUT],
-          nombreSocio: row[COL_JUST.NOMBRE],
-          tipo: row[COL_JUST.MOTIVO],
-          motivo: row[COL_JUST.ARGUMENTO],
-          url: row[COL_JUST.RESPALDO],
-          estado: row[COL_JUST.ESTADO],
-          obs: row[COL_JUST.OBSERVACION],
-          asamblea: row[COL_JUST.ASAMBLEA]
-        });
-      }
-    }
-    
-    // APELACIONES
-    const sheetApel = getSheet('APELACIONES', 'APELACIONES');
-    const dataApel = sheetApel.getDataRange().getDisplayValues();
-    const COL_APEL = CONFIG.COLUMNAS.APELACIONES;
-    
-    for (let i = 1; i < dataApel.length; i++) {
-      const row = dataApel[i];
-      const gestion = row[COL_APEL.GESTION];
-      
-      if (gestion === "Dirigente") {
-        resultado.apelaciones.push({
-          id: row[COL_APEL.ID],
-          fecha: row[COL_APEL.FECHA_SOLICITUD],
-          rutSocio: row[COL_APEL.RUT],
-          nombreSocio: row[COL_APEL.NOMBRE],
-          mesApelacion: row[COL_APEL.MES_APELACION],
-          tipoMotivo: row[COL_APEL.TIPO_MOTIVO],
-          detalleMotivo: row[COL_APEL.DETALLE_MOTIVO],
-          urlComprobante: row[COL_APEL.URL_COMPROBANTE],
-          urlLiquidacion: row[COL_APEL.URL_LIQUIDACION],
-          estado: row[COL_APEL.ESTADO],
-          obs: row[COL_APEL.OBSERVACION],
-          urlComprobanteDevolucion: row[COL_APEL.URL_COMPROBANTE_DEVOLUCION] || ""
-        });
-      }
-    }
-    
-    // PERMISOS MÉDICOS
-    const sheetPermisos = getSheet('PERMISOS_MEDICOS', 'PERMISOS_MEDICOS');
-    const dataPermisos = sheetPermisos.getDataRange().getDisplayValues();
-    const COL_PERM = CONFIG.COLUMNAS.PERMISOS_MEDICOS;
-    
-    for (let i = 1; i < dataPermisos.length; i++) {
-      const row = dataPermisos[i];
-      const gestion = row[COL_PERM.GESTION];
-      
-      if (gestion === "Dirigente") {
-        resultado.permisosMedicos.push({
-          id: row[COL_PERM.ID],
-          fecha: row[COL_PERM.FECHA_SOLICITUD],
-          rutSocio: row[COL_PERM.RUT],
-          nombreSocio: row[COL_PERM.NOMBRE],
-          tipoPermiso: row[COL_PERM.TIPO_PERMISO],
-          fechaInicio: row[COL_PERM.FECHA_INICIO],
-          motivo: row[COL_PERM.MOTIVO_DETALLE],
-          urlDocumento: row[COL_PERM.URL_DOCUMENTO],
-          estado: row[COL_PERM.ESTADO]
-        });
-      }
-    }
-    
-    return { success: true, datos: resultado };
-    
-  } catch (e) {
-    return { success: false, message: "Error: " + e.toString() };
-  }
-}
-
-// ==========================================
-// PANEL ADMINISTRADOR
-// ==========================================
-
-function generarInformeAdministrador() {
-  try {
-    const sheetPrestamos = getSheet('PRESTAMOS', 'PRESTAMOS');
-    const data = sheetPrestamos.getDataRange().getValues();
-    const COL = CONFIG.COLUMNAS.PRESTAMOS;
-    
-    const prestamosSolicitados = [];
-    const filasActualizar = [];
-    
-    for (let i = 1; i < data.length; i++) {
-      const estado = String(data[i][COL.VALIDACION]);
-      
-      if (estado === "Solicitado") {
-        const obs = data[i][COL.OBSERVACION] || "";
-        const partes = obs.split(" - ");
-        const tipo = partes[0] || "Préstamo";
-        const cuotas = partes[1] || "";
-        const medio = partes[2] || "";
-        
-        prestamosSolicitados.push({
-          rut: data[i][COL.RUT],
-          nombre: data[i][COL.NOMBRE],
-          tipoPrestamo: tipo,
-          cuotas: cuotas,
-          medioPago: medio
-        });
-        filasActualizar.push(i + 1);
-      }
-    }
-    
-    if (prestamosSolicitados.length === 0) {
-      return { success: false, message: "No hay préstamos en estado 'Solicitado' para procesar." };
-    }
-    
-    const ss = getSpreadsheet('PRESTAMOS');
-    let sheetInforme = ss.getSheetByName("INFORME_PRESTAMOS_TEMP");
-    if (sheetInforme) {
-      ss.deleteSheet(sheetInforme);
-    }
-    sheetInforme = ss.insertSheet("INFORME_PRESTAMOS_TEMP");
-    
-    const headers = ["RUT", "NOMBRE", "TIPO PRÉSTAMO", "CUOTAS", "MEDIO PAGO"];
-    sheetInforme.appendRow(headers);
-    
-    prestamosSolicitados.forEach(prestamo => {
-      sheetInforme.appendRow([
-        prestamo.rut,
-        prestamo.nombre,
-        prestamo.tipoPrestamo,
-        prestamo.cuotas,
-        prestamo.medioPago
-      ]);
-    });
-    
-    const lastRow = sheetInforme.getLastRow();
-    const lastCol = sheetInforme.getLastColumn();
-    
-    sheetInforme.getRange(1, 1, 1, lastCol)
-      .setFontWeight("bold")
-      .setBackground("#4c1d95")
-      .setFontColor("#ffffff");
-    
-    sheetInforme.setFrozenRows(1);
-    sheetInforme.autoResizeColumns(1, lastCol);
-    
-    const url = "https://docs.google.com/spreadsheets/d/" + ss.getId() + "/export?format=xlsx&gid=" + sheetInforme.getSheetId();
-    const token = ScriptApp.getOAuthToken();
-    const response = UrlFetchApp.fetch(url, {
-      headers: {
-        'Authorization': 'Bearer ' + token
-      }
-    });
-    
-    const blob = response.getBlob();
-    blob.setName(`Informe_Prestamos_Solicitados_${new Date().toLocaleDateString('es-CL').replace(/\//g, '-')}.xlsx`);
-    
-    const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
-    const dataUsers = sheetUsers.getDataRange().getDisplayValues();
-    const COL_USER = CONFIG.COLUMNAS.USUARIOS;
-    let correoAdmin = "admin@sindicato.com";
-    
-    for (let i = 1; i < dataUsers.length; i++) {
-      const rol = String(dataUsers[i][COL_USER.ROL]).toUpperCase();
-      if (rol === "ADMIN") {
-        correoAdmin = dataUsers[i][COL_USER.CORREO];
-        break;
-      }
-    }
-    
-    MailApp.sendEmail({
-      to: correoAdmin,
-      subject: "Informe de Préstamos Solicitados - Sindicato SLIM n°3",
-      htmlBody: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: linear-gradient(135deg, #4c1d95 0%, #5b21b6 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-            <h1 style="margin: 0; font-size: 24px;">Informe de Préstamos Solicitados</h1>
+      <!-- LOGIN -->
+      <section id="login-view" class="w-full max-w-sm relative z-10 fade-in-up my-auto">
+        <div class="glass-panel rounded-2xl shadow-2xl p-5 sm:p-8 border-t border-white/50">
+          <div class="text-center mb-4 sm:mb-6">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-lg mb-3 text-white"><span class="material-icons-round text-2xl">groups</span></div>
+            <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">Sindicato SLIM n°3</h1>
+            <p class="text-xs text-slate-500 mt-0.5 font-medium">Portal Oficial de Socios</p>
           </div>
-          <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
-            <p style="color: #1e293b; font-size: 16px; line-height: 1.6;">
-              Se adjunta el informe de préstamos en estado <strong>"Solicitado"</strong> generado el <strong>${new Date().toLocaleDateString('es-CL')}</strong>.
-            </p>
-            <p style="color: #64748b; font-size: 14px; margin-top: 20px;">
-              Total de préstamos procesados: <strong>${prestamosSolicitados.length}</strong>
-            </p>
-            <p style="color: #dc2626; font-size: 14px; font-weight: bold; margin-top: 15px;">
-              ⚠️ Estos préstamos han sido cambiados automáticamente al estado "Enviado".
-            </p>
-            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
-            <p style="color: #94a3b8; font-size: 12px; text-align: center;">
-              Sindicato SLIM n°3 - Sistema de Gestión
-            </p>
+          <form id="login-form" onsubmit="handleLogin(event)" class="space-y-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">RUT</label>
+              <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><span class="material-icons-round text-base">badge</span></span><input id="rut" type="text" maxlength="12" class="input-modern w-full pl-9 pr-3 py-2.5 rounded-lg outline-none font-semibold text-sm text-slate-700 placeholder-slate-400" placeholder="12.345.678-K" required autocomplete="off">
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">Contraseña</label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <span class="material-icons-round text-base">lock</span>
+                </span>
+                <input 
+                  id="password" 
+                  type="password" 
+                  class="input-modern w-full pl-9 pr-12 py-2.5 rounded-lg outline-none font-semibold text-sm text-slate-700 placeholder-slate-400" 
+                  placeholder="••••••••" 
+                  required
+                  autocomplete="off">
+                <!-- ⭐ NUEVO: Botón de ojo para mostrar/ocultar contraseña -->
+                <button 
+                  type="button"
+                  id="toggle-password-btn"
+                  onclick="togglePasswordVisibility()"
+                  class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                  tabindex="-1">
+                  <span id="password-eye-icon" class="material-icons-round text-xl">visibility_off</span>
+                </button>
+              </div>
+            </div>
+            <div class="flex items-center justify-between text-xs py-1"><label class="flex items-center text-slate-600 cursor-pointer hover:text-blue-600 transition"><input type="checkbox" id="remember-me" class="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-1.5"><span>Recordarme</span></label><a href="#" onclick="recuperarContrasena()" class="text-blue-600 hover:text-blue-700 font-semibold">Recuperar contraseña</a></div>
+            <button id="btn-login" type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-blue-500/30 transform transition hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 mt-1 text-sm"><span>Ingresar</span><span class="material-icons-round text-sm">arrow_forward</span></button>
+          </form>
+          <div id="error-msg" class="hidden mt-3 p-2 rounded-lg bg-red-50 text-red-600 text-xs font-medium text-center border border-red-100 flex items-center justify-center gap-2 animate-pulse"><span class="material-icons-round text-sm">error_outline</span><span id="error-text">Error message</span></div>
+        </div>
+      </section>
+
+      <!-- DASHBOARD -->
+      <section id="dashboard-view" class="hidden w-full max-w-5xl z-10 flex-col md:flex-row glass-panel rounded-xl md:rounded-3xl shadow-2xl overflow-hidden fade-in-up transition-all duration-500 my-2 md:my-0">
+        <header class="bg-slate-900 text-white p-5 md:p-6 md:w-72 flex-shrink-0 flex flex-col justify-between relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+          <div class="relative z-10"><div class="flex items-center gap-2 mb-4 md:mb-8"><div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center backdrop-blur-md text-blue-300"><span class="material-icons-round text-base">token</span></div><span class="font-bold text-base tracking-tight">Sindicato SLIM n°3</span></div><div class="mb-4 md:mb-6"><p class="text-slate-400 text-[10px] uppercase tracking-wider font-bold mb-0.5">Bienvenido</p><h2 id="user-name-display" class="text-lg md:text-2xl font-bold text-white leading-tight break-words">Socio</h2></div></div>
+          <button onclick="handleLogout()" class="hidden md:flex items-center gap-3 text-slate-400 hover:text-white transition mt-auto pt-8 group text-sm"><span class="material-icons-round group-hover:-translate-x-1 transition">logout</span><span class="font-medium">Cerrar Sesión</span></button>
+        </header>
+        <div class="flex-grow bg-slate-50/50 flex flex-col h-full">
+          <div class="p-4 pb-2 md:p-8 md:pb-4"><h3 class="text-lg font-bold text-slate-800">Menú de Gestión</h3><p class="text-slate-500 text-xs">Selecciona una opción para comenzar</p></div>
+          <div class="flex-grow p-4 md:p-8 pt-2"><div class="grid grid-cols-2 md:grid-cols-3 gap-3 pb-4">
+              <button onclick="navAction('Mis Datos')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-blue-200 relative overflow-hidden"><div class="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">badge</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Mis Datos</span></button>
+              
+              <button onclick="navAction('RegistroAsistencia')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-green-200 relative overflow-hidden"><div class="absolute inset-0 bg-green-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">history_edu</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Registro Asistencia</span></button>
+
+              <button onclick="navAction('Justificaciones')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-orange-200 relative overflow-hidden"><div class="absolute inset-0 bg-orange-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">assignment_late</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Justificaciones</span></button>
+              
+              <button onclick="navAction('Prestamos')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-purple-200 relative overflow-hidden"><div class="absolute inset-0 bg-purple-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">monetization_on</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Préstamos</span></button>
+              
+              <button onclick="navAction('Apelaciones')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-red-200 relative overflow-hidden"><div class="absolute inset-0 bg-red-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">gavel</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Apelaciones</span></button>
+              
+              <button onclick="navAction('PermisoMedico')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-emerald-200 relative overflow-hidden"><div class="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">local_hospital</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Permiso Médico</span></button>
+              
+              <!-- BOTONES DE ROLES -->
+              <button id="btn-gestion-socios" onclick="navAction('GestionSocios')" class="hidden glass-card group flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-indigo-200 relative overflow-hidden">
+                 <div class="absolute inset-0 bg-indigo-50 opacity-0 group-hover:opacity-100 transition duration-300"></div>
+                 <div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">manage_accounts</span></div>
+                 <span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Gestión Socios</span>
+              </button>
+
+              <button id="btn-panel-admin" onclick="navAction('PanelAdmin')" class="hidden glass-card group flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-slate-400 relative overflow-hidden">
+                 <div class="absolute inset-0 bg-slate-100 opacity-0 group-hover:opacity-100 transition duration-300"></div>
+                 <div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-slate-800 text-white flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">admin_panel_settings</span></div>
+                 <span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Panel Admin</span>
+              </button>
+
+              <button id="btn-consulta-id" onclick="navAction('ConsultaID')" class="hidden glass-card group flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-teal-200 relative overflow-hidden">
+              <div class="absolute inset-0 bg-teal-50 opacity-0 group-hover:opacity-100 transition duration-300"></div>
+              <div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10">
+                <span class="material-icons-round text-xl md:text-2xl">badge</span>
+              </div>
+              <span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Consultar ID</span>
+            </button>
           </div>
         </div>
-      `,
-      attachments: [blob]
-    });
-    
-    filasActualizar.forEach(fila => {
-      sheetPrestamos.getRange(fila, COL.VALIDACION + 1).setValue("Enviado");
-    });
-    
-    ss.deleteSheet(sheetInforme);
-    
-    return { 
-      success: true, 
-      message: `Informe generado y enviado. ${prestamosSolicitados.length} préstamo(s) cambiado(s) a "Enviado".` 
-    };
-    
-  } catch (e) {
-    return { success: false, message: "Error al generar informe: " + e.toString() };
-  }
-}
-
-// ==========================================
-// FUNCIONES AUXILIARES
-// ==========================================
-
-// AGREGAR al inicio de Code.gs, después de las funciones auxiliares
-
-/**
- * Verifica si un usuario tiene un rol específico
- * @param {string} rut - RUT del usuario
- * @param {Array} rolesPermitidos - Array de roles permitidos ['ADMIN', 'DIRIGENTE']
- * @returns {Object} {autorizado: boolean, mensaje: string, rol: string}
- */
-function verificarRolUsuario(rut, rolesPermitidos) {
-  try {
-    const usuario = obtenerUsuarioPorRut(rut);
-    
-    if (!usuario.encontrado) {
-      return {
-        autorizado: false,
-        mensaje: "Usuario no encontrado",
-        rol: ""
-      };
-    }
-    
-    const rolUsuario = String(usuario.rol || "SOCIO").trim().toUpperCase();
-    const tienePermiso = rolesPermitidos.some(function(rol) {
-      return rol.toUpperCase() === rolUsuario;
-    });
-    
-    if (!tienePermiso) {
-      Logger.log('⚠️ INTENTO DE ACCESO NO AUTORIZADO:');
-      Logger.log('   RUT: ' + rut);
-      Logger.log('   Rol actual: ' + rolUsuario);
-      Logger.log('   Roles requeridos: ' + rolesPermitidos.join(', '));
-      
-      return {
-        autorizado: false,
-        mensaje: "No tienes permisos para realizar esta acción",
-        rol: rolUsuario
-      };
-    }
-    
-    return {
-      autorizado: true,
-      mensaje: "Acceso autorizado",
-      rol: rolUsuario
-    };
-    
-  } catch (e) {
-    Logger.log('❌ Error verificando rol: ' + e.toString());
-    return {
-      autorizado: false,
-      mensaje: "Error de validación",
-      rol: ""
-    };
-  }
-}
-
-function cleanRut(rut) {
-  if (!rut) return "";
-  return String(rut).replace(/\./g, '').replace(/-/g, '').toUpperCase().trim();
-}
-
-function enviarCorreoEstilizado(destinatario, asunto, titulo, mensaje, detalles, colorTema) {
-  try {
-    if (!destinatario || !destinatario.includes("@")) {
-      console.log("Correo inválido: " + destinatario);
-      return;
-    }
-    
-    // Convertir detalles a tabla HTML
-    let detallesHtml = "";
-    if (detalles && typeof detalles === "object") {
-      detallesHtml = "<table style='width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;'>";
-      
-      let isEven = false;
-      for (let key in detalles) {
-        let valor = detalles[key];
-        
-        // LÓGICA S/D
-        if (valor === null || valor === undefined || valor === "") {
-          valor = "<span style='color: #94a3b8; font-style: italic;'>S/D</span>";
-        }
-        
-        const bgRow = isEven ? "#f8fafc" : "#ffffff";
-        
-        detallesHtml += `
-          <tr style="background-color: ${bgRow};">
-            <td style='padding: 12px 15px; border-bottom: 1px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 13px; width: 35%; vertical-align: top; text-transform: uppercase; letter-spacing: 0.05em;'>${key}</td>
-            <td style='padding: 12px 15px; border-bottom: 1px solid #e2e8f0; color: #1e293b; font-weight: 500; font-size: 14px; vertical-align: top;'>${valor}</td>
-          </tr>
-        `;
-        isEven = !isEven;
-      }
-      detallesHtml += "</table>";
-    }
-    
-    // Generamos un ID único para evitar que Gmail agrupe y oculte el footer
-    const uniqueId = Utilities.getUuid().slice(0, 8);
-    
-    const htmlBody = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      </head>
-      <body style="margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f1f5f9;">
-        <div style="max-width: 600px; margin: 20px auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
           
-          <div style="background: linear-gradient(135deg, ${colorTema} 0%, ${adjustColor(colorTema, -40)} 100%); padding: 40px 30px; text-align: center;">
-            <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">${titulo}</h1>
-            <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Sindicato SLIM N°3</p>
+          <!-- Botón Cerrar Sesión Móvil -->
+          <div class="md:hidden p-3 bg-white/80 backdrop-blur border-t border-slate-200 mt-auto">
+             <button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 text-red-600 font-bold py-2.5 rounded-xl bg-red-50 active:bg-red-100 transition text-sm">
+                <span class="material-icons-round text-lg">logout</span>
+                Cerrar Sesión
+             </button>
           </div>
-          
-          <div style="padding: 40px 30px; background-color: #ffffff;">
-            <p style="color: #334155; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0; text-align: left;">
-              ${mensaje}
-            </p>
+        </div>
+      </section>
+
+      <!-- VISTA: PERFIL -->
+      <section id="profile-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4">
+        <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+          <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><span class="material-icons-round">arrow_back</span></button>
+          <h2 class="text-lg font-bold z-10">Mis Datos Personales</h2>
+        </div>
+
+        <div class="p-6 bg-slate-50/50 flex-grow overflow-y-auto">
+          <div id="profile-loader" class="hidden flex flex-col items-center justify-center py-10">
+            <div class="loader mb-3"></div>
+            <p class="text-xs text-slate-500">Cargando información...</p>
+          </div>
+
+          <div id="profile-content" class="space-y-4">
+
+            <!-- TARJETA: DATOS PERSONALES -->
             
-            ${detallesHtml}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
             
-            <div style="margin-top: 30px; padding: 15px; background-color: #eff6ff; border-left: 4px solid ${colorTema}; border-radius: 4px;">
-              <p style="color: #1e40af; font-size: 12px; line-height: 1.5; margin: 0;">
-                <strong>Nota Importante:</strong> Si el campo aparece como "S/D", significa que no hay datos registrados para ese ítem en el momento de la gestión.
-              </p>
+            <!-- Nombre -->
+            <div class="mb-4 pb-3 border-b border-slate-100">
+              <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nombre Completo</label>
+              <div id="p-nombre" class="font-bold text-slate-900 text-lg leading-tight">Cargando...</div>
+            </div>
+            
+            <!-- Grid de datos -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">RUT</label>
+                <div id="p-rut" class="text-sm font-bold text-slate-800">Cargando...</div>
+              </div>
+              
+              <div>
+                <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cargo</label>
+                <div id="p-cargo" class="text-sm font-bold text-slate-800">Cargando...</div>
+              </div>
+
+              <div class="sm:col-span-2">
+                <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cliente</label>
+                <div id="p-site" class="text-sm font-bold text-slate-800 uppercase">Cargando...</div>
+              </div>
             </div>
           </div>
-          
-          <div style="background: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
-            <p style="color: #64748b; font-size: 11px; margin: 0; line-height: 1.4;">
-              Este es un mensaje automático. Por favor no respondas a este correo.<br>
-              © ${new Date().getFullYear()} Plataforma de Gestión Sindicato SLIM N°3
-            </p>
-            <p style="color: #cbd5e1; font-size: 9px; margin: 10px 0 0 0;">Ref: ${uniqueId}</p>
-          </div>
-          
-        </div>
-      </body>
-      </html>
-    `;
-    
-    MailApp.sendEmail({
-      to: destinatario,
-      subject: asunto,
-      htmlBody: htmlBody
-    });
-    
-  } catch (e) {
-    console.error("Error enviando correo a " + destinatario + ": " + e.toString());
-  }
-}
 
-function adjustColor(hexColor, percent) {
-  const num = parseInt(hexColor.replace("#", ""), 16);
-  const amt = Math.round(2.55 * percent);
-  const R = (num >> 16) + amt;
-  const G = (num >> 8 & 0x00FF) + amt;
-  const B = (num & 0x0000FF) + amt;
-  return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-    (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-    (B < 255 ? B < 1 ? 0 : B : 255))
-    .toString(16).slice(1);
-}
-
-function formatRutServer(rut) {
-  if (!rut) return "";
-  let value = rut.replace(/[^0-9kK]/g, '').toUpperCase();
-  if (value.length < 2) return value;
-  const body = value.slice(0, -1);
-  const dv = value.slice(-1);
-  let formattedBody = "";
-  for (let i = body.length - 1, j = 0; i >= 0; i--, j++) {
-    formattedBody = body.charAt(i) + ((j > 0 && j % 3 === 0) ? "." : "") + formattedBody;
-  }
-  return formattedBody + "-" + dv;
-}
-
-
-// ==========================================
-// TRIGGERS Y AUTOMATIZACIONES
-// ==========================================
-
-function verificarCambiosJustificaciones() {
-  try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("JUSTIFICACIONES");
-    if (!sheet) return;
-    
-    const data = sheet.getDataRange().getValues();
-    
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const idRegistro = String(row[0]);
-      const estadoActual = String(row[8]);
-      const estadoNotif = String(row[10]);
-      const correo = row[4];
-      const nombre = row[3];
-      const tipo = row[5];
-      const obs = row[9];
-      const asamblea = row[11];
-      
-      if (estadoActual !== estadoNotif) {
-        if (correo && correo.includes("@")) {
-          let color = "#ea580c";
-          let titulo = "Actualización de Justificación";
-          
-          if (estadoActual.includes("Aceptado")) { 
-            color = "#15803d"; 
-            titulo = "Justificación Aceptada"; 
-          } else if (estadoActual.includes("Rechazado")) { 
-            color = "#b91c1c"; 
-            titulo = "Justificación Rechazada"; 
-          }
-          
-          enviarCorreoEstilizado(
-            correo, 
-            titulo + " - Sindicato SLIM n°3", 
-            titulo, 
-            `Hola ${nombre}, el estado de tu justificación ha cambiado.`, 
-            { 
-              "ID": idRegistro,
-              "Tipo": tipo, 
-              "Nuevo Estado": estadoActual, 
-              "Observación": obs || "Sin observaciones",
-              "Asamblea": asamblea || "Pendiente asignación"
-            }, 
-            color
-          );
-        }
-        
-        sheet.getRange(i + 1, 11).setValue(estadoActual);
-      }
-    }
-  } catch (e) { 
-    console.error("Error verificando justificaciones: " + e); 
-  }
-}
-
-// ==========================================
-// SISTEMA QR - VALIDACIÓN Y REGISTRO
-// ==========================================
-
-function validarUsuarioQR(rutInput) {
-  try {
-    const sheet = getSheet('USUARIOS', 'USUARIOS');
-    const data = sheet.getDataRange().getDisplayValues();
-    const rutLimpio = cleanRut(rutInput);
-    const COL = CONFIG.COLUMNAS.USUARIOS;
-    
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      if (cleanRut(row[COL.RUT]) === rutLimpio) {
-        const estadoUsuario = String(row[COL.ESTADO]).toUpperCase();
-        
-        if (estadoUsuario !== "ACTIVO" && estadoUsuario !== "SI" && estadoUsuario !== "TRUE") {
-          return { 
-            success: false, 
-            error: "Usuario desvinculado. Contacta con la directiva." 
-          };
-        }
-        
-        return {
-          success: true,
-          nombre: row[COL.NOMBRE] || "Socio",
-          rut: row[COL.RUT]
-        };
-      }
-    }
-    
-    return { success: false, error: "RUT no encontrado en el sistema." };
-    
-  } catch (e) {
-    return { success: false, error: "Error del servidor: " + e.toString() };
-  }
-}
-
-function checkinQR(rutInput, nombreAsamblea) {
-  var lock = LockService.getScriptLock();
-  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
-    try {
-      const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
-      
-      // NOTA: El módulo de ASISTENCIA aún no está en la nueva estructura
-      // Por ahora usamos el spreadsheet principal
-      const ss = SpreadsheetApp.getActiveSpreadsheet();
-      let sheetAsistencia = ss.getSheetByName("ASISTENCIA");
-      
-      if (!sheetAsistencia) {
-        sheetAsistencia = ss.insertSheet("ASISTENCIA");
-        sheetAsistencia.appendRow(["RUT", "ASAMBLEA", "TIPO ASISTENCIA", "GESTION", "DIRIGENTE"]);
-      }
-      
-      const dataUsers = sheetUsers.getDataRange().getDisplayValues();
-      const rutLimpio = cleanRut(rutInput);
-      const COL = CONFIG.COLUMNAS.USUARIOS;
-      
-      let usuario = null;
-      for (let i = 1; i < dataUsers.length; i++) {
-        if (cleanRut(dataUsers[i][COL.RUT]) === rutLimpio) {
-          usuario = {
-            rut: dataUsers[i][COL.RUT],
-            nombre: dataUsers[i][COL.NOMBRE]
-          };
-          break;
-        }
-      }
-      
-      if (!usuario) {
-        throw new Error("Usuario no encontrado");
-      }
-      
-      // Verificar si ya registró asistencia en esta asamblea
-      const dataAsistencia = sheetAsistencia.getDataRange().getDisplayValues();
-      for (let i = 1; i < dataAsistencia.length; i++) {
-        const row = dataAsistencia[i];
-        if (cleanRut(row[0]) === rutLimpio && row[1] === nombreAsamblea) {
-          throw new Error("Ya registraste tu asistencia en esta asamblea.");
-        }
-      }
-      
-      // Registrar asistencia
-      const fechaHora = new Date();
-      sheetAsistencia.appendRow([
-        usuario.rut,
-        nombreAsamblea,
-        "Asistencia QR",
-        "Sistema",
-        ""
-      ]);
-      
-      return {
-        success: true,
-        nombre: usuario.nombre,
-        rut: usuario.rut,
-        fecha: fechaHora.toLocaleString('es-CL')
-      };
-      
-    } catch (e) {
-      throw new Error(e.message || e.toString());
-    } finally {
-      lock.releaseLock();
-    }
-  } else {
-    throw new Error("Sistema ocupado, intenta nuevamente.");
-  }
-}
-
-// ==========================================
-// CONFIGURAR TRIGGERS (Ejecutar manualmente UNA VEZ)
-// ==========================================
-
-function configurarTriggers() {
-  // Eliminar triggers existentes para evitar duplicados
-  const triggers = ScriptApp.getProjectTriggers();
-  triggers.forEach(trigger => ScriptApp.deleteTrigger(trigger));
-  
-  // Trigger para verificar cambios en justificaciones cada 30 minutos
-  // Escalonar las ejecuciones
-  ScriptApp.newTrigger('verificarCambiosJustificaciones')
-    .timeBased().everyMinutes(30).create();
-  
-  ScriptApp.newTrigger('verificarCambiosApelaciones')
-    .timeBased().everyMinutes(30)
-    .atHour(1).nearMinute(15).create(); // ← Desplazado 15 min
-  
-  // ✅ AGREGAR ESTE (FALTABA)
-  ScriptApp.newTrigger('procesarValidacionPrestamos')
-    .timeBased().everyHours(1).create();
-  
-  // Trigger para procesar permisos de comprobantes de devolución cada hora
-  ScriptApp.newTrigger('procesarPermisosComprobantesDevolucion')
-    .timeBased()
-    .everyHours(1)
-    .create();
-  
-  // ⭐ NUEVO: Trigger para verificar préstamos diariamente a las 8 AM
-  ScriptApp.newTrigger('verificarCambiosPrestamos')
-    .timeBased()
-    .everyDays(1)
-    .atHour(8)
-    .create();
-  
-  Logger.log("✅ Triggers configurados exitosamente");
-  Logger.log("Total de triggers activos: " + ScriptApp.getProjectTriggers().length);
-  
-  return {
-    success: true,
-    message: "Triggers configurados correctamente",
-    triggers: [
-      "verificarCambiosJustificaciones (cada 30 min)",
-      "verificarCambiosApelaciones (cada 30 min)",
-      "procesarPermisosComprobantesDevolucion (cada hora)"
-    ]
-  };
-}
-
-/**
- * Función para obtener el correo de un usuario por RUT
- */
-function obtenerCorreoDeRut(rut) {
-  try {
-    const sheet = getSheet('USUARIOS', 'USUARIOS');
-    const data = sheet.getDataRange().getDisplayValues();
-    const rutLimpio = cleanRut(rut);
-    const COL = CONFIG.COLUMNAS.USUARIOS;
-    
-    for (let i = 1; i < data.length; i++) {
-      if (cleanRut(data[i][COL.RUT]) === rutLimpio) {
-        return data[i][COL.CORREO];
-      }
-    }
-    return "";
-  } catch (e) {
-    console.error("Error obteniendo correo: " + e);
-    return "";
-  }
-}
-
-/**
- * Función para otorgar permisos a archivos de justificaciones existentes
- * EJECUTAR MANUALMENTE UNA SOLA VEZ
- */
-function corregirPermisosJustificacionesExistentes() {
-  try {
-    const sheet = getSheet('JUSTIFICACIONES', 'JUSTIFICACIONES');
-    const data = sheet.getDataRange().getValues();
-    const COL = CONFIG.COLUMNAS.JUSTIFICACIONES;
-    
-    let archivosCorregidos = 0;
-    let errores = 0;
-    
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const gestion = String(row[COL.GESTION]);
-      const urlArchivo = String(row[COL.RESPALDO]);
-      const correoDirigente = String(row[COL.CORREO_DIRIGENTE]);
-      const correoSocio = obtenerCorreoDeRut(row[COL.RUT]);
-      
-      if (gestion === "Dirigente" && urlArchivo.includes("drive.google.com") && correoDirigente && correoDirigente.includes("@")) {
-        
-        try {
-          let fileId = "";
-          if (urlArchivo.includes("/d/")) {
-            fileId = urlArchivo.split("/d/")[1].split("/")[0];
-          } else if (urlArchivo.includes("id=")) {
-            fileId = urlArchivo.split("id=")[1].split("&")[0];
-          }
-          
-          if (fileId) {
-            const file = DriveApp.getFileById(fileId);
-            const viewers = file.getViewers();
-            const tieneDirigente = viewers.some(viewer => viewer.getEmail() === correoDirigente);
-            const tieneSocio = viewers.some(viewer => viewer.getEmail() === correoSocio);
+          <!-- TARJETA: ESTADOS DE VIGENCIA -->
+          <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center">
+                <span class="material-icons-round text-white text-base">verified</span>
+              </div>
+              <h4 class="text-sm font-bold text-slate-800">Estados de Vigencia</h4>
+            </div>
+            <p class="text-[10px] text-slate-600 mb-3 italic">Presione cada estado para conocer más detalles</p>
             
-            let cambios = [];
-            
-            if (!tieneDirigente) {
-              file.addViewer(correoDirigente);
-              cambios.push(`dirigente: ${correoDirigente}`);
-            }
-            
-            if (correoSocio && correoSocio.includes("@") && !tieneSocio) {
-              file.addViewer(correoSocio);
-              cambios.push(`socio: ${correoSocio}`);
-            }
-            
-            if (cambios.length > 0) {
-              archivosCorregidos++;
-              Logger.log(`✅ Fila ${i + 1} - Permisos otorgados: ${cambios.join(', ')}`);
-            }
-          }
-        } catch (fileErr) {
-          errores++;
-          Logger.log(`⚠️ Error en fila ${i + 1}: ${fileErr.toString()}`);
-        }
-      }
-    }
-    
-    Logger.log(`\n📊 RESUMEN:`);
-    Logger.log(`✅ Archivos corregidos: ${archivosCorregidos}`);
-    Logger.log(`⚠️ Errores: ${errores}`);
-    
-    return {
-      success: true,
-      archivosCorregidos: archivosCorregidos,
-      errores: errores
-    };
-    
-  } catch (error) {
-    Logger.log('❌ Error: ' + error.message);
-    return { success: false, message: error.message };
-  }
-}
-
-    // ==========================================
-    // SISTEMA DE MÉTRICAS Y MONITOREO
-    // ==========================================
-
-    /**
-     * Registra métricas de uso para análisis de performance
-     */
-    function registrarMetrica(operacion, duracion, exito) {
-      try {
-        var properties = PropertiesService.getScriptProperties();
-        var fecha = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
-        var key = 'metrics_' + fecha + '_' + operacion;
-        
-        var existing = properties.getProperty(key);
-        var metrics = existing ? JSON.parse(existing) : { count: 0, totalDuration: 0, errors: 0 };
-        
-        metrics.count++;
-        metrics.totalDuration += duracion;
-        if (!exito) metrics.errors++;
-        
-        properties.setProperty(key, JSON.stringify(metrics));
-      } catch (e) {
-        // No hacer nada si falla el logging
-        Logger.log('Error logging metrics: ' + e);
-      }
-    }
-
-    /**
-     * Wrapper para medir performance de funciones críticas
-     */
-    function medirPerformance(nombreFuncion, funcionCallback) {
-      var inicio = new Date().getTime();
-      var exito = true;
-      
-      try {
-        return funcionCallback();
-      } catch (e) {
-        exito = false;
-        throw e;
-      } finally {
-        var duracion = new Date().getTime() - inicio;
-        registrarMetrica(nombreFuncion, duracion, exito);
-      }
-    }
-
-    /**
-     * Ver métricas del día (ejecutar manualmente desde editor)
-     */
-    function verMetricasHoy() {
-      var properties = PropertiesService.getScriptProperties();
-      var fecha = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
-      var allProps = properties.getProperties();
-      
-      Logger.log('=== MÉTRICAS ' + fecha + ' ===');
-      for (var key in allProps) {
-        if (key.startsWith('metrics_' + fecha)) {
-          var operacion = key.replace('metrics_' + fecha + '_', '');
-          var data = JSON.parse(allProps[key]);
-          Logger.log(operacion + ': ' + data.count + ' llamadas, avg: ' + 
-                    (data.totalDuration / data.count).toFixed(0) + 'ms, errores: ' + data.errors);
-        }
-      }
-    }
-
-    // ==========================================
-    // CONSULTA DE ID CREDENCIAL
-    // ==========================================
-
-    /**
-     * Consulta el ID Credencial de un usuario por RUT
-     * Solo accesible para roles DIRIGENTE y ADMIN
-     * @param {string} rutConsultante - RUT del usuario que realiza la consulta
-     * @param {string} rutBuscado - RUT del usuario a buscar
-     * @returns {Object} {success: boolean, idCredencial: string, nombre: string, ...}
-     */
-    function consultarIdCredencialBackend(rutConsultante, rutBuscado) {
-      try {
-        // ==========================================
-        // 1. VALIDAR PERMISOS DEL CONSULTANTE
-        // ==========================================
-        const validacion = verificarRolUsuario(rutConsultante, ['DIRIGENTE', 'ADMIN']);
-        
-        if (!validacion.autorizado) {
-          Logger.log('❌ Acceso denegado a consulta de ID Credencial');
-          Logger.log('   RUT consultante: ' + rutConsultante);
-          Logger.log('   Rol: ' + validacion.rol);
-          return {
-            success: false,
-            message: 'No tienes permisos para realizar esta consulta.'
-          };
-        }
-        
-        Logger.log('✅ Consulta de ID Credencial autorizada');
-        Logger.log('   Consultante: ' + rutConsultante + ' (' + validacion.rol + ')');
-        Logger.log('   Buscando: ' + rutBuscado);
-        
-        // ==========================================
-        // 2. LIMPIAR Y VALIDAR RUT BUSCADO
-        // ==========================================
-        const rutLimpio = cleanRut(rutBuscado);
-        
-        if (!rutLimpio || rutLimpio.length < 7) {
-          return {
-            success: false,
-            message: 'RUT inválido o incompleto.'
-          };
-        }
-        
-        // ==========================================
-        // 3. BUSCAR USUARIO EN LA BASE DE DATOS
-        // ==========================================
-        const sheet = getSheet('USUARIOS', 'USUARIOS');
-        if (!sheet) {
-          Logger.log('❌ No se pudo acceder a la hoja de usuarios');
-          return {
-            success: false,
-            message: 'Error al acceder a la base de datos.'
-          };
-        }
-        
-        const COL = CONFIG.COLUMNAS.USUARIOS;
-        const lastRow = sheet.getLastRow();
-        
-        if (lastRow < 2) {
-          return {
-            success: false,
-            message: 'No hay usuarios registrados en el sistema.'
-          };
-        }
-        
-        const data = sheet.getRange(2, 1, lastRow - 1, COL.ESTADO_NEG_COLECT + 1).getDisplayValues();
-
-        // Leer las FÓRMULAS de la columna QR para extraer la URL
-        const formulasQR = sheet.getRange(2, COL.QR_REGISTRO + 1, lastRow - 1, 1).getFormulas();
-        
-        // ==========================================
-        // 4. BUSCAR COINCIDENCIA
-        // ==========================================
-        for (let i = 0; i < data.length; i++) {
-          if (cleanRut(data[i][COL.RUT]) === rutLimpio) {
-            const rolUsuarioBuscado = String(data[i][COL.ROL] || 'SOCIO').trim().toUpperCase();
-            
-            // ==========================================
-            // 4.1 VALIDAR RESTRICCIÓN POR ROL
-            // ==========================================
-            // Si el consultante es DIRIGENTE, solo puede ver SOCIOS
-            if (validacion.rol === 'DIRIGENTE' && rolUsuarioBuscado !== 'SOCIO') {
-              Logger.log('⚠️ ACCESO RESTRINGIDO:');
-              Logger.log('   Consultante: ' + rutConsultante + ' (DIRIGENTE)');
-              Logger.log('   Usuario buscado: ' + data[i][COL.NOMBRE] + ' (' + rolUsuarioBuscado + ')');
-              Logger.log('   Motivo: Los dirigentes solo pueden consultar usuarios con rol SOCIO');
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <!-- ESTADO EN ORGANIZACIÓN -->
+              <button onclick="mostrarInfoEstado('organizacion')" class="bg-white rounded-lg p-3 border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all text-left group">
+                <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 group-hover:text-indigo-600 transition-colors">Estado en Sindicato</label>
+                <div id="p-estado-badge" class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+                  <span class="material-icons-round text-xs">info</span>
+                  Cargando...
+                </div>
+              </button>
               
-              return {
-                success: false,
-                message: 'Acceso restringido: Solo puedes consultar información de usuarios con rol SOCIO.',
-                restricted: true
-              };
+              <!-- ESTADO NEGOCIACIÓN COLECTIVA -->
+              <button onclick="mostrarInfoEstado('negociacion')" class="bg-white rounded-lg p-3 border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all text-left group">
+                <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 group-hover:text-indigo-600 transition-colors">Negociación Colectiva 2026</label>
+                <div id="p-estado-negociacion" class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-slate-100 text-slate-500">
+                  <span class="material-icons-round text-xs">info</span>
+                  S/D
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- TARJETA: INFORMACIÓN DE CONTACTO -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-7 h-7 rounded-lg bg-blue-500 flex items-center justify-center">
+                <span class="material-icons-round text-white text-base">contact_mail</span>
+              </div>
+              <h4 class="text-sm font-bold text-slate-800">Información de Contacto</h4>
+            </div>
+            
+            <div class="space-y-3">
+              <!-- REGIÓN -->
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex items-center justify-between hover:bg-slate-100 transition-colors">
+                <div class="flex-grow pr-3 min-w-0">
+                  <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Región</label>
+                  <div id="display-region" class="text-sm font-semibold text-slate-800 truncate">No definida</div>
+                </div>
+                <button onclick="openEditModal('region')" class="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600 transition-colors shadow-sm">
+                  <span class="material-icons-round text-base">edit</span>
+                </button>
+              </div>
+
+              <!-- CORREO ELECTRÓNICO -->
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex items-center justify-between hover:bg-slate-100 transition-colors">
+                <div class="flex-grow pr-3 min-w-0">
+                  <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Correo Electrónico</label>
+                  <div id="display-correo" class="text-sm font-semibold text-slate-800 truncate break-all">No definido</div>
+                </div>
+                <button onclick="openEditModal('correo')" class="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600 transition-colors shadow-sm">
+                  <span class="material-icons-round text-base">edit</span>
+                </button>
+              </div>
+
+              <!-- TELÉFONO -->
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex items-center justify-between hover:bg-slate-100 transition-colors">
+                <div class="flex-grow pr-3 min-w-0">
+                  <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Teléfono</label>
+                  <div id="display-contacto" class="text-sm font-semibold text-slate-800 truncate">No definido</div>
+                </div>
+                <button onclick="openEditModal('contacto')" class="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600 transition-colors shadow-sm">
+                  <span class="material-icons-round text-base">edit</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- TARJETA: DATOS BANCARIOS -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-7 h-7 rounded-lg bg-green-500 flex items-center justify-center">
+                <span class="material-icons-round text-white text-base">account_balance</span>
+              </div>
+              <h4 class="text-sm font-bold text-slate-800">Datos Bancarios</h4>
+            </div>
+            <p class="text-[10px] text-slate-600 mb-3 leading-relaxed">
+              Aquellos beneficios que se depositan desde el sindicato se harán a través de esta cuenta bancaria. 
+              <strong>Mantener siempre actualizados tus datos.</strong>
+            </p>
+            
+            <div class="space-y-3">
+              <!-- BANCO -->
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex-grow pr-3 min-w-0">
+                    <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Banco</label>
+                    <div id="display-banco" class="text-sm font-semibold text-slate-800 truncate">No definido</div>
+                  </div>
+                  <button onclick="openEditModal('banco')" class="flex-shrink-0 w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center hover:bg-green-600 transition-colors shadow-sm">
+                    <span class="material-icons-round text-base">edit</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- TIPO DE CUENTA -->
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex-grow pr-3 min-w-0">
+                    <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tipo de Cuenta</label>
+                    <div id="display-tipo-cuenta" class="text-sm font-semibold text-slate-800 truncate">No definido</div>
+                  </div>
+                  <button onclick="openEditModal('tipoCuenta')" class="flex-shrink-0 w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center hover:bg-green-600 transition-colors shadow-sm">
+                    <span class="material-icons-round text-base">edit</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- NÚMERO DE CUENTA -->
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex-grow pr-3 min-w-0">
+                    <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Número de Cuenta</label>
+                    <div id="display-numero-cuenta" class="text-sm font-semibold text-slate-800 font-mono">No definido</div>
+                  </div>
+                  <button onclick="openEditModal('numeroCuenta')" class="flex-shrink-0 w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center hover:bg-green-600 transition-colors shadow-sm">
+                    <span class="material-icons-round text-base">edit</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- NOTA INFORMATIVA -->
+            <div class="mt-3 p-3 bg-amber-50 border-l-4 border-amber-400 rounded-r-lg">
+              <div class="flex items-start gap-2">
+                <span class="material-icons-round text-amber-600 text-base flex-shrink-0 mt-0.5">info</span>
+                <p class="text-[10px] text-amber-900 leading-relaxed">
+                  <strong>Importante:</strong> Verifica que los datos sean correctos. Los errores en la información bancaria 
+                  pueden retrasar o impedir el depósito de beneficios.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VISTA: PRÉSTAMOS -->
+      <section id="loans-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4 h-[90vh]">
+        <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden flex-shrink-0">
+           <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+           <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><span class="material-icons-round">arrow_back</span></button>
+           <h2 class="text-lg font-bold z-10">Módulo de Préstamos</h2>
+        </div>
+
+        <div class="flex-grow flex flex-col bg-slate-50/50 overflow-hidden">
+           <div id="loans-menu" class="p-6 flex flex-col gap-4 h-full overflow-y-auto">
+              <div class="text-center mb-2"><h3 class="text-slate-800 font-bold text-lg">¿Cuánto necestias?</h3><p class="text-slate-500 text-sm">Selecciona una opción</p></div>
+              
+              <button onclick="showLoanForm('emergencia')" class="glass-card p-4 flex items-center gap-4 hover:bg-white hover:border-red-200 transition group">
+                 <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition"><span class="material-icons-round">medical_services</span></div>
+                 <div class="text-left">
+                    <h4 class="font-bold text-slate-700">Préstamo de Emergencia</h4>
+                    <p class="text-xs text-slate-500">$200.000 - Hasta 10 cuotas</p>
+                 </div>
+                 <span class="material-icons-round ml-auto text-slate-300">chevron_right</span>
+              </button>
+
+              <button onclick="showLoanForm('vacaciones')" class="glass-card p-4 flex items-center gap-4 hover:bg-white hover:border-blue-200 transition group">
+                 <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition"><span class="material-icons-round">beach_access</span></div>
+                 <div class="text-left">
+                    <h4 class="font-bold text-slate-700">Préstamo de Vacaciones</h4>
+                    <p class="text-xs text-slate-500">$150.000 - Hasta 8 cuotas</p>
+                 </div>
+                 <span class="material-icons-round ml-auto text-slate-300">chevron_right</span>
+              </button>
+
+              <button onclick="showLoanRecords()" class="glass-card p-4 flex items-center gap-4 hover:bg-white hover:border-purple-200 transition group">
+                 <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition"><span class="material-icons-round">history</span></div>
+                 <div class="text-left">
+                    <h4 class="font-bold text-slate-700">Ver Registros</h4>
+                    <p class="text-xs text-slate-500">Modifica o elimina tus registros</p>
+                 </div>
+                 <span class="material-icons-round ml-auto text-slate-300">chevron_right</span>
+              </button>
+           </div>
+
+           <div id="loans-form" class="hidden flex-col h-full p-6 overflow-y-auto">
+              <button onclick="backToLoansMenu()" class="text-xs text-slate-500 flex items-center gap-1 mb-4 hover:text-slate-800"><span class="material-icons-round text-sm">arrow_back</span> Volver</button>
+              <h3 id="form-title" class="text-xl font-bold text-slate-800 mb-1">Solicitud</h3><p class="text-xs text-slate-500 mb-6">Complete los detalles del préstamo.</p>
+              
+              <div class="space-y-5">
+                 <div id="loan-admin-field" class="hidden bg-indigo-50 p-4 rounded-xl border border-indigo-100 mb-2">
+                    <label class="block text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-2 flex items-center gap-1"><span class="material-icons-round text-sm">admin_panel_settings</span> RUT del Socio Beneficiario</label>
+                    <input id="loan-rut-socio" type="text" maxlength="12" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white outline-none" placeholder="Ingrese RUT del socio" oninput="formatRutInput(this)">
+                    <p class="text-[10px] text-indigo-400 mt-1">Dejar vacío para solicitar a nombre propio.</p>
+                 </div>
+
+                 <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Cantidad de Cuotas</label>
+                    <div onclick="openQuotaModal()" id="btn-select-cuotas" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white cursor-pointer flex justify-between items-center border border-slate-200 hover:border-blue-400 transition">
+                       <span id="selected-quota-text" class="text-slate-700">Seleccione...</span>
+                       <span class="material-icons-round text-slate-400">expand_more</span>
+                    </div>
+                 </div>
+
+                 <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Medio de Pago</label>
+                    <div class="grid grid-cols-2 gap-3">
+                       <label class="cursor-pointer">
+                          <input type="radio" name="pago" value="Cuenta RUT" class="peer sr-only">
+                          <div class="p-3 rounded-lg border border-slate-200 bg-white text-center peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 transition"><span class="block text-sm font-bold">Cuenta RUT</span></div>
+                       </label>
+                       <label class="cursor-pointer">
+                          <input type="radio" name="pago" value="ServiPag" class="peer sr-only">
+                          <div class="p-3 rounded-lg border border-slate-200 bg-white text-center peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 transition"><span class="block text-sm font-bold">ServiPag</span></div>
+                       </label>
+                    </div>
+                 </div>
+
+                 <button onclick="submitLoanRequest()" id="btn-submit-loan" class="w-full py-3 rounded-xl bg-slate-900 text-white font-bold shadow-lg shadow-slate-500/30 hover:bg-slate-800 transition flex items-center justify-center gap-2">
+                    <span>Enviar Solicitud</span>
+                 </button>
+              </div>
+           </div>
+
+           <div id="loans-records" class="hidden flex-col h-full p-6 overflow-y-auto">
+              <button onclick="backToLoansMenu()" class="text-xs text-slate-500 flex items-center gap-1 mb-4 hover:text-slate-800"><span class="material-icons-round text-sm">arrow_back</span> Volver</button>
+              <h3 class="text-xl font-bold text-slate-800 mb-4">Mis Solicitudes</h3>
+              <button onclick="openFilterModal()" class="w-full mb-4 py-2.5 rounded-lg bg-white border border-slate-200 text-slate-600 text-sm font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition shadow-sm"><span class="material-icons-round text-slate-400">tune</span> Filtrar y Ordenar</button>
+              <div id="records-loader" class="flex justify-center py-10 hidden"><div class="loader"></div></div>
+              <div id="records-list" class="space-y-3"></div>
+              <div id="records-empty" class="hidden text-center py-10 text-slate-400 text-sm"><span class="material-icons-round text-4xl mb-2 block opacity-50">history_toggle_off</span>No hay registros aún.</div>
+           </div>
+        </div>
+      </section>
+
+      <!-- VISTA: JUSTIFICACIONES (CON SWITCH ADMIN) -->
+      <section id="justifications-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4 h-[90vh]">
+        <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden flex-shrink-0">
+           <div class="absolute top-0 right-0 w-32 h-32 bg-orange-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+           <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><span class="material-icons-round">arrow_back</span></button>
+           <h2 class="text-lg font-bold z-10 flex-grow">Justificaciones</h2>
+           
+           <!-- SWITCH ADMIN (solo visible para ADMIN) -->
+           <div id="justif-switch-container" class="hidden z-10 flex flex-col items-center gap-1">
+              <label class="toggle-switch">
+                 <input type="checkbox" id="justif-switch" onchange="handleJustifSwitch()">
+                 <span class="toggle-slider"></span>
+              </label>
+              <span class="text-[9px] text-white/60 font-semibold">Módulo</span>
+           </div>
+        </div>
+
+        <div class="flex-grow flex flex-col bg-slate-50/50 overflow-hidden">
+           <div class="flex p-4 gap-2 border-b border-slate-200 bg-white/50 flex-shrink-0">
+              <button onclick="toggleJustifTab('form')" id="tab-justif-form" class="flex-1 py-2 rounded-lg text-sm font-bold transition bg-orange-100 text-orange-700">Nueva</button>
+              <button onclick="toggleJustifTab('list')" id="tab-justif-list" class="flex-1 py-2 rounded-lg text-sm font-bold transition text-slate-500 hover:bg-slate-100">Historial</button>
+           </div>
+
+           <div id="justif-form-content" class="flex-col h-full p-4 overflow-y-auto flex">
+              <h3 class="text-xl font-bold text-slate-800 mb-1">Nueva Justificación</h3>
+              <p class="text-xs text-slate-500 mb-4">Adjunte el comprobante necesario.</p>
+
+              <div class="space-y-4">
+                 <div id="justif-admin-field" class="hidden bg-indigo-50 p-4 rounded-xl border border-indigo-100 mb-2">
+                    <label class="block text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-2 flex items-center gap-1"><span class="material-icons-round text-sm">admin_panel_settings</span> RUT del Socio Beneficiario</label>
+                    <input id="justif-rut-socio" type="text" maxlength="12" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white outline-none" placeholder="Ingrese RUT del socio" oninput="formatRutInput(this)">
+                    <p class="text-[10px] text-indigo-400 mt-1">Dejar vacío para justificar a nombre propio.</p>
+                 </div>
+
+                 <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Tipo de Evento</label>
+                    <div onclick="openMotiveModal()" id="btn-select-motive" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white cursor-pointer flex justify-between items-center border border-slate-200 hover:border-orange-400 transition">
+                       <span id="selected-motive-text" class="text-slate-700">Seleccione...</span>
+                       <span class="material-icons-round text-slate-400">expand_more</span>
+                    </div>
+                 </div>
+
+                 <div id="div-justif-motivo" class="hidden">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Motivo / Detalle</label>
+                    <textarea id="justif-motivo" rows="3" maxlength="150" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white outline-none resize-none" placeholder="Explique brevemente (Máx 150 caracteres)..."></textarea>
+                    <p class="text-[10px] text-slate-400 text-right mt-1"><span id="char-count">0</span>/150</p>
+                  </div>
+
+                 <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Adjuntar Comprobante (Imagen/PDF)</label>
+                    <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-white hover:bg-slate-50 transition" id="drop-area">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <span class="material-icons-round text-3xl text-slate-400 mb-2">cloud_upload</span>
+                            <p class="text-xs text-slate-500"><span class="font-semibold">Toque para subir</span></p>
+                            <p class="text-[10px] text-slate-400 mt-1" id="file-name-display">Formatos: JPG, PNG, PDF (Máx 5MB)</p>
+                        </div>
+                        <input id="justif-file" type="file" class="hidden" accept="image/*,application/pdf" capture="environment" onchange="updateFileName(this)" />
+                    </label>
+                 </div>
+
+                 <button onclick="submitJustification()" id="btn-submit-justif" class="w-full py-3 rounded-xl bg-slate-900 text-white font-bold shadow-lg shadow-slate-500/30 hover:bg-slate-800 transition flex items-center justify-center gap-2 mt-4">
+                    <span>Enviar Justificación</span>
+                 </button>
+              </div>
+           </div>
+
+           <div id="justif-list-content" class="hidden flex-col h-full p-4 overflow-y-auto">
+              <div id="justif-loader" class="flex justify-center py-10 hidden"><div class="loader"></div></div>
+              <div id="justif-list" class="space-y-3"></div>
+              <div id="justif-empty" class="hidden text-center py-10 text-slate-400 text-sm"><span class="material-icons-round text-4xl mb-2 block opacity-50">folder_off</span>No hay justificaciones.</div>
+           </div>
+        </div>
+      </section>
+
+      <!-- VISTA: APELACIONES -->
+      <section id="appeals-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4 h-[90vh]">
+        <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden flex-shrink-0">
+           <div class="absolute top-0 right-0 w-32 h-32 bg-red-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+           <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><span class="material-icons-round">arrow_back</span></button>
+           <h2 class="text-lg font-bold z-10">Apelación de Multas</h2>
+        </div>
+
+        <div class="flex-grow flex flex-col bg-slate-50/50 overflow-hidden">
+           <div class="flex p-4 gap-2 border-b border-slate-200 bg-white/50 flex-shrink-0">
+              <button onclick="toggleAppealsTab('form')" id="tab-appeals-form" class="flex-1 py-2 rounded-lg text-sm font-bold transition bg-red-100 text-red-700">Nueva Apelación</button>
+              <button onclick="toggleAppealsTab('list')" id="tab-appeals-list" class="flex-1 py-2 rounded-lg text-sm font-bold transition text-slate-500 hover:bg-slate-100">Historial</button>
+           </div>
+
+           <!-- FORMULARIO APELACIÓN -->
+           <div id="appeals-form-content" class="flex-col h-full p-4 overflow-y-auto flex">
+              <h3 class="text-xl font-bold text-slate-800 mb-1">Nueva Apelación</h3>
+              <p class="text-xs text-slate-500 mb-4">Completa todos los datos para apelar una multa.</p>
+
+              <div class="space-y-4">
+                 <div id="appeal-admin-field" class="hidden bg-indigo-50 p-4 rounded-xl border border-indigo-100 mb-2">
+                    <label class="block text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                       <span class="material-icons-round text-sm">admin_panel_settings</span> RUT del Socio Beneficiario
+                    </label>
+                    <input id="appeal-rut-socio" type="text" maxlength="12" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white outline-none" placeholder="Ingrese RUT del socio" oninput="formatRutInput(this)">
+                    <p class="text-[10px] text-indigo-400 mt-1">Dejar vacío para apelar a nombre propio.</p>
+                 </div>
+
+                 <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                       Mes de la Multa
+                    </label>
+                    <div onclick="openMonthModal()" id="btn-select-month" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white cursor-pointer flex justify-between items-center border border-slate-200 hover:border-red-400 transition">
+                       <span id="selected-month-text" class="text-slate-700">Seleccione mes...</span>
+                       <span class="material-icons-round text-slate-400">expand_more</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1">Solo desde Marzo 2025. Mes actual disponible desde el día 25.</p>
+                 </div>
+
+                 <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Motivo de la Ausencia</label>
+                    <div onclick="openAppealMotiveModal()" id="btn-select-appeal-motive" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white cursor-pointer flex justify-between items-center border border-slate-200 hover:border-red-400 transition">
+                       <span id="selected-appeal-motive-text" class="text-slate-700">Seleccione...</span>
+                       <span class="material-icons-round text-slate-400">expand_more</span>
+                    </div>
+                 </div>
+
+                 <div id="div-appeal-detalle" class="hidden">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Detalle / Explicación</label>
+                    <textarea id="appeal-detalle" rows="3" maxlength="150" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white outline-none resize-none" placeholder="Explique brevemente (Máx 150 caracteres)..."></textarea>
+                    <p class="text-[10px] text-slate-400 text-right mt-1"><span id="appeal-char-count">0</span>/150</p>
+                  </div>
+
+                 <div id="div-appeal-comprobante">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                       Comprobante del Motivo <span class="text-slate-400" id="comprobante-required-label">(Opcional)</span>
+                    </label>
+                    <label class="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-white hover:bg-slate-50 transition" id="drop-area-comprobante">
+                        <div class="flex flex-col items-center justify-center pt-4 pb-5">
+                            <span class="material-icons-round text-2xl text-slate-400 mb-1">description</span>
+                            <p class="text-xs text-slate-500"><span class="font-semibold">Toque para subir comprobante</span></p>
+                            <p class="text-[10px] text-slate-400 mt-1" id="file-name-comprobante">JPG, PNG, PDF (Máx 5MB)</p>
+                        </div>
+                        <input id="appeal-file-comprobante" type="file" class="hidden" accept="image/*,application/pdf" capture="environment" onchange="updateFileNameAppeal(this, 'comprobante')" />
+                    </label>
+                 </div>
+
+                 <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                       <span class="material-icons-round text-sm text-red-600">priority_high</span>
+                       Liquidación de Sueldo <span class="text-red-600 font-bold">(OBLIGATORIO)</span>
+                    </label>
+                    <label class="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-red-300 rounded-xl cursor-pointer bg-red-50 hover:bg-red-100 transition" id="drop-area-liquidacion">
+                        <div class="flex flex-col items-center justify-center pt-4 pb-5">
+                            <span class="material-icons-round text-2xl text-red-400 mb-1">receipt_long</span>
+                            <p class="text-xs text-red-600"><span class="font-bold">Toque para subir liquidación</span></p>
+                            <p class="text-[10px] text-red-400 mt-1" id="file-name-liquidacion">JPG, PNG, PDF (Máx 5MB)</p>
+                        </div>
+                        <input id="appeal-file-liquidacion" type="file" class="hidden" accept="image/*,application/pdf" capture="environment" onchange="updateFileNameAppeal(this, 'liquidacion')" />
+                    </label>
+                    <p class="text-[10px] text-red-500 mt-2 font-semibold">⚠️ Debe contener el descuento de la multa visible.</p>
+                 </div>
+
+                 <button onclick="submitAppeal()" id="btn-submit-appeal" class="w-full py-3 rounded-xl bg-red-600 text-white font-bold shadow-lg shadow-red-500/30 hover:bg-red-700 transition flex items-center justify-center gap-2 mt-4">
+                    <span>Enviar Apelación</span>
+                 </button>
+              </div>
+           </div>
+
+           <!-- HISTORIAL APELACIONES -->
+           <div id="appeals-list-content" class="hidden flex-col h-full p-4 overflow-y-auto">
+              <div id="appeals-loader" class="flex justify-center py-10 hidden"><div class="loader"></div></div>
+              <div id="appeals-list" class="space-y-3"></div>
+              <div id="appeals-empty" class="hidden text-center py-10 text-slate-400 text-sm">
+                 <span class="material-icons-round text-4xl mb-2 block opacity-50">folder_off</span>
+                 No hay apelaciones registradas.
+              </div>
+           </div>
+        </div>
+      </section>
+
+      <!-- VISTA: PERMISO MÉDICO -->
+      <section id="permission-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4 h-[90vh]">
+        <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden flex-shrink-0">
+           <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+           <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><span class="material-icons-round">arrow_back</span></button>
+           <h2 class="text-lg font-bold z-10">Permiso Médico</h2>
+        </div>
+
+        <div class="flex-grow flex flex-col bg-slate-50/50 overflow-hidden">
+           <div class="flex p-4 gap-2 border-b border-slate-200 bg-white/50 flex-shrink-0">
+              <button onclick="togglePermissionTab('form')" id="tab-permission-form" class="flex-1 py-2 rounded-lg text-sm font-bold transition bg-emerald-100 text-emerald-700">Nueva Solicitud</button>
+              <button onclick="togglePermissionTab('list')" id="tab-permission-list" class="flex-1 py-2 rounded-lg text-sm font-bold transition text-slate-500 hover:bg-slate-100">Historial</button>
+           </div>
+
+           <!-- FORMULARIO PERMISO -->
+           <div id="permission-form-content" class="flex-col h-full p-4 overflow-y-auto flex">
+              <h3 class="text-xl font-bold text-slate-800 mb-1">Solicitar Permiso Médico</h3>
+              <p class="text-xs text-slate-500 mb-4">Seleccione el tipo de permiso según su situación.</p>
+
+              <div class="space-y-4">
+                 <div id="permission-admin-field" class="hidden bg-indigo-50 p-4 rounded-xl border border-indigo-100 mb-2">
+                    <label class="block text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                       <span class="material-icons-round text-sm">admin_panel_settings</span> RUT del Socio Beneficiario
+                    </label>
+                    <input id="permission-rut-socio" type="text" maxlength="12" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white outline-none" placeholder="Ingrese RUT del socio" oninput="formatRutInput(this)">
+                    <p class="text-[10px] text-indigo-400 mt-1">Dejar vacío para solicitar a nombre propio.</p>
+                 </div>
+
+                 <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Tipo de Permiso</label>
+                    <div onclick="openPermissionTypeModal()" id="btn-select-permission-type" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white cursor-pointer flex justify-between items-center border border-slate-200 hover:border-emerald-400 transition">
+                       <span id="selected-permission-type-text" class="text-slate-700">Seleccione...</span>
+                       <span class="material-icons-round text-slate-400">expand_more</span>
+                    </div>
+                 </div>
+
+                 <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Fecha de Inicio del Permiso</label>
+                    <input type="date" id="permission-fecha-inicio" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white outline-none">
+                    <p class="text-[10px] text-slate-400 mt-1">La fecha de inicio del permiso médico puede ser desde, 7 días antes a la solicitud o 7 días después.</p>
+                 </div>
+
+                 <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Motivo / Detalle</label>
+                    <textarea id="permission-motivo" rows="3" maxlength="150" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white outline-none resize-none" placeholder="Describa brevemente su situación (Máx 150 caracteres)..."></textarea>
+                    <p class="text-[10px] text-slate-400 text-right mt-1"><span id="permission-char-count">0</span>/150</p>
+                 </div>
+
+                 <div class="bg-amber-50 border-l-4 border-amber-400 p-3 mb-4">
+                    <div class="flex items-start">
+                      <span class="material-icons-round text-amber-600 mr-2 text-lg">warning</span>
+                      <p class="text-xs text-amber-800 leading-relaxed">
+                        <strong>⚠️ Importante:</strong> El documento se debe adjuntar posteriormente una vez se realice el examen o atención médica para comprobar el correcto uso de este beneficio. El no hacerlo puede significar el descuento de las horas ausentadas.
+                      </p>
+                    </div>
+                  </div>
+
+                 <button onclick="submitPermission()" id="btn-submit-permission" class="w-full py-3 rounded-xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-500/30 hover:bg-emerald-700 transition flex items-center justify-center gap-2">
+                    <span>Enviar Solicitud</span>
+                 </button>
+              </div>
+           </div>
+
+           <!-- HISTORIAL PERMISOS -->
+           <div id="permission-list-content" class="hidden flex-col h-full p-4 overflow-y-auto">
+              <div id="permission-loader" class="flex justify-center py-10 hidden"><div class="loader"></div></div>
+              <div id="permission-list" class="space-y-3"></div>
+              <div id="permission-empty" class="hidden text-center py-10 text-slate-400 text-sm">
+                 <span class="material-icons-round text-4xl mb-2 block opacity-50">folder_off</span>
+                 No hay permisos médicos registrados.
+              </div>
+           </div>
+        </div>
+      </section>
+
+      <!-- VISTA: REGISTRO ASISTENCIA -->
+      <section id="attendance-records-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4 h-[90vh]">
+        <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden flex-shrink-0">
+           <div class="absolute top-0 right-0 w-32 h-32 bg-green-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+           <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><span class="material-icons-round">arrow_back</span></button>
+           <h2 class="text-lg font-bold z-10">Historial de Asistencia</h2>
+        </div>
+
+        <div class="flex-grow flex flex-col bg-slate-50/50 overflow-hidden">
+           <div class="p-4 border-b border-slate-200 bg-white/50 flex-shrink-0">
+              <p class="text-xs text-slate-500">Registro histórico de participación en asambleas.</p>
+           </div>
+
+           <div id="attendance-list-content" class="flex-col h-full p-4 overflow-y-auto flex">
+              <div id="attendance-loader" class="flex justify-center py-10 hidden"><div class="loader"></div></div>
+              <div id="attendance-list" class="space-y-3"></div>
+              <div id="attendance-empty" class="hidden text-center py-10 text-slate-400 text-sm">
+                 <span class="material-icons-round text-4xl mb-2 block opacity-50">event_busy</span>
+                 No hay registros de asistencia encontrados.
+              </div>
+           </div>
+        </div>
+      </section>
+
+      <!-- VISTA: PANEL ADMIN -->
+      <section id="admin-panel-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4 h-[90vh]">
+        <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden flex-shrink-0">
+           <div class="absolute top-0 right-0 w-32 h-32 bg-slate-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+           <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><span class="material-icons-round">arrow_back</span></button>
+           <h2 class="text-lg font-bold z-10">Panel de Administración</h2>
+        </div>
+
+        <div class="flex-grow flex flex-col bg-slate-50/50 overflow-hidden p-6">
+           <h3 class="text-lg font-bold text-slate-800 mb-4">Herramientas Administrativas</h3>
+           
+           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <!-- Generar Informe Préstamos -->
+              <button onclick="generarInformePrestamos()" class="glass-card p-4 flex items-center gap-4 hover:bg-white hover:border-purple-200 transition group">
+                 <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <span class="material-icons-round">description</span>
+                 </div>
+                 <div class="text-left flex-1">
+                    <h4 class="font-bold text-slate-700 text-sm">Informe Préstamos</h4>
+                    <p class="text-xs text-slate-500">Generar reporte</p>
+                 </div>
+              </button>
+
+              <!-- Informe Apelaciones (Próximamente) -->
+              <button onclick="showConstruction('Informe Apelaciones')" class="glass-card p-4 flex items-center gap-4 hover:bg-white hover:border-red-200 transition group opacity-70">
+                 <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <span class="material-icons-round">gavel</span>
+                 </div>
+                 <div class="text-left flex-1">
+                    <h4 class="font-bold text-slate-700 text-sm">Informe Apelaciones</h4>
+                    <p class="text-xs text-slate-500">Próximamente</p>
+                 </div>
+              </button>
+
+              <!-- Informe Asistencia (Próximamente) -->
+              <button onclick="showConstruction('Informe Asistencia')" class="glass-card p-4 flex items-center gap-4 hover:bg-white hover:border-green-200 transition group opacity-70">
+                 <div class="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <span class="material-icons-round">how_to_reg</span>
+                 </div>
+                 <div class="text-left flex-1">
+                    <h4 class="font-bold text-slate-700 text-sm">Informe Asistencia</h4>
+                    <p class="text-xs text-slate-500">Próximamente</p>
+                 </div>
+              </button>
+
+              <!-- Cambio de Rol (Próximamente) -->
+              <button onclick="showConstruction('Cambio de Rol')" class="glass-card p-4 flex items-center gap-4 hover:bg-white hover:border-blue-200 transition group opacity-70">
+                 <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <span class="material-icons-round">swap_horiz</span>
+                 </div>
+                 <div class="text-left flex-1">
+                    <h4 class="font-bold text-slate-700 text-sm">Cambio de Rol</h4>
+                    <p class="text-xs text-slate-500">Próximamente</p>
+                 </div>
+              </button>
+           </div>
+        </div>
+      </section>
+
+      <!-- VISTA: CONSULTA ID CREDENCIAL -->
+      <section id="id-credential-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4">
+        <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-teal-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+          <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition">
+            <span class="material-icons-round">arrow_back</span>
+          </button>
+          <h2 class="text-lg font-bold z-10">Consulta ID Credencial</h2>
+        </div>
+
+        <div class="p-6 bg-slate-50/50 flex-grow overflow-y-auto">
+          
+          <!-- TARJETA: FORMULARIO DE BÚSQUEDA -->
+          <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl border border-teal-200 p-5 mb-4">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center">
+                <span class="material-icons-round text-white text-lg">badge</span>
+              </div>
+              <h4 class="text-sm font-bold text-slate-800">Buscar por RUT</h4>
+            </div>
+            <p class="text-xs text-slate-600 mb-4">Ingresa el RUT del socio para consultar su ID de credencial asignado en el sistema.</p>
+            
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">RUT del Socio *</label>
+                <input 
+                  type="text" 
+                  id="search-rut-input" 
+                  placeholder="12.345.678-9" 
+                  maxlength="12"
+                  oninput="formatRutInput(this)"
+                  class="w-full px-3 py-2 border border-teal-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
+                >
+              </div>
+              
+              <button 
+                onclick="consultarIdCredencial()" 
+                class="w-full bg-teal-600 text-white font-bold py-2.5 rounded-lg hover:bg-teal-700 active:scale-95 transition flex items-center justify-center gap-2"
+              >
+                <span class="material-icons-round text-lg">search</span>
+                Buscar ID Credencial
+              </button>
+            </div>
+          </div>
+
+          <!-- LOADER -->
+          <div id="id-credential-loader" class="hidden flex flex-col items-center justify-center py-10">
+            <div class="loader mb-3"></div>
+            <p class="text-xs text-slate-500">Consultando...</p>
+          </div>
+
+          <!-- RESULTADO -->
+          <div id="id-credential-result" class="hidden">
+            <!-- Aquí se mostrará el resultado dinámicamente -->
+          </div>
+
+        </div>
+      </section>
+
+      <!-- VISTA: GESTIÓN SOCIOS -->
+      <section id="management-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4 h-[90vh]">
+        <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden flex-shrink-0">
+           <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+           <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><span class="material-icons-round">arrow_back</span></button>
+           <h2 class="text-lg font-bold z-10">Gestión de Socios</h2>
+        </div>
+
+        <div class="flex-grow flex flex-col bg-slate-50/50 overflow-hidden">
+           <!-- TABS MÓDULOS -->
+           <div class="flex p-4 gap-2 border-b border-slate-200 bg-white/50 flex-shrink-0 overflow-x-auto">
+              <button onclick="toggleManagementTab('prestamos')" id="tab-mgmt-prestamos" class="px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap bg-purple-100 text-purple-700">Préstamos</button>
+              <button onclick="toggleManagementTab('justif')" id="tab-mgmt-justif" class="px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap text-slate-500 hover:bg-slate-100">Justificaciones</button>
+              <button onclick="toggleManagementTab('apel')" id="tab-mgmt-apel" class="px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap text-slate-500 hover:bg-slate-100">Apelaciones</button>
+              <button onclick="toggleManagementTab('permisos')" id="tab-mgmt-permisos" class="px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap text-slate-500 hover:bg-slate-100">Permisos</button>
+           </div>
+
+           <!-- CONTENIDO -->
+           <div class="flex-grow overflow-y-auto p-4">
+              <div id="mgmt-loader" class="flex justify-center py-10 hidden"><div class="loader"></div></div>
+              
+              <div id="mgmt-prestamos-content" class="space-y-3"></div>
+              <div id="mgmt-justif-content" class="hidden space-y-3"></div>
+              <div id="mgmt-apel-content" class="hidden space-y-3"></div>
+              <div id="mgmt-permisos-content" class="hidden space-y-3"></div>
+              
+              <div id="mgmt-empty" class="hidden text-center py-10 text-slate-400 text-sm">
+                 <span class="material-icons-round text-4xl mb-2 block opacity-50">inbox</span>
+                 No hay gestiones registradas en este módulo.
+              </div>
+           </div>
+        </div>
+      </section>
+
+      <!-- MODALES -->
+      
+      <!-- Modal Motivos Justificación -->
+      <div id="motive-modal" class="hidden fixed inset-0 z-[65] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-[#1f2937] w-full max-w-xs rounded-2xl shadow-2xl overflow-hidden border border-slate-600">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center"><h3 class="text-white font-bold">Seleccionar Motivo</h3><button onclick="document.getElementById('motive-modal').classList.add('hidden')" class="text-slate-400 hover:text-white"><span class="material-icons-round">close</span></button></div><div id="motive-list-container" class="max-h-80 overflow-y-auto custom-scroll"></div>
+         </div>
+      </div>
+
+      <!-- Modal Motivos Apelación -->
+      <div id="appeal-motive-modal" class="hidden fixed inset-0 z-[65] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-[#1f2937] w-full max-w-xs rounded-2xl shadow-2xl overflow-hidden border border-slate-600">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+               <h3 class="text-white font-bold">Motivo de Ausencia</h3>
+               <button onclick="document.getElementById('appeal-motive-modal').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                  <span class="material-icons-round">close</span>
+               </button>
+            </div>
+            <div id="appeal-motive-list-container" class="max-h-80 overflow-y-auto custom-scroll"></div>
+         </div>
+      </div>
+
+      <!-- Modal Selector Mes/Año -->
+      <div id="month-modal" class="hidden fixed inset-0 z-[65] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-[#1f2937] w-full max-w-xs rounded-2xl shadow-2xl overflow-hidden border border-slate-600">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+               <h3 class="text-white font-bold">Seleccionar Mes</h3>
+               <button onclick="document.getElementById('month-modal').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                  <span class="material-icons-round">close</span>
+               </button>
+            </div>
+            <div id="month-list-container" class="max-h-80 overflow-y-auto custom-scroll"></div>
+         </div>
+      </div>
+
+      <!-- Modal Tipo Permiso Médico -->
+      <div id="permission-type-modal" class="hidden fixed inset-0 z-[65] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-[#1f2937] w-full max-w-xs rounded-2xl shadow-2xl overflow-hidden border border-slate-600">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+               <h3 class="text-white font-bold">Tipo de Permiso</h3>
+               <button onclick="document.getElementById('permission-type-modal').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                  <span class="material-icons-round">close</span>
+               </button>
+            </div>
+            <div id="permission-type-list-container" class="max-h-80 overflow-y-auto custom-scroll"></div>
+         </div>
+      </div>
+
+      <!-- Modal Fecha Límite Justificaciones (ADMIN) -->
+      <div id="justif-deadline-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 fade-in-up">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Establecer Fecha Límite</h3>
+            <p class="text-sm text-slate-600 mb-4">Ingrese hasta qué fecha y hora estará habilitado el módulo de justificaciones.</p>
+            
+            <div class="space-y-4">
+               <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Fecha</label>
+                  <input type="date" id="justif-deadline-date" class="input-modern w-full px-4 py-3 rounded-lg text-sm">
+               </div>
+               <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Hora</label>
+                  <input type="time" id="justif-deadline-time" class="input-modern w-full px-4 py-3 rounded-lg text-sm">
+               </div>
+            </div>
+
+            <div class="flex gap-3 mt-6">
+               <button onclick="cancelJustifDeadline()" class="flex-1 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50">
+                  Cancelar
+               </button>
+               <button onclick="confirmJustifDeadline()" class="flex-1 py-2.5 rounded-lg bg-orange-600 text-white font-bold text-sm hover:bg-orange-700">
+                  Confirmar
+               </button>
+            </div>
+         </div>
+      </div>
+
+      <!-- Modal Advertencia Archivos Apelación -->
+      <div id="appeal-file-warning-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 text-center fade-in-up max-h-[90vh] overflow-y-auto">
+             <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span class="material-icons-round text-3xl">warning</span>
+             </div>
+             <h3 class="text-lg font-bold text-slate-800 mb-2">⚠️ Confirmación Importante</h3>
+             
+             <div id="appeal-warning-content" class="text-xs text-slate-600 text-left space-y-2 mb-5 bg-slate-50 p-4 rounded-lg">
+             </div>
+             
+             <p class="text-sm text-slate-700 mb-5 font-semibold">¿Has cargado los archivos correctos?</p>
+             <div class="flex gap-2">
+                <button onclick="document.getElementById('appeal-file-warning-modal').classList.add('hidden')" class="w-1/2 py-2.5 rounded-lg border-2 border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50">
+                   Revisar de Nuevo
+                </button>
+                <button onclick="confirmAppealFileWarning()" class="w-1/2 py-2.5 rounded-lg bg-red-600 text-white font-bold text-sm hover:bg-red-700 shadow-lg shadow-red-500/30">
+                   Sí, Enviar
+                </button>
+             </div>
+         </div>
+      </div>
+
+      <!-- Modal Advertencia Permiso (documento posterior) -->
+      <div id="permission-warning-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center fade-in-up">
+             <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span class="material-icons-round text-2xl">info</span>
+             </div>
+             <h3 class="text-lg font-bold text-slate-800 mb-2">Recordatorio Importante</h3>
+             <p class="text-xs text-slate-600 mb-5">
+                Se enviará una notificación al representante legal de la empresa para informar sobre su permiso médico.<br><br>
+                <strong>Debes adjuntar el documento médico de respaldo (Atención medica, realización de examen, etc...) desde el historial de este modulo una vez realizado el tramite médico, para así finalizar correctamente esta gestión y evitar descuetos por falta laboral.</strong>
+             </p>
+             <div class="flex gap-2">
+                <button onclick="document.getElementById('permission-warning-modal').classList.add('hidden')" class="w-1/2 py-2 rounded-lg border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50">
+                   Cancelar
+                </button>
+                <button onclick="confirmPermissionSubmit()" class="w-1/2 py-2 rounded-lg bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 shadow-lg shadow-emerald-500/30">
+                   Entendido, Enviar
+                </button>
+             </div>
+         </div>
+      </div>
+
+      <!-- Modal Adjuntar Documento Permiso -->
+      <div id="attach-permission-doc-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 fade-in-up">
+             <h3 class="text-lg font-bold text-slate-800 mb-4">Adjuntar Documento de Respaldo</h3>
+             <p class="text-sm text-slate-600 mb-4">Adjunte el certificado médico, comprobante u otro documento que respalde que efectivamente realizó una atención médica.</p>
+             
+             <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-emerald-300 rounded-xl cursor-pointer bg-emerald-50 hover:bg-emerald-100 transition" id="drop-area-permission-doc">
+                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                    <span class="material-icons-round text-3xl text-emerald-400 mb-2">upload_file</span>
+                    <p class="text-xs text-emerald-700"><span class="font-semibold">Toque para seleccionar archivo</span></p>
+                    <p class="text-[10px] text-emerald-500 mt-1" id="permission-doc-name">JPG, PNG, PDF (Máx 5MB)</p>
+                </div>
+                <input id="permission-doc-file" type="file" class="hidden" accept="image/*,application/pdf" capture="environment" onchange="updatePermissionDocName(this)" />
+            </label>
+
+            <div class="flex gap-3 mt-6">
+               <button onclick="closeAttachPermissionModal()" class="flex-1 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50">
+                  Cancelar
+               </button>
+               <button onclick="confirmAttachPermissionDoc()" id="btn-attach-permission-doc" class="flex-1 py-2.5 rounded-lg bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700">
+                  Subir Documento
+               </button>
+            </div>
+         </div>
+      </div>
+
+      <!-- Modal Advertencia Fuerza Mayor Justificación -->
+      <div id="force-majeure-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-xs rounded-2xl shadow-2xl p-6 text-center fade-in-up">
+             <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-3"><span class="material-icons-round text-2xl">warning_amber</span></div>
+             <h3 class="text-lg font-bold text-slate-800 mb-2">Advertencia</h3>
+             <p class="text-xs text-slate-500 mb-5">Su justificación tiene mayor validez si adjunta un documento de respaldo. <br><br>¿Desea continuar sin archivo?</p>
+             <div class="flex gap-2">
+                <button onclick="document.getElementById('force-majeure-modal').classList.add('hidden')" class="w-1/2 py-2 rounded-lg border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50">Volver</button>
+                <button onclick="confirmForceMajeureSubmission()" class="w-1/2 py-2 rounded-lg bg-orange-600 text-white font-bold text-sm hover:bg-orange-700 shadow-lg shadow-orange-500/30">Continuar</button>
+             </div>
+         </div>
+      </div>
+
+      <!-- Modal Fuera de Plazo Justificaciones -->
+      <div id="out-of-deadline-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center fade-in-up">
+             <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span class="material-icons-round text-2xl">schedule</span>
+             </div>
+             <h3 class="text-lg font-bold text-slate-800 mb-2">Módulo Deshabilitado</h3>
+             <p class="text-xs text-slate-600 mb-5">
+                El módulo de justificaciones está deshabilitado debido a que se encuentra <strong>fuera del plazo establecido</strong>.<br><br>
+                Para más información sobre los plazos, consulte con la directiva.<br><br>
+                Puedes revisar tu historial, pero no se pueden crear nuevas solicitudes en este momento.
+             </p>
+             <button onclick="handleOutOfDeadlineConfirm()" class="w-full py-2 rounded-lg bg-red-600 text-white font-bold text-sm hover:bg-red-700 shadow-lg shadow-red-500/30">
+                Ver Historial
+             </button>
+         </div>
+      </div>
+
+      <!-- Modal Cuotas -->
+      <div id="quota-modal" class="hidden fixed inset-0 z-[65] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-[#1f2937] w-full max-w-xs rounded-2xl shadow-2xl overflow-hidden border border-slate-600">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center"><h3 class="text-white font-bold">Seleccionar Cuotas</h3><button onclick="document.getElementById('quota-modal').classList.add('hidden')" class="text-slate-400 hover:text-white"><span class="material-icons-round">close</span></button></div><div id="quota-list-container" class="max-h-80 overflow-y-auto custom-scroll"></div>
+         </div>
+      </div>
+
+      <!-- Modal Edición Campo -->
+      <div id="edit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 relative fade-in-up flex flex-col max-h-[80vh]">
+            <button onclick="closeEditModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><span class="material-icons-round">close</span></button>
+            <h3 class="text-lg font-bold text-slate-800 mb-1" id="modal-title">Editar Campo</h3>
+            <p class="text-xs text-slate-500 mb-4" id="modal-desc">Ingrese el nuevo valor.</p>
+            <div id="modal-input-container" class="overflow-y-auto custom-scroll pr-1"></div>
+            <div class="mt-6 flex justify-end gap-3 pt-2 border-t border-slate-100">
+               <button onclick="closeEditModal()" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-100">Cancelar</button>
+               <button onclick="saveEdit()" id="btn-save-modal" class="px-4 py-2 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 flex items-center gap-2"><span>Guardar</span></button>
+            </div>
+         </div>
+      </div>
+      
+        <!-- MODAL EDITAR PRÉSTAMO (Gestión) -->
+        <div id="edit-loan-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+            <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 class="text-lg font-bold text-slate-800">Editar Préstamo</h3>
+              <button onclick="document.getElementById('edit-loan-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
+                <span class="material-icons-round">close</span>
+              </button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cuotas</label>
+                <div class="relative">
+                  <select id="edit-loan-cuotas" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition appearance-none bg-white text-slate-700 font-medium text-sm">
+                    <!-- Opciones se generan dinámicamente -->
+                  </select>
+                  <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                    <span class="material-icons-round text-xl">expand_more</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Medio de Pago</label>
+                <div class="relative">
+                  <select id="edit-loan-medio" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition appearance-none bg-white text-slate-700 font-medium text-sm">
+                    <option value="Cuenta RUT">Cuenta RUT</option>
+                    <option value="ServiPag">ServiPag</option>
+                  </select>
+                  <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                    <span class="material-icons-round text-xl">expand_more</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="p-4 border-t border-slate-200 flex gap-3">
+              <button onclick="document.getElementById('edit-loan-modal').classList.add('hidden')" class="flex-1 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50">
+                Cancelar
+              </button>
+              <button onclick="confirmEditLoan()" id="btn-confirm-edit-loan" class="flex-1 py-2.5 rounded-lg bg-purple-600 text-white font-bold text-sm hover:bg-purple-700 shadow-lg shadow-purple-500/30">
+                Guardar Cambios
+              </button>
+            </div>
+          </div>
+        </div>
+
+      <!-- Modal Filtros -->
+      <div id="filter-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 relative fade-in-up flex flex-col">
+            <button onclick="document.getElementById('filter-modal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><span class="material-icons-round">close</span></button>
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Filtrar y Ordenar</h3>
+            <div class="space-y-6">
+               <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Orden</label><div class="grid grid-cols-2 gap-2"><div onclick="selectFilterOption('sort', 'desc', this)" class="select-option p-3 rounded-lg text-sm cursor-pointer text-center selected" data-type="sort" data-val="desc">Más recientes</div><div onclick="selectFilterOption('sort', 'asc', this)" class="select-option p-3 rounded-lg text-sm cursor-pointer text-center" data-type="sort" data-val="asc">Más antiguas</div></div></div>
+               <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Estado</label><div class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto custom-scroll pr-1"><div onclick="selectFilterOption('status', 'all', this)" class="select-option p-3 rounded-lg text-sm cursor-pointer text-center selected" data-type="status" data-val="all">Todos</div><div onclick="selectFilterOption('status', 'Solicitado', this)" class="select-option p-3 rounded-lg text-sm cursor-pointer text-center" data-type="status" data-val="Solicitado">Solicitado</div><div onclick="selectFilterOption('status', 'Enviado', this)" class="select-option p-3 rounded-lg text-sm cursor-pointer text-center" data-type="status" data-val="Enviado">Enviado</div><div onclick="selectFilterOption('status', 'Vigente', this)" class="select-option p-3 rounded-lg text-sm cursor-pointer text-center" data-type="status" data-val="Vigente">Vigente</div><div onclick="selectFilterOption('status', 'Pagado', this)" class="select-option p-3 rounded-lg text-sm cursor-pointer text-center" data-type="status" data-val="Pagado">Pagado</div><div onclick="selectFilterOption('status', 'Rechazado', this)" class="select-option p-3 rounded-lg text-sm cursor-pointer text-center" data-type="status" data-val="Rechazado">Rechazado</div></div></div>
+            </div>
+            <button onclick="applyFilters()" class="w-full mt-6 py-3 rounded-xl bg-slate-900 text-white font-bold shadow-lg shadow-slate-500/30 hover:bg-slate-800 transition">Aplicar Filtros</button>
+         </div>
+      </div>
+
+      <!-- Modal Eliminar Genérico -->
+      <div id="delete-generic-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-xs rounded-2xl shadow-2xl p-6 text-center fade-in-up">
+             <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3"><span class="material-icons-round text-2xl">delete_forever</span></div>
+             <h3 class="text-lg font-bold text-slate-800 mb-2">¿Eliminar registro?</h3>
+             <p class="text-xs text-slate-500 mb-5">Esta acción no se puede deshacer.</p>
+             <div class="flex gap-2">
+                <button onclick="document.getElementById('delete-generic-modal').classList.add('hidden')" class="w-1/2 py-2 rounded-lg border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50">Cancelar</button>
+                <button onclick="confirmDeleteGeneric()" class="w-1/2 py-2 rounded-lg bg-red-600 text-white font-bold text-sm hover:bg-red-700 shadow-lg shadow-red-500/30">Eliminar</button>
+             </div>
+         </div>
+      </div>
+
+      <!-- Modal Recuperar Contraseña -->
+      <div id="recover-password-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 text-center fade-in-up">
+             <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="material-icons-round text-3xl">vpn_key</span>
+             </div>
+             <h3 class="text-xl font-bold text-slate-800 mb-3">Recuperar Contraseña</h3>
+             <p class="text-sm text-slate-600 mb-2">
+                Estás a punto de enviar tu contraseña al correo electrónico:
+             </p>
+             <p class="text-sm font-bold text-blue-600 mb-5" id="recover-email-display">
+                ejemplo@correo.com
+             </p>
+             <p class="text-xs text-slate-500 mb-6">
+                Si ese <strong>NO</strong> es tu correo electrónico, vuelve atrás y contáctate con la directiva para actualizar tus datos.
+             </p>
+             <div class="flex gap-3">
+                <button onclick="document.getElementById('recover-password-modal').classList.add('hidden')" class="flex-1 py-2.5 rounded-lg border-2 border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50">
+                   Volver
+                </button>
+                <button onclick="confirmRecuperarContrasena()" id="btn-confirm-recover" class="flex-1 py-2.5 rounded-lg bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-500/30">
+                   Sí, Enviar
+                </button>
+             </div>
+         </div>
+      </div>
+
+      <!-- Modal Informe Admin -->
+      <div id="admin-report-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 text-center fade-in-up">
+             <div class="w-14 h-14 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="material-icons-round text-3xl">description</span>
+             </div>
+             <h3 class="text-xl font-bold text-slate-800 mb-3">Generar Informe de Préstamos</h3>
+             <p class="text-sm text-slate-600 mb-6">
+                ¿Desea generar y enviar el informe de préstamos al correo de la directiva?
+             </p>
+             <div class="flex gap-3">
+                <button onclick="document.getElementById('admin-report-modal').classList.add('hidden')" class="flex-1 py-2.5 rounded-lg border-2 border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50">
+                   Cancelar
+                </button>
+                <button onclick="confirmGenerarInforme()" id="btn-confirm-report" class="flex-1 py-2.5 rounded-lg bg-purple-600 text-white font-bold text-sm hover:bg-purple-700 shadow-lg shadow-purple-500/30">
+                   Generar Informe
+                </button>
+             </div>
+         </div>
+      </div>
+
+      <div id="warning-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-xs rounded-2xl shadow-2xl p-5 flex flex-col items-center justify-center animate-bounce-short text-center">
+            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3 text-orange-500"><span class="material-icons-round text-2xl">priority_high</span></div>
+            <h3 class="text-lg font-bold text-slate-800 mb-1">Atención</h3><p id="warning-text" class="text-sm text-slate-500 mb-4">Mensaje.</p>
+            <button onclick="document.getElementById('warning-modal').classList.add('hidden')" class="w-full py-2 rounded-lg bg-orange-500 text-white font-bold text-sm hover:bg-orange-600 transition shadow-lg shadow-orange-500/30">Entendido</button>
+         </div>
+      </div>
+      
+      <div id="construction-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-xs rounded-2xl shadow-2xl p-6 flex flex-col items-center justify-center animate-bounce-short text-center border border-white/50">
+            <div class="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-4 text-indigo-500 shadow-inner"><span class="material-icons-round text-3xl">handyman</span></div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Próximamente</h3><p class="text-sm text-slate-500 mb-6 leading-relaxed">El módulo <span id="construction-module-name" class="font-bold text-indigo-600"></span> está en desarrollo.</p>
+            <button onclick="document.getElementById('construction-modal').classList.add('hidden')" class="w-full py-3 rounded-xl bg-slate-800 text-white font-bold text-sm hover:bg-slate-700 transition shadow-lg shadow-slate-500/30 flex items-center justify-center gap-2"><span>Entendido</span></button>
+         </div>
+      </div>
+      
+      <div id="success-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+         <div class="bg-white rounded-2xl shadow-2xl p-6 flex flex-col items-center justify-center animate-bounce-short">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-3 text-green-600"><span class="material-icons-round text-3xl">check</span></div>
+            <h3 class="text-lg font-bold text-slate-800">¡Éxito!</h3><p class="text-sm text-slate-500" id="success-msg">Operación realizada correctamente.</p>
+         </div>
+      </div>
+
+      <!-- Modal Información de Estados -->
+      <div id="info-estado-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden fade-in-up max-h-[85vh] flex flex-col">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-5 flex items-center justify-between flex-shrink-0">
+              <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                    <span class="material-icons-round text-white text-xl" id="info-estado-icon">info</span>
+                  </div>
+                  <h3 class="text-lg font-bold text-white" id="info-estado-titulo">Estado</h3>
+              </div>
+              <button onclick="cerrarInfoEstado()" class="text-white/80 hover:text-white transition-colors">
+                  <span class="material-icons-round text-2xl">close</span>
+              </button>
+            </div>
+            
+            <!-- Body -->
+            <div class="p-6 overflow-y-auto flex-grow">
+              <!-- Badge del estado actual -->
+              <div class="mb-4 flex justify-center">
+                  <div id="info-estado-badge" class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide">
+                    Estado
+                  </div>
+              </div>
+              
+              <!-- Descripción -->
+              <div id="info-estado-descripcion" class="text-sm text-slate-700 leading-relaxed space-y-3">
+                  Cargando información...
+              </div>
+              
+              <!-- Nota importante (solo para negociación) -->
+              <div id="info-estado-nota" class="hidden mt-4 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg">
+                  <div class="flex items-start gap-2">
+                    <span class="material-icons-round text-amber-600 text-lg flex-shrink-0">warning</span>
+                    <p class="text-xs text-amber-900 leading-relaxed">
+                        <strong>Importante:</strong> Esta información es válida desde el 19 de diciembre de 2025 hasta la finalización del proceso de negociación colectiva.
+                    </p>
+                  </div>
+              </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex-shrink-0">
+              <button onclick="cerrarInfoEstado()" class="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/30">
+                  Entendido
+              </button>
+            </div>
+        </div>
+      </div>
+      
+      <section id="logout-view" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/95 backdrop-blur-md fade-in-up">
+        <div class="text-center"><div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/30 animate-bounce"><span class="material-icons-round text-3xl text-white">check</span></div><h2 class="text-2xl font-bold text-white mb-2">¡Hasta pronto!</h2><p class="text-slate-300 text-sm">Cerrando sesión de forma segura...</p></div>
+      </section>
+
+    </main>
+
+    <script>
+
+      // LISTADO DE REGIONES
+      const regionesList = [
+          "01. XV. Region de Arica y Parinacota - Arica",
+          "02. I Region de Tarapacá - Iquique",
+          "03. II. Region de Antofagasta - Antofagasta",
+          "04. III Region de Atacama - Copiapó",
+          "05. IV Region de Coquimbo - La Serena",
+          "06. V Region de Valparaíso - Valparaíso.",
+          "07. RM Region Metropolitana - Santiago.",
+          "08. VI Region del Lib. Gral. Bdo. O'Higgins - Rancagua.",
+          "09. VII Region del Maule - Talca.",
+          "10. XVI Region del Ñuble - Chillán",
+          "11. VIII Region del Biobío - Concepción.",
+          "12. IX Region de Araucanía - Temuco",
+          "13. XIV Region de Los Ríos - Valdivia",
+          "14. X Region de los Lagos - Puerto Montt.",
+          "15. XI. Region de Aysén del General Carlos Ibáñez del Campo - Coyhaique",
+          "16. XII Region de Magallanes y la Antártica Chilena - Punta Arenas."
+      ];
+
+      let currentRut = "";
+      let currentUserState = "";
+      let currentEstadoNegColect = "";
+      let currentEditingField = "";
+      let userDataCache = {};
+      let selectedRegionTemp = "";
+      let activeLoanType = "";
+      let currentEditingLoanId = "";
+      let loanRecordsCache = [];
+      let currentSort = 'desc';
+      let currentStatusFilter = 'all';
+      let currentUserRole = ""; 
+      let itemToDeleteId = "";
+      let deleteType = "";
+      let tempSelectedMotive = "";
+      let tempSelectedQuota = "";
+
+      // LISTADOS BANCARIOS
+      const bancosList = [
+        "BANCO ESTADO",
+        "BANCO DE CHILE",
+        "BANCO DE CREDITO E INVERSIONES (BCI)",
+        "BANCO BICE",
+        "SCOTIABANK CHILE",
+        "BANCO SANTANDER-CHILE",
+        "ITAÚ CHILE",
+        "BANCO SECURITY",
+        "BANCO FALABELLA",
+        "BANCO RIPLEY",
+        "BANCO CONSORCIO",
+        "MERCADO PAGO",
+        "SCOTIABANK AZUL",
+        "BANCO INTERNACIONAL",
+        "HSBC BANK (CHILE)",
+        "BANCO BTG PACTUAL CHILE"
+      ];
+
+      const tiposCuentaList = [
+        "CUENTA CORRIENTE",
+        "CUENTA VISTA"
+      ];
+      
+      // VARIABLES APELACIONES
+      let tempSelectedAppealMotive = "";
+      let tempSelectedMonth = "";
+      let appealFileComprobanteData = null;
+      let appealFileLiquidacionData = null;
+      
+      // VARIABLES PERMISO MÉDICO
+      let tempSelectedPermissionType = "";
+      let currentPermissionIdToAttach = "";
+      let currentManagementModule = "prestamos";
+
+      window.onload = function() {
+        const rutInput = document.getElementById('rut');
+        rutInput.addEventListener('input', function(e) {
+          let value = e.target.value.replace(/[^0-9kK]/g, '');
+          if(value.length > 9) value = value.slice(0, 9);
+          if (value.length > 1) {
+            const body = value.slice(0, -1);
+            const dv = value.slice(-1).toUpperCase();
+            let formattedBody = "";
+            for (let i = body.length - 1, j = 0; i >= 0; i--, j++) {
+              formattedBody = body.charAt(i) + ((j > 0 && j % 3 === 0) ? "." : "") + formattedBody;
+            }
+            e.target.value = formattedBody + "-" + dv;
+          } else {
+            e.target.value = value;
+          }
+        });
+        
+        // Char counters
+        document.getElementById('justif-motivo').addEventListener('input', function(e) {
+            document.getElementById('char-count').innerText = e.target.value.length;
+        });
+        
+        document.getElementById('appeal-detalle').addEventListener('input', function(e) {
+            document.getElementById('appeal-char-count').innerText = e.target.value.length;
+        });
+        
+        document.getElementById('permission-motivo').addEventListener('input', function(e) {
+            document.getElementById('permission-char-count').innerText = e.target.value.length;
+        });
+
+        const savedRut = localStorage.getItem('sindicato_rut');
+        const savedPass = localStorage.getItem('sindicato_pass');
+
+        if(savedRut) {
+          const rutInput = document.getElementById('rut');
+          const passwordInput = document.getElementById('password');
+          
+          rutInput.value = savedRut;
+          document.getElementById('remember-me').checked = true;
+          rutInput.dispatchEvent(new Event('input'));
+          
+          // ⭐ NUEVO: Cargar también la contraseña si existe
+          if(savedPass) {
+            passwordInput.value = savedPass;
+          }
+        }
+      };
+
+      // MOCK
+      if (typeof google === 'undefined') {
+        const mockData = { rut: "12345678K", nombre: "Juan Pérez", cargo: "Op", site: "Faena", region: "RM", estado: "ACTIVO", correo: "a@a.com", contacto: "+56912345678" };
+        const mockLoans = [
+           {id: "123", fecha: "12/12/2024 10:00", tipo: "Emergencia", cuotas: "5", medio: "Cuenta RUT", estado: "Solicitado", fechaTermino: "22/05/2025 10:00"},
+           {id: "456", fecha: "01/01/2025 12:30", tipo: "Vacaciones", cuotas: "3", medio: "ServiPag", estado: "Pagado", fechaTermino: "01/04/2025 12:30"},
+        ];
+        const mockAsistencia = [
+            { rut: "12.345.678-K", nombre: "Juan Pérez", asamblea: "2023-10", region: "RM", tipo: "Asistencia Presencial", gestion: "Socio", dirigente: "" },
+            { rut: "12.345.678-K", nombre: "Juan Pérez", asamblea: "2023-09", region: "RM", tipo: "Ausente", gestion: "Sistema", dirigente: "" },
+        ];
+        const serverFunctions = (success, fail) => ({
+           validarUsuario: (r, p) => setTimeout(() => success({success: true, user: "Juan Pérez", role: "ADMIN", message: "OK"}), 1500), 
+           obtenerDatosUsuario: (r) => setTimeout(() => success({success: true, datos: mockData}), 1000),
+           actualizarDatoUsuario: (r, c, v) => setTimeout(() => success({success: true, message: "OK"}), 1500),
+           crearSolicitudPrestamo: (r, t, c, m, rb) => setTimeout(() => success({success: true, message: "Solicitud creada"}), 2000),
+           obtenerHistorialPrestamos: (r) => setTimeout(() => success({success: true, registros: mockLoans}), 1000),
+           eliminarSolicitud: (id) => setTimeout(() => success({success: true, message: "Eliminado"}), 1000),
+           modificarSolicitud: (id, c, m) => setTimeout(() => success({success: true, message: "Modificado"}), 1500),
+           enviarJustificacion: (r, t, m, f, rb) => setTimeout(() => success({success: true, message: "Enviado"}), 2000),
+           obtenerHistorialJustificaciones: (r) => setTimeout(() => success({success: true, registros: [
+               {id: "j1", fecha: "2024-01-01", tipo: "Licencia Médica", motivo: "Gripe", estado: "Enviado", url: "", gestion: "Socio", nomDirigente: ""},
+           ]}), 1000),
+           eliminarJustificacion: (id) => setTimeout(() => success({success: true, message: "Eliminado"}), 1000),
+           obtenerEstadoSwitchJustificaciones: () => setTimeout(() => success({habilitado: true, fechaLimite: ""}), 500),
+           actualizarSwitchJustificaciones: (e, f) => setTimeout(() => success({success: true}), 500),
+           obtenerHistorialAsistencia: (r) => setTimeout(() => success({success: true, registros: mockAsistencia}), 1000),
+           enviarApelacion: (rG, mes, tipo, det, archComp, archLiq, rB) => setTimeout(() => success({success: true, message: "Apelación enviada"}), 2000),
+           obtenerHistorialApelaciones: (r) => setTimeout(() => success({success: true, registros: [
+              {id: "ap1", fecha: "2025-03-15", mesApelacion: "2025-03", tipoMotivo: "Licencia Médica", detalleMotivo: "", urlComprobante: "http://", urlLiquidacion: "http://", estado: "Enviado", obs: "", gestion: "Socio", nomDirigente: "", urlComprobanteDevolucion: ""}
+           ]}), 1000),
+           eliminarApelacion: (id) => setTimeout(() => success({success: true, message: "Eliminado"}), 1000),
+           solicitarPermisoMedico: (rG, tipo, fechaInicio, mot, rB) => setTimeout(() => success({success: true, message: "Permiso solicitado"}), 2000),
+           obtenerHistorialPermisosMedicos: (r) => setTimeout(() => success({success: true, registros: []}), 1000),
+           adjuntarDocumentoPermiso: (id, arch) => setTimeout(() => success({success: true, message: "Documento adjuntado"}), 2000),
+           eliminarPermisoMedico: (id) => setTimeout(() => success({success: true, message: "Eliminado"}), 1000),
+           obtenerGestionesDirigente: (r) => setTimeout(() => success({success: true, datos: {prestamos: [], justificaciones: [], apelaciones: [], permisosMedicos: []}}), 1000),
+           recuperarContrasena: (r) => setTimeout(() => success({success: true, correo: "ejemplo@correo.com"}), 1000),
+           generarInformeAdministrador: () => setTimeout(() => success({success: true}), 2000),
+        });
+        window.google = { script: { run: { withSuccessHandler: (success) => {
+             const funcs = serverFunctions(success, console.error);
+             return { withFailureHandler: (fail) => serverFunctions(success, fail), ...funcs };
+        }}}};
+      }
+
+      // --- HELPERS ---
+      function formatRutDisplay(rutRaw) {
+        if (!rutRaw) return "";
+        let value = rutRaw.replace(/[^0-9kK]/g, '').toUpperCase();
+        if (value.length < 2) return value;
+        const body = value.slice(0, -1);
+        const dv = value.slice(-1);
+        let formattedBody = "";
+        for (let i = body.length - 1, j = 0; i >= 0; i--, j++) {
+          formattedBody = body.charAt(i) + ((j > 0 && j % 3 === 0) ? "." : "") + formattedBody;
+        }
+        return formattedBody + "-" + dv;
+      }
+      
+      function formatRutInput(input) {
+        let value = input.value.replace(/[^0-9kK]/g, '');
+        if(value.length > 9) value = value.slice(0, 9);
+        if (value.length > 1) {
+          const body = value.slice(0, -1);
+          const dv = value.slice(-1).toUpperCase();
+          let formattedBody = "";
+          for (let i = body.length - 1, j = 0; i >= 0; i--, j++) {
+            formattedBody = body.charAt(i) + ((j > 0 && j % 3 === 0) ? "." : "") + formattedBody;
+          }
+          input.value = formattedBody + "-" + dv;
+        } else {
+          input.value = value;
+        }
+      }
+      
+      function parsePhoneToSuffix(fullPhone) {
+        if(!fullPhone) return "";
+        let clean = fullPhone.replace(/[^0-9]/g, '');
+        if (clean.startsWith('569')) return clean.substring(3);
+        if (clean.startsWith('9') && clean.length === 9) return clean.substring(1);
+        return clean; 
+      }
+      
+      function showWarning(msg) {
+         document.getElementById('warning-text').innerText = msg;
+         document.getElementById('warning-modal').classList.remove('hidden');
+      }
+      
+      function showSuccess(msg) {
+         document.getElementById('success-msg').innerText = msg || "Operación exitosa.";
+         const m = document.getElementById('success-modal');
+         m.classList.remove('hidden');
+         setTimeout(() => m.classList.add('hidden'), 2500);
+      }
+
+      // ========================================
+      // FUNCIÓN PARA MOSTRAR ALERTA PERSONALIZADA DE LOGIN
+      // ========================================
+      function mostrarAlertaLogin(tipo, mensajeBase) {
+        let titulo, mensaje, icono;
+        
+        if (tipo === "rut") {
+          titulo = "RUT Inválido";
+          icono = "badge";
+          mensaje = mensajeBase || "El RUT ingresado está mal digitado o no existe en la base de datos del sindicato.";
+          mensaje += "<br><br>Por favor, verifica la información ingresada o comunícate con la directiva sindical para regularizar esta situación.";
+        } else if (tipo === "password") {
+          titulo = "Contraseña Incorrecta";
+          icono = "lock";
+          mensaje = mensajeBase || "La contraseña ingresada es incorrecta.";
+          mensaje += "<br><br>Vuelve a verificar que el valor ingresado sea el correcto, recupera tu contraseña usando la opción disponible, o comunícate con nosotros para regularizar esta situación.";
+        } else {
+          titulo = "Error de Acceso";
+          icono = "error";
+          mensaje = mensajeBase || "Ha ocurrido un error al intentar iniciar sesión.";
+        }
+        
+        const modalHTML = `
+          <div id="login-error-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100] animate-fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-scale-in">
+              <div class="p-6">
+                <div class="flex items-start gap-4">
+                  <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0">
+                    <span class="material-icons-round text-2xl">${icono}</span>
+                  </div>
+                  <div class="flex-1">
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">${titulo}</h3>
+                    <p class="text-sm text-gray-600 leading-relaxed">${mensaje}</p>
+                  </div>
+                </div>
+                <div class="mt-6 flex justify-end">
+                  <button 
+                    onclick="cerrarAlertaLogin()" 
+                    class="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-all shadow-lg">
+                    Entendido
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        const alertaExistente = document.getElementById('login-error-modal');
+        if (alertaExistente) {
+          alertaExistente.remove();
+        }
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+      }
+
+      function cerrarAlertaLogin() {
+        const modal = document.getElementById('login-error-modal');
+        if (modal) {
+          modal.classList.add('animate-fade-out');
+          setTimeout(() => modal.remove(), 200);
+        }
+      }
+
+      // ==========================================
+      // MODIFICACIONES PARA Index.html
+      // Agregar después de la función showSuccess()
+      // ==========================================
+
+      /**
+       * Muestra una alerta de permisos cuando hay problemas con correos
+       * @param {string} mensaje - Mensaje a mostrar
+       * @param {string} tipo - 'warning' o 'info'
+       */
+      function mostrarAlertaPermisos(mensaje, tipo) {
+        tipo = tipo || 'warning';
+        
+        var icono = tipo === 'warning' ? 'warning' : 'info';
+        var colorIcono = tipo === 'warning' ? 'text-orange-500 bg-orange-100' : 'text-blue-500 bg-blue-100';
+        var colorBoton = tipo === 'warning' ? 'bg-orange-600 hover:bg-orange-700' : 'bg-blue-600 hover:bg-blue-700';
+        
+        // Reemplazar saltos de línea por <br> para HTML
+        var mensajeHTML = mensaje.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+        
+        var html = '<div id="alerta-permisos-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 9999;">' +
+          '<div class="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-scale-in max-h-[80vh] overflow-y-auto">' +
+            '<div class="p-6">' +
+              '<div class="flex items-start gap-4">' +
+                '<div class="w-12 h-12 rounded-full ' + colorIcono + ' flex items-center justify-center flex-shrink-0">' +
+                  '<span class="material-icons-round text-2xl">' + icono + '</span>' +
+                '</div>' +
+                '<div class="flex-1">' +
+                  '<h3 class="text-lg font-bold text-gray-800 mb-2">Aviso sobre permisos</h3>' +
+                  '<p class="text-sm text-gray-600 leading-relaxed">' + mensajeHTML + '</p>' +
+                '</div>' +
+              '</div>' +
+              '<div class="mt-6 flex justify-end">' +
+                '<button onclick="cerrarAlertaPermisos()" class="px-6 py-2.5 rounded-xl ' + colorBoton + ' text-white font-bold text-sm transition-all shadow-lg">' +
+                  'Entendido' +
+                '</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+        
+        // Eliminar alerta existente si la hay
+        var alertaExistente = document.getElementById('alerta-permisos-modal');
+        if (alertaExistente) {
+          alertaExistente.remove();
+        }
+        
+        document.body.insertAdjacentHTML('beforeend', html);
+      }
+
+      function cerrarAlertaPermisos() {
+        var alerta = document.getElementById('alerta-permisos-modal');
+        if (alerta) {
+          alerta.remove();
+        }
+      }
+      
+      function showConstruction(moduleName) {
+         document.getElementById('construction-module-name').innerText = moduleName;
+         document.getElementById('construction-modal').classList.remove('hidden');
+      }
+      
+      function formatRut(rut) {
+         if (!rut) return "---";
+         const cleaned = String(rut).replace(/\./g, '').replace(/-/g, '').toUpperCase().trim();
+         if (cleaned.length < 2) return rut;
+         
+         const dv = cleaned.slice(-1);
+         const number = cleaned.slice(0, -1);
+         
+         let formatted = "";
+         let count = 0;
+         for (let i = number.length - 1; i >= 0; i--) {
+            if (count === 3) {
+               formatted = "." + formatted;
+               count = 0;
+            }
+            formatted = number[i] + formatted;
+            count++;
+         }
+  
+      return formatted + "-" + dv;
+      }
+
+      function parseCustomDate(dateString) {
+         if (!dateString) return new Date(0);
+         let d = new Date(dateString);
+         if (!isNaN(d.getTime())) return d;
+         try {
+            const parts = dateString.split(' ');
+            const dateParts = parts[0].split('/');
+            const timeParts = parts.length > 1 ? parts[1].split(':') : ['00', '00', '00'];
+            return new Date(parseInt(dateParts[2], 10), parseInt(dateParts[1], 10) - 1, parseInt(dateParts[0], 10), parseInt(timeParts[0], 10), parseInt(timeParts[1], 10), timeParts[2] ? parseInt(timeParts[2], 10) : 0);
+         } catch (e) { return new Date(0); }
+      }
+      
+      function formatRut(rut) {
+        if (!rut) return "---";
+        const cleaned = String(rut).replace(/\./g, '').replace(/-/g, '').toUpperCase().trim();
+        if (cleaned.length < 2) return rut;
+        
+        const dv = cleaned.slice(-1);
+        const number = cleaned.slice(0, -1);
+        
+        let formatted = "";
+        let count = 0;
+        for (let i = number.length - 1; i >= 0; i--) {
+          if (count === 3) {
+            formatted = "." + formatted;
+            count = 0;
+          }
+          formatted = number[i] + formatted;
+          count++;
+        }
+        
+        return formatted + "-" + dv;
+      }
+
+      // --- CORE FUNCTIONS ---
+      function handleLogin(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn-login');
+        const originalContent = btn.innerHTML;
+        const rut = document.getElementById('rut').value;
+        
+        const pass = document.getElementById('password').value;
+        
+        btn.disabled = true; 
+        btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Ingresando...</span></div>';
+        
+        const errorMsgElement = document.getElementById('error-msg');
+        if (errorMsgElement) {
+          errorMsgElement.classList.add('hidden');
+        }
+
+        google.script.run.withSuccessHandler(res => {
+          btn.disabled = false; 
+          btn.innerHTML = originalContent;
+          
+          if(res.success) {
+            currentRut = rut; 
+            currentUserRole = res.role || "SOCIO";
+            currentUserState = res.state || "ACTIVO";
+            currentEstadoNegColect = res.estadoNegColect || "";
+
+            // Guardar datos si "Recordarme" está activado
+            if(document.getElementById('remember-me').checked) {
+              localStorage.setItem('sindicato_rut', rut);
+              localStorage.setItem('sindicato_pass', pass);
+            } else {
+              localStorage.removeItem('sindicato_rut');
+              localStorage.removeItem('sindicato_pass');
             }
             
-            // ==========================================
-            // 4.2 USUARIO ENCONTRADO Y AUTORIZADO
-            // ==========================================
-
-            // Extraer URL del QR desde la fórmula =IMAGE()
-            const formulaQR = formulasQR[i][0]; // Fórmula de la columna QR
-            const urlQR = extraerUrlDeImagen(formulaQR);
-
-            const usuario = {
-              success: true,
-              rut: data[i][COL.RUT],
-              nombre: data[i][COL.NOMBRE],
-              cargo: data[i][COL.CARGO],
-              estado: data[i][COL.ESTADO],
-              rol: rolUsuarioBuscado,
-              idCredencial: data[i][COL.ID_CREDENCIAL] || 'S/D',
-              qrRegistro: urlQR
-            };
             
-            Logger.log('✅ Usuario encontrado y acceso autorizado:');
-            Logger.log('   Consultante: ' + rutConsultante + ' (' + validacion.rol + ')');
-            Logger.log('   Usuario: ' + usuario.nombre + ' (' + usuario.rol + ')');
-            Logger.log('   ID Credencial: ' + usuario.idCredencial);
-            Logger.log('   Fórmula QR: ' + formulaQR);
-            Logger.log('   URL QR extraída: ' + urlQR);
+            document.getElementById('user-name-display').innerText = res.user;
+            applyRolePermissions();
+            switchView('dashboard-view');
+            mostrarAlertasInicioSesion();
+          } else {
+            // Mostrar alerta según el tipo de error
+            if (res.errorType === "rut") {
+              mostrarAlertaLogin("rut", res.message);
+            } else if (res.errorType === "password") {
+              mostrarAlertaLogin("password", res.message);
+            } else {
+              mostrarAlertaLogin("generic", res.message);
+            }
+          }
+        }).withFailureHandler(() => { 
+          btn.disabled = false; 
+          btn.innerHTML = originalContent; 
+          showWarning("Error de conexión con el servidor. Por favor, intenta nuevamente.");
+        }).validarUsuario(rut, pass);
+      }
 
-            return usuario;
+      function togglePasswordVisibility() {
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('password-eye-icon');
+        
+        if (passwordInput.type === 'password') {
+          passwordInput.type = 'text';
+          eyeIcon.textContent = 'visibility';
+        } else {
+          passwordInput.type = 'password';
+          eyeIcon.textContent = 'visibility_off';
+        }
+      }
+
+    /**
+     * Función principal que determina qué alerta mostrar al iniciar sesión
+     */
+    function mostrarAlertasInicioSesion() {
+      const estado = (currentUserState || "").trim().toUpperCase();
+      const estadoNeg = (currentEstadoNegColect || "").trim().toUpperCase();
+      
+      // PRIORIDAD 1: Usuarios DESVINCULADOS (alerta crítica)
+      if (estado === "DESVINCULADO") {
+        mostrarAlertaDesvinculado();
+        return;
+      }
+      
+      // PRIORIDAD 2: Estado de negociación colectiva
+      if (estadoNeg === "HABILITADO PARA NEGOCIAR") {
+        mostrarAlertaHabilitado();
+        return;
+      }
+      
+      if (estadoNeg === "EXTENSION DE BENEFICIOS" || estadoNeg === "OTRO CONT. COLEC.") {
+        mostrarAlertaNoHabilitado(estadoNeg);
+        return;
+      }
+      
+      // Si no hay ninguna alerta que mostrar, no hacer nada
+    }
+
+    /**
+     * Alerta para usuarios DESVINCULADOS (NUEVA)
+     */
+    function mostrarAlertaDesvinculado() {
+      const modalHTML = `
+        <div id="alerta-inicio-sesion" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-scale-in">
+          <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+            
+            <!-- Header compacto -->
+            <div class="bg-gradient-to-r from-red-600 to-red-700 p-4 text-center flex-shrink-0">
+              <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
+                <span class="material-icons-round text-3xl">warning</span>
+              </div>
+              <h3 class="text-lg font-bold text-white">Usuario Desvinculado</h3>
+              <p class="text-xs text-red-100 mt-1">Sindicato SLIM N°3</p>
+            </div>
+            
+            <!-- Contenido scrolleable -->
+            <div class="p-5 overflow-y-auto flex-grow custom-scroll">
+              <p class="text-sm text-slate-700 mb-3 leading-relaxed">
+                <strong>Ya no perteneces a la organización.</strong> Has sido desvinculado por renuncia voluntaria o desvinculación laboral de la empresa.
+              </p>
+              
+              <div class="bg-red-50 border-l-4 border-red-400 p-3 rounded-lg">
+                <div class="flex items-start gap-2">
+                  <span class="material-icons-round text-red-600 text-sm flex-shrink-0">info</span>
+                  <p class="text-xs text-red-800 leading-relaxed">
+                    <strong>Acceso limitado:</strong> Solo puedes acceder al módulo "Mis Datos". No puedes realizar gestiones sindicales.
+                  </p>
+                </div>
+              </div>
+              
+              <p class="text-xs text-slate-500 mt-3 text-center">
+                ¿Error? Contacta a la directiva por los canales oficiales.
+              </p>
+            </div>
+            
+            <!-- Footer fijo -->
+            <div class="p-3 bg-slate-50 border-t border-slate-200 flex-shrink-0">
+              <button onclick="cerrarAlertaInicioSesion()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2">
+                <span>Entendido</span>
+                <span class="material-icons-round text-sm">check_circle</span>
+              </button>
+            </div>
+            
+          </div>
+        </div>
+      `;
+      
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    /**
+     * Alerta para usuarios HABILITADOS para negociar (REDISEÑADA - MÁS COMPACTA)
+     */
+    function mostrarAlertaHabilitado() {
+      const modalHTML = `
+        <div id="alerta-inicio-sesion" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-scale-in">
+          <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+            
+            <!-- Header compacto -->
+            <div class="bg-gradient-to-r from-green-600 to-emerald-600 p-4 text-center flex-shrink-0">
+              <div class="w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
+                <span class="material-icons-round text-3xl">verified</span>
+              </div>
+              <h3 class="text-lg font-bold text-white">Habilitado para Negociar</h3>
+              <p class="text-xs text-green-100 mt-1">Sindicato SLIM N°3</p>
+            </div>
+            
+            <!-- Contenido scrolleable -->
+            <div class="p-5 overflow-y-auto flex-grow custom-scroll">
+              <p class="text-sm text-slate-700 mb-3 leading-relaxed">
+                <strong>Estás habilitado(a) para participar</strong> en el proceso de negociación colectiva de nuestra organización.
+              </p>
+              
+              <p class="text-sm text-slate-600 mb-3">
+                Formas parte integral del proceso y tienes derecho a participar activamente en las decisiones colectivas del sindicato.
+              </p>
+              
+              <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-lg">
+                <div class="flex items-start gap-2">
+                  <span class="material-icons-round text-blue-600 text-sm flex-shrink-0">info</span>
+                  <p class="text-xs text-blue-800 leading-relaxed">
+                    Más detalles en <strong>"Mis Datos"</strong> desde el menú principal.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Footer fijo -->
+            <div class="p-3 bg-slate-50 border-t border-slate-200 flex-shrink-0">
+              <button onclick="cerrarAlertaInicioSesion()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2">
+                <span>Entendido</span>
+                <span class="material-icons-round text-sm">check_circle</span>
+              </button>
+            </div>
+            
+          </div>
+        </div>
+      `;
+      
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    /**
+     * Alerta para usuarios NO HABILITADOS (REDISEÑADA - MÁS COMPACTA)
+     */
+    function mostrarAlertaNoHabilitado(estadoNeg) {
+      const modalHTML = `
+        <div id="alerta-inicio-sesion" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-scale-in">
+          <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+            
+            <!-- Header compacto -->
+            <div class="bg-gradient-to-r from-amber-600 to-orange-600 p-4 text-center flex-shrink-0">
+              <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
+                <span class="material-icons-round text-3xl">info</span>
+              </div>
+              <h3 class="text-lg font-bold text-white">Estado en la Organización</h3>
+              <p class="text-xs text-amber-100 mt-1">Sindicato SLIM N°3</p>
+            </div>
+            
+            <!-- Contenido scrolleable -->
+            <div class="p-5 overflow-y-auto flex-grow custom-scroll">
+              <p class="text-sm text-slate-700 mb-3 leading-relaxed">
+                <strong>Eres parte de la organización</strong>, sin embargo, <strong>no estás habilitado(a) para negociar colectivamente</strong> en este proceso.
+              </p>
+              
+              <p class="text-sm text-slate-600 mb-3">
+                Tu estado actual: <strong>${estadoNeg}</strong>
+              </p>
+              
+              <div class="bg-amber-50 border-l-4 border-amber-400 p-3 rounded-lg">
+                <div class="flex items-start gap-2">
+                  <span class="material-icons-round text-amber-600 text-sm flex-shrink-0">info</span>
+                  <p class="text-xs text-amber-800 leading-relaxed">
+                    Conoce tus beneficios en <strong>"Mis Datos"</strong> desde el menú principal.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Footer fijo -->
+            <div class="p-3 bg-slate-50 border-t border-slate-200 flex-shrink-0">
+              <button onclick="cerrarAlertaInicioSesion()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2">
+                <span>Entendido</span>
+                <span class="material-icons-round text-sm">check_circle</span>
+              </button>
+            </div>
+            
+          </div>
+        </div>
+      `;
+      
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    /**
+     * Función para cerrar la alerta
+     */
+    function cerrarAlertaInicioSesion() {
+      const modal = document.getElementById('alerta-inicio-sesion');
+      if (modal) {
+        modal.classList.add('fade-out');
+        setTimeout(() => modal.remove(), 300);
+      }
+    }
+
+    function cerrarAlertaNegociacion() {
+      const modal = document.getElementById('alerta-negociacion-colectiva');
+      if (modal) {
+        modal.classList.add('fade-out');
+        setTimeout(() => modal.remove(), 300);
+      }
+    }
+      
+      function applyRolePermissions() {
+      const btnGestion = document.getElementById('btn-gestion-socios');
+      const btnAdmin = document.getElementById('btn-panel-admin');
+      const switchContainer = document.getElementById('justif-switch-container');
+      
+      // ✅ Obtener rol normalizado
+      const role = (currentUserRole || "").toUpperCase();
+      const estado = (currentUserState || "").toUpperCase();
+      
+      // ✅ NUEVA LÓGICA: Primero verificar si es ADMIN (tiene acceso total)
+      const esAdmin = (role === 'ADMIN');
+      const esDirigente = (role === 'DIRIGENTE');
+      const esDesvinculado = (estado === "DESVINCULADO");
+      
+      // ========== BOTÓN GESTIÓN SOCIOS ==========
+      if (esAdmin || esDirigente) {
+        btnGestion.classList.remove('hidden'); 
+        btnGestion.classList.add('flex');
+        
+        // Mostrar campos admin en formularios
+        document.getElementById('loan-admin-field').classList.remove('hidden');
+        document.getElementById('justif-admin-field').classList.remove('hidden');
+        document.getElementById('appeal-admin-field').classList.remove('hidden');
+        document.getElementById('permission-admin-field').classList.remove('hidden');
+      } else {
+        btnGestion.classList.add('hidden');
+        
+        // Ocultar campos admin en formularios
+        document.getElementById('loan-admin-field').classList.add('hidden');
+        document.getElementById('justif-admin-field').classList.add('hidden');
+        document.getElementById('appeal-admin-field').classList.add('hidden');
+        document.getElementById('permission-admin-field').classList.add('hidden');
+      }
+      
+      // ========== BOTÓN PANEL ADMIN + SWITCH ==========
+      if (esAdmin) {
+        btnAdmin.classList.remove('hidden'); 
+        btnAdmin.classList.add('flex');
+        
+        switchContainer.classList.remove('hidden');
+        switchContainer.classList.add('flex');
+        
+        loadJustifSwitchState();
+      } else {
+        btnAdmin.classList.add('hidden');
+        switchContainer.classList.add('hidden');
+      }
+
+      // ========== BOTÓN CONSULTA ID ==========
+      const btnConsultaId = document.getElementById('btn-consulta-id');
+      if (esAdmin || esDirigente) {
+        btnConsultaId.classList.remove('hidden'); 
+        btnConsultaId.classList.add('flex');
+      } else {
+        btnConsultaId.classList.add('hidden');
+      }
+      
+      // ========== VALIDACIÓN DE ESTADO DESVINCULADO ==========
+      // Si es DESVINCULADO pero NO es ADMIN, mostrar advertencia al intentar acciones
+      if (esDesvinculado && !esAdmin) {
+        console.warn('Usuario desvinculado: acceso limitado a "Mis Datos"');
+        // La validación de acciones se hace en navAction()
+      }
+    }
+
+      function switchView(viewId) {
+        // Validar si el usuario está desvinculado
+        if (currentUserState === "DESVINCULADO" && viewId !== 'dashboard-view' && viewId !== 'profile-view' && viewId !== 'logout-view' && viewId !== 'login-view') {
+          showWarning("No puedes realizar gestiones sindicales debido a que tu estado dentro de la organización es DESVINCULADO. Si crees que existe un error, comunícate con la directiva de la organización.");
+          return;
+        }
+        
+        ['login-view','dashboard-view','logout-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view'].forEach(id => document.getElementById(id).classList.add('hidden'));
+        const view = document.getElementById(viewId);
+        view.classList.remove('hidden');
+        if (['dashboard-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view'].includes(viewId)) view.classList.add('flex');
+      }
+
+      function handleLogout() {
+        switchView('logout-view');
+        
+        // Limpiar variables de sesión
+        currentRut = ""; 
+        currentUserRole = "";
+        currentUserState = "";
+        currentEstadoNegColect = "";
+        
+        // Después de 3 segundos, volver al login y recargar datos guardados
+        setTimeout(() => {
+          switchView('login-view');
+          
+          // ⭐ NUEVO: Recargar datos guardados si existen
+          const savedRut = localStorage.getItem('sindicato_rut');
+          const savedPass = localStorage.getItem('sindicato_pass');
+          
+          if (savedRut || savedPass) {
+            const rutInput = document.getElementById('rut');
+            const passwordInput = document.getElementById('password');
+            const rememberCheckbox = document.getElementById('remember-me');
+            
+            if (savedRut && rutInput) {
+              rutInput.value = savedRut;
+              rutInput.dispatchEvent(new Event('input')); // Aplicar formato al RUT
+            }
+            
+            if (savedPass && passwordInput) {
+              passwordInput.value = savedPass;
+            }
+            
+            if (rememberCheckbox) {
+              rememberCheckbox.checked = true;
+            }
+          }
+        }, 3000);
+      }
+
+      function navAction(module) {
+        if(!currentRut) { showWarning("Sesión expirada."); return handleLogout(); }
+
+        const role = (currentUserRole || "").toUpperCase();
+        const esAdmin = (role === 'ADMIN');
+        const esDesvinculado = (currentUserState === "DESVINCULADO");
+        
+        if (esDesvinculado && !esAdmin && module !== 'Mis Datos') {
+          showWarning("No puedes realizar gestiones sindicales debido a que tu estado dentro de la organización es DESVINCULADO. Si crees que existe un error, comunícate con la directiva de la organización.");
+          return;
+        }
+        
+        if (module === 'Mis Datos') { 
+           cargarMisDatos(); 
+        } else if (module === 'RegistroAsistencia') { 
+            loadAttendanceRecords(); 
+        } else if (module === 'Prestamos') {
+           document.getElementById('loans-menu').classList.remove('hidden');
+           document.getElementById('loans-form').classList.add('hidden');
+           document.getElementById('loans-records').classList.add('hidden');
+           switchView('loans-view');
+        } else if (module === 'Justificaciones') {
+           google.script.run.withSuccessHandler(res => {
+                if (res.habilitado) { 
+                   toggleJustifTab('form'); 
+                   switchView('justifications-view'); 
+                } else { 
+                   showOutOfDeadlineWarning();
+                }
+           }).obtenerEstadoSwitchJustificaciones();
+        } else if (module === 'Apelaciones') {
+           toggleAppealsTab('form'); 
+           switchView('appeals-view');
+        } else if (module === 'PermisoMedico') {
+           togglePermissionTab('form');
+           switchView('permission-view');
+        } else if (module === 'PanelAdmin') {
+           switchView('admin-panel-view');
+        } else if (module === 'ConsultaID') {
+           switchView('id-credential-view');
+           document.getElementById('search-rut-input').value = '';
+           document.getElementById('id-credential-result').classList.add('hidden');
+        } else if (module === 'GestionSocios') {
+           loadManagementView();
+        } else {
+           showConstruction(module);
+        }
+      }
+
+      function recuperarContrasena() {
+        const rutInput = document.getElementById('rut').value;
+        if (!rutInput || rutInput.trim() === "") {
+          return showWarning("Por favor, ingrese su RUT primero.");
+        }
+        
+        google.script.run.withSuccessHandler(res => {
+          if (res.success) {
+            document.getElementById('recover-email-display').innerText = res.correo || "No registrado";
+            document.getElementById('recover-password-modal').classList.remove('hidden');
+          } else {
+            showWarning(res.message || "No se pudo obtener información del usuario.");
+          }
+        }).withFailureHandler(err => {
+          showWarning("Error de conexión: " + err);
+        }).recuperarContrasena(rutInput);
+      }
+      
+      function confirmRecuperarContrasena() {
+        const rutInput = document.getElementById('rut').value;
+        const btn = document.getElementById('btn-confirm-recover');
+        const oldHtml = btn.innerHTML;
+        
+        btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Enviando...</span></div>';
+        btn.disabled = true;
+        
+        google.script.run.withSuccessHandler(res => {
+          btn.innerHTML = oldHtml;
+          btn.disabled = false;
+          document.getElementById('recover-password-modal').classList.add('hidden');
+          
+          if (res.success) {
+            showSuccess("Contraseña enviada a tu correo electrónico.");
+          } else {
+            showWarning(res.message || "Error al enviar la contraseña.");
+          }
+        }).withFailureHandler(err => {
+          btn.innerHTML = oldHtml;
+          btn.disabled = false;
+          document.getElementById('recover-password-modal').classList.add('hidden');
+          showWarning("Error: " + err);
+        }).enviarContrasenaCorreo(rutInput);
+      }
+
+      // === FUNCIONES PRÉSTAMOS ===
+      function backToLoansMenu() {
+         document.getElementById('loans-form').classList.add('hidden');
+         document.getElementById('loans-records').classList.add('hidden');
+         document.getElementById('loans-menu').classList.remove('hidden');
+         document.getElementById('loan-rut-socio').value = "";
+      }
+      
+      function showLoanForm(type) { 
+         activeLoanType = (type === 'emergencia') ? 'Emergencia' : 'Vacaciones'; 
+         document.getElementById('loans-menu').classList.add('hidden'); 
+         document.getElementById('loans-form').classList.remove('hidden'); 
+         document.getElementById('loans-form').classList.add('flex'); 
+         document.getElementById('form-title').innerText = "Solicitud: " + activeLoanType; 
+         tempSelectedQuota = ""; 
+         document.getElementById('selected-quota-text').innerText = "Seleccione..."; 
+         document.getElementsByName('pago').forEach(r => r.checked = false); 
+      }
+      
+      function openQuotaModal() { 
+         const modal = document.getElementById('quota-modal'); 
+         const container = document.getElementById('quota-list-container'); 
+         container.innerHTML = ""; 
+         const maxCuotas = (activeLoanType === 'Emergencia') ? 10 : 8; 
+         for(let i=1; i<=maxCuotas; i++) { 
+            const label = i + (i===1 ? " Cuota" : " Cuotas"); 
+            const isSelected = tempSelectedQuota == i; 
+            const item = document.createElement('div'); 
+            item.className = `quota-option p-4 text-sm cursor-pointer flex items-center justify-between ${isSelected ? 'selected' : ''}`; 
+            item.innerHTML = `<span>${label}</span><div class="w-5 h-5 rounded-full border ${isSelected ? 'border-[#60a5fa] flex items-center justify-center' : 'border-slate-500'}">${isSelected ? '<div class="w-2.5 h-2.5 bg-[#60a5fa] rounded-full"></div>' : ''}</div>`; 
+            item.onclick = function() { 
+               tempSelectedQuota = i; 
+               document.getElementById('selected-quota-text').innerText = label; 
+               modal.classList.add('hidden'); 
+            }; 
+            container.appendChild(item); 
+         } 
+         modal.classList.remove('hidden'); 
+      }
+      
+      function submitLoanRequest() { 
+         const cuotas = tempSelectedQuota; 
+         const radios = document.getElementsByName('pago'); 
+         let medio = ""; 
+         for(const r of radios) { if(r.checked) medio = r.value; } 
+         const rutBeneficiario = document.getElementById('loan-rut-socio').value; 
+         if(!cuotas) return showWarning("Seleccione la cantidad de cuotas."); 
+         if(!medio) return showWarning("Seleccione un medio de pago."); 
+         const btn = document.getElementById('btn-submit-loan'); 
+         const oldHtml = btn.innerHTML; 
+         btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Enviando...</span></div>'; 
+         btn.disabled = true; 
+         google.script.run.withSuccessHandler(res => { 
+            btn.innerHTML = oldHtml; 
+            btn.disabled = false; 
+            if(res.success) { 
+               showSuccess("Solicitud enviada."); 
+               backToLoansMenu(); 
+            } else { 
+               showWarning(res.message); 
+            } 
+         }).crearSolicitudPrestamo(currentRut, activeLoanType, cuotas, medio, rutBeneficiario); 
+      }
+      
+      function showLoanRecords() { 
+         document.getElementById('loans-menu').classList.add('hidden'); 
+         document.getElementById('loans-records').classList.remove('hidden'); 
+         document.getElementById('loans-records').classList.add('flex'); 
+         const list = document.getElementById('records-list'); 
+         list.innerHTML = ""; 
+         document.getElementById('records-loader').classList.remove('hidden'); 
+         document.getElementById('records-empty').classList.add('hidden'); 
+         google.script.run.withSuccessHandler(res => { 
+            document.getElementById('records-loader').classList.add('hidden'); 
+            if(res.success) { 
+               loanRecordsCache = res.registros; 
+               renderLoanRecords(); 
+            } else { 
+               showWarning("Error cargando registros."); 
+            } 
+         }).obtenerHistorialPrestamos(currentRut); 
+      }
+
+      function openFilterModal() { document.getElementById('filter-modal').classList.remove('hidden'); }
+      
+      function selectFilterOption(type, value, element) { 
+         const container = element.parentElement; 
+         container.querySelectorAll('.select-option').forEach(el => el.classList.remove('selected')); 
+         element.classList.add('selected'); 
+         if(type === 'sort') currentSort = value; 
+         if(type === 'status') currentStatusFilter = value; 
+      }
+      
+      function applyFilters() { 
+         document.getElementById('filter-modal').classList.add('hidden'); 
+         renderLoanRecords(); 
+      }
+      
+      // === ACTUALIZAR PARA HISTORIAL DE SOCIO (MIS SOLICITUDES) ===
+      function renderLoanRecords() {
+         const list = document.getElementById('records-list');
+         const empty = document.getElementById('records-empty');
+         list.innerHTML = "";
+         let records = [...loanRecordsCache];
+         if(currentStatusFilter !== 'all') records = records.filter(r => r.estado === currentStatusFilter);
+         records.sort((a, b) => {
+            const dateA = parseCustomDate(a.fecha).getTime();
+            const dateB = parseCustomDate(b.fecha).getTime();
+            return currentSort === 'desc' ? dateB - dateA : dateA - dateB;
+         });
+         if(records.length === 0) {
+            empty.classList.remove('hidden');
+         } else {
+            empty.classList.add('hidden');
+            records.forEach(reg => {
+               let fechaStr = reg.fecha;
+               try {
+                  const d = parseCustomDate(reg.fecha);
+                  if(!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+               } catch(e){}
+               
+               let statusColor = "text-slate-500 bg-slate-100";
+               const st = (reg.estado || "S/D").toLowerCase();
+               if(st.includes('rechazado')) statusColor = "text-red-600 bg-red-50";
+               else if(st.includes('vigente') || st.includes('aceptado')) statusColor = "text-green-600 bg-green-50";
+               else if(st.includes('enviado')) statusColor = "text-yellow-600 bg-yellow-50";
+               else if(st.includes('pagado')) statusColor = "text-blue-600 bg-blue-50";
+               else if(st.includes('solicitado')) statusColor = "text-slate-600 bg-slate-100";
+               
+               let buttonsHtml = '';
+               if (st.includes('solicitado')) {
+                  buttonsHtml += `<button onclick="startEditLoan('${reg.id}', '${reg.tipo}', '${reg.cuotas}', '${reg.medio}')" class="text-blue-500 hover:bg-blue-50 p-1 rounded-lg" title="Editar"><span class="material-icons-round text-lg">edit</span></button>`;
+               }
+               if (st.includes('solicitado') || st.includes('pagado') || st.includes('rechazado')) {
+                  buttonsHtml += `<button onclick="initDelete('loan', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg" title="Eliminar"><span class="material-icons-round text-lg">delete</span></button>`;
+               }
+               const actionDiv = buttonsHtml ? `<div class="flex justify-end gap-2 border-t border-slate-100 pt-2">${buttonsHtml}</div>` : '';
+               
+               let gestionHtml = "";
+               if(reg.gestion && reg.gestion.toUpperCase() !== "SOCIO") {
+                  gestionHtml = `<div class="text-[10px] text-indigo-500 bg-indigo-50 px-2 py-1 rounded mb-2 inline-block"><strong>Ingresado por:</strong> ${reg.nomDirigente || "Dirigente"}</div>`;
+               }
+               
+               const item = document.createElement('div');
+               item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative";
+               item.innerHTML = `
+                  <div class="flex justify-between items-start mb-2">
+                     <div>
+                        <span class="font-bold text-slate-800 text-sm block">${reg.tipo}</span>
+                        <span class="text-xs text-emerald-600 font-bold">${reg.monto || "$0"}</span>
+                     </div>
+                     <span class="text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide ${statusColor}">${reg.estado || "S/D"}</span>
+                  </div>
+                  ${gestionHtml}
+                  <div class="grid grid-cols-2 gap-2 text-xs text-slate-500 mb-2">
+                     <div><span class="block font-semibold text-slate-400 text-[10px] uppercase">Solicitud</span>${fechaStr}</div>
+                     <div><span class="block font-semibold text-slate-400 text-[10px] uppercase">Cuotas</span>${reg.cuotas}</div>
+                     <div><span class="block font-semibold text-slate-400 text-[10px] uppercase">Medio</span>${reg.medio}</div>
+                     ${reg.fechaTermino ? `<div><span class="block font-semibold text-slate-400 text-[10px] uppercase">Término</span>${reg.fechaTermino}</div>` : ''}
+                  </div>
+                  ${actionDiv}`;
+               list.appendChild(item);
+            });
+         }
+      }
+      
+      function initDelete(type, id) { 
+         deleteType = type; 
+         itemToDeleteId = id; 
+         document.getElementById('delete-generic-modal').classList.remove('hidden'); 
+      }
+      
+      function confirmDeleteGeneric() { 
+         document.getElementById('delete-generic-modal').classList.add('hidden'); 
+         if(!itemToDeleteId) return; 
+         if (deleteType === 'loan') { 
+            google.script.run.withSuccessHandler(res => { 
+               if(res.success) { 
+                  showSuccess("Eliminado."); 
+                  showLoanRecords(); 
+               } else { 
+                  showWarning(res.message); 
+               } 
+            }).eliminarSolicitud(itemToDeleteId); 
+         } else if (deleteType === 'justif') { 
+            google.script.run.withSuccessHandler(res => { 
+               if(res.success) { 
+                  showSuccess("Eliminado."); 
+                  loadJustificationHistory(); 
+               } else { 
+                  showWarning(res.message); 
+               } 
+            }).eliminarJustificacion(itemToDeleteId); 
+         } else if (deleteType === 'appeal') {
+            google.script.run.withSuccessHandler(res => { 
+               if(res.success) { 
+                  showSuccess("Eliminado."); 
+                  loadAppealsHistory(); 
+               } else { 
+                  showWarning(res.message); 
+               } 
+            }).eliminarApelacion(itemToDeleteId); 
+         } else if (deleteType === 'permission') {
+            google.script.run.withSuccessHandler(res => {
+               if(res.success) {
+                  showSuccess("Solicitud anulada correctamente.");
+                  loadPermissionHistory();
+               } else {
+                  showWarning(res.message);
+               }
+            }).eliminarPermisoMedico(itemToDeleteId);
+         }
+      }
+      
+      function startEditLoan(id, tipo, cuotas, medio) {
+        currentEditingLoanId = id;
+        const maxCuotas = (tipo === 'Emergencia') ? 10 : 8;
+        const selectCuotas = document.getElementById('edit-loan-cuotas');
+        selectCuotas.innerHTML = "";
+        for(let i=1; i<=maxCuotas; i++) {
+          const opt = document.createElement('option');
+          opt.value = i;
+          opt.innerText = i + (i===1 ? " Cuota" : " Cuotas");
+          if(i == cuotas) opt.selected = true;
+          selectCuotas.appendChild(opt);
+        }
+        document.getElementById('edit-loan-medio').value = medio;
+        document.getElementById('edit-loan-modal').classList.remove('hidden');
+      }
+      
+      function confirmEditLoan() {
+        const cuotas = document.getElementById('edit-loan-cuotas').value;
+        const medio = document.getElementById('edit-loan-medio').value;
+        const btn = document.getElementById('btn-confirm-edit-loan');
+        const oldHtml = btn.innerHTML;
+        
+        btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Guardando...</span></div>';
+        btn.disabled = true;
+        
+        google.script.run.withSuccessHandler(res => {
+          btn.innerHTML = oldHtml;
+          btn.disabled = false;
+          
+          if (res.success) {
+            document.getElementById('edit-loan-modal').classList.add('hidden');
+            showSuccess("Solicitud modificada.");
+            loadManagementData();
+          } else {
+            showWarning(res.message);
+          }
+        }).withFailureHandler(err => {
+          btn.innerHTML = oldHtml;
+          btn.disabled = false;
+          showWarning("Error: " + err);
+        }).modificarSolicitud(currentEditingLoanId, cuotas, medio);
+      }
+
+      // === FUNCIONES PERFIL ===
+      function cargarMisDatos() { 
+        if(!currentRut) { showWarning("Sesión no válida."); return handleLogout(); } 
+        switchView('profile-view'); 
+        document.getElementById('profile-loader').classList.remove('hidden'); 
+        document.getElementById('profile-content').classList.add('hidden'); 
+        
+        google.script.run.withSuccessHandler(function(response) { 
+            document.getElementById('profile-loader').classList.add('hidden'); 
+            document.getElementById('profile-content').classList.remove('hidden'); 
+            
+            if (response.success) { 
+              const d = response.datos; 
+              userDataCache = d; 
+              
+              // NOMBRE
+              document.getElementById('p-nombre').innerText = d.nombre; 
+              
+              // DATOS PRINCIPALES
+              document.getElementById('p-rut').innerText = formatRutDisplay(d.rut); 
+              document.getElementById('p-cargo').innerText = d.cargo; 
+              document.getElementById('p-site').innerText = (d.site || "").toUpperCase(); 
+              
+              // INFORMACIÓN DE CONTACTO
+              document.getElementById('display-region').innerText = d.region || "No definida"; 
+              document.getElementById('display-correo').innerText = d.correo || "No definido"; 
+              document.getElementById('display-contacto').innerText = d.contacto || "No definido";
+
+              // DATOS BANCARIOS
+              document.getElementById('display-banco').innerText = d.banco || "No definido";
+              document.getElementById('display-tipo-cuenta').innerText = d.tipoCuenta || "No definido";
+              document.getElementById('display-numero-cuenta').innerText = d.numeroCuenta || "No definido";
+              
+              // ========== BADGE ESTADO ORGANIZACIÓN ==========
+              const badge = document.getElementById('p-estado-badge'); 
+              badge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide"; 
+              
+              if(d.estado === 'ACTIVO' || d.estado === 'SI' || d.estado === 'TRUE') { 
+                  badge.classList.add('bg-emerald-500', 'text-white'); 
+                  badge.innerHTML = '<span class="material-icons-round text-xs">check_circle</span> ACTIVO';
+                  estadoActualOrganizacion = "ACTIVO";
+              } else { 
+                  badge.classList.add('bg-red-500', 'text-white'); 
+                  badge.innerHTML = '<span class="material-icons-round text-xs">cancel</span> DESVINCULADO';
+                  estadoActualOrganizacion = "DESVINCULADO";
+              }
+              
+              // ========== BADGE ESTADO NEGOCIACIÓN COLECTIVA ==========
+              const badgeNeg = document.getElementById('p-estado-negociacion');
+              const estadoNeg = String(d.estadoNegColect || "").trim().toUpperCase();
+              estadoActualNegociacion = estadoNeg;
+              
+              badgeNeg.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide";
+              
+              if (estadoNeg === "" || estadoNeg === "S/D") {
+                  badgeNeg.classList.add('bg-slate-400', 'text-white');
+                  badgeNeg.innerHTML = '<span class="material-icons-round text-xs">help_outline</span> S/D';
+              } else if (estadoNeg.includes("HABILITADO") || estadoNeg.includes("NEGOCIAR")) {
+                  badgeNeg.classList.add('bg-blue-500', 'text-white');
+                  badgeNeg.innerHTML = '<span class="material-icons-round text-xs">how_to_vote</span> ' + (estadoNeg.length > 25 ? 'HABILITADO' : estadoNeg);
+              } else if (estadoNeg.includes("EXTENSION") || estadoNeg.includes("BENEFICIO")) {
+                  badgeNeg.classList.add('bg-purple-500', 'text-white');
+                  badgeNeg.innerHTML = '<span class="material-icons-round text-xs">extension</span> ' + (estadoNeg.length > 25 ? 'EXTENSIÓN' : estadoNeg);
+              } else if (estadoNeg.includes("OTRO") || estadoNeg.includes("CONT")) {
+                  badgeNeg.classList.add('bg-amber-500', 'text-white');
+                  badgeNeg.innerHTML = '<span class="material-icons-round text-xs">description</span> OTRO CONT. COLEC.';
+              } else {
+                  badgeNeg.classList.add('bg-slate-500', 'text-white');
+                  badgeNeg.innerHTML = '<span class="material-icons-round text-xs">info</span> ' + estadoNeg;
+              }
+              
+            } else { 
+              showWarning("Error: " + response.message); 
+              switchView('dashboard-view'); 
+            } 
+        }).obtenerDatosUsuario(currentRut); 
+      }
+
+      function selectRegionOption(el, val) { 
+         document.querySelectorAll('.region-option').forEach(e => e.classList.remove('selected')); 
+         document.querySelectorAll('.region-option span.check-icon').forEach(e => e.remove()); 
+         el.classList.add('selected'); 
+         el.innerHTML += '<span class="material-icons-round text-blue-600 text-sm check-icon">check</span>'; 
+         selectedRegionTemp = val; 
+      }
+
+      function selectBankOption(el, val) {
+        document.querySelectorAll('.region-option').forEach(e => {
+            e.classList.remove('selected');
+            e.querySelectorAll('.check-icon').forEach(icon => icon.remove());
+        });
+        el.classList.add('selected');
+        el.innerHTML += '<span class="material-icons-round text-blue-600 text-sm check-icon">check</span>';
+        selectedRegionTemp = val;
+      }
+      
+      function openEditModal(field) {
+        currentEditingField = field;
+        const modal = document.getElementById('edit-modal');
+        const container = document.getElementById('modal-input-container');
+        const title = document.getElementById('modal-title');
+        const desc = document.getElementById('modal-desc');
+        container.innerHTML = ""; selectedRegionTemp = ""; 
+        
+        if (field === 'region') {
+           title.innerText = "Editar Región"; desc.innerText = "Seleccione su región.";
+           const currentVal = userDataCache.region || "";
+           
+           regionesList.forEach(region => { 
+               const isSelected = currentVal === region; 
+               if(isSelected) selectedRegionTemp = region; 
+               const item = document.createElement('div'); 
+               item.className = `region-option p-3 rounded-lg mb-2 text-sm cursor-pointer flex items-center justify-between ${isSelected ? 'selected' : ''}`; 
+               item.innerHTML = `<span>${region}</span> ${isSelected ? '<span class="material-icons-round text-blue-600 text-sm check-icon">check</span>' : ''}`; 
+               item.onclick = function() { selectRegionOption(this, region); }; 
+               container.appendChild(item); 
+           });
+
+        } else if (field === 'correo') { 
+           title.innerText = "Editar Correo"; 
+           desc.innerText = "Ingrese un correo válido."; 
+           container.innerHTML = `<input id="modal-input" type="email" maxlength="50" class="input-modern w-full px-4 py-3 rounded-lg text-sm outline-none" placeholder="ejemplo@mail.com" value="${userDataCache.correo || ''}">`;
+        
+        } else if (field === 'contacto') { 
+           title.innerText = "Editar Teléfono"; 
+           desc.innerText = "Ingrese los 8 dígitos (sin +569)."; 
+           const suffix = parsePhoneToSuffix(userDataCache.contacto || ""); 
+           container.innerHTML = `<div class="flex items-center input-modern rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-400"><span class="bg-slate-200 px-4 py-3 text-slate-600 font-bold text-sm border-r border-slate-300 select-none">+569</span><input id="modal-input" type="tel" maxlength="8" class="w-full px-4 py-3 text-sm font-medium text-slate-700 outline-none bg-transparent" placeholder="12345678" value="${suffix}" oninput="this.value = this.value.replace(/[^0-9]/g, '')"></div>`; 
+        } else if (field === 'contacto') { 
+          title.innerText = "Editar Teléfono"; 
+          desc.innerText = "Ingrese los 8 dígitos (sin +569)."; 
+          const suffix = parsePhoneToSuffix(userDataCache.contacto || ""); 
+          container.innerHTML = `<div class="flex items-center input-modern rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-400"><span class="bg-slate-200 px-4 py-3 text-slate-600 font-bold text-sm border-r border-slate-300 select-none">+569</span><input id="modal-input" type="tel" maxlength="8" class="w-full px-4 py-3 text-sm font-medium text-slate-700 outline-none bg-transparent" placeholder="12345678" value="${suffix}" oninput="this.value = this.value.replace(/[^0-9]/g, '')"></div>`; 
+
+        // ========== AGREGAR ESTOS CASOS NUEVOS ==========
+        } else if (field === 'banco') {
+          title.innerText = "Editar Banco";
+          desc.innerText = "Seleccione su banco.";
+          const currentVal = userDataCache.banco || "";
+          
+          container.innerHTML = '<div class="max-h-80 overflow-y-auto custom-scroll">' +
+            bancosList.map(banco => {
+              const isSelected = currentVal === banco;
+              return `<div onclick="selectBankOption(this, '${banco}')" class="region-option p-3 rounded-lg mb-2 text-sm cursor-pointer flex items-center justify-between ${isSelected ? 'selected' : ''}">${banco} ${isSelected ? '<span class="material-icons-round text-blue-600 text-sm check-icon">check</span>' : ''}</div>`;
+            }).join('') + '</div>';
+          
+          if (currentVal) selectedRegionTemp = currentVal;
+
+        } else if (field === 'tipoCuenta') {
+          title.innerText = "Editar Tipo de Cuenta";
+          desc.innerText = "Seleccione el tipo de cuenta bancaria.";
+          const currentVal = userDataCache.tipoCuenta || "";
+          
+          container.innerHTML = '<div class="space-y-2">' +
+            tiposCuentaList.map(tipo => {
+              const isSelected = currentVal === tipo;
+              return `<div onclick="selectBankOption(this, '${tipo}')" class="region-option p-3 rounded-lg text-sm cursor-pointer flex items-center justify-between border ${isSelected ? 'selected' : 'border-slate-200'}">${tipo} ${isSelected ? '<span class="material-icons-round text-blue-600 text-sm check-icon">check</span>' : ''}</div>`;
+            }).join('') + '</div>';
+          
+          if (currentVal) selectedRegionTemp = currentVal;
+
+        } else if (field === 'numeroCuenta') {
+          title.innerText = "Editar Número de Cuenta";
+          desc.innerText = "Ingrese su número de cuenta bancaria (solo dígitos).";
+          container.innerHTML = `
+            <input id="modal-input" type="text" maxlength="20" class="input-modern w-full px-4 py-3 rounded-lg text-sm outline-none font-mono" placeholder="Ej: 1234567890" value="${userDataCache.numeroCuenta || ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            <p class="text-[10px] text-slate-500 mt-2">
+              <strong>Consejos:</strong><br>
+              • Solo números, sin guiones ni espacios<br>
+              • Verifica que sea el número correcto<br>
+              • Longitud típica: 8-20 dígitos
+            </p>
+          `;
+        }
+
+        modal.classList.remove('hidden');
+      }
+      
+      function closeEditModal() { document.getElementById('edit-modal').classList.add('hidden'); }
+      
+      function saveEdit() {
+        const btn = document.getElementById('btn-save-modal');
+        let val = "";
+        
+        // ========== CAMBIO 1: Determinar valor según tipo de campo ==========
+        if (currentEditingField === 'region' || currentEditingField === 'banco' || currentEditingField === 'tipoCuenta') {
+          val = selectedRegionTemp; // Esta variable se usa para los 3 selectores
+        } else {
+          val = document.getElementById('modal-input').value;
+        }
+        
+        // ========== VALIDACIONES EXISTENTES ==========
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if(currentEditingField === 'correo' && !emailRegex.test(val)) {
+            return showWarning("Ingrese un correo electrónico válido.");
+        }
+
+        if(currentEditingField === 'contacto') {
+            if (val.length !== 8) {
+                return showWarning("El teléfono debe tener exactamente 8 dígitos.");
+            }
+        }
+
+        if(currentEditingField === 'numeroCuenta') {
+            if (val.length < 8) {
+                return showWarning("El número de cuenta debe tener al menos 8 dígitos.");
+            }
+            if (val.length > 20) {
+                return showWarning("El número de cuenta no puede tener más de 20 dígitos.");
+            }
+        }
+
+        // ========== CAMBIO 2: Validaciones para nuevos campos ==========
+        if(currentEditingField === 'banco' && !val) {
+            return showWarning("Seleccione un banco");
+        }
+        
+        if(currentEditingField === 'tipoCuenta' && !val) {
+            return showWarning("Seleccione un tipo de cuenta");
+        }
+
+        if(currentEditingField === 'region' && !val) {
+            return showWarning("Seleccione una región");
+        }
+        
+        // ========== PREPARAR VALOR FINAL ==========
+        let finalValue = val; 
+        if(currentEditingField === 'contacto') finalValue = "+569" + val;
+        
+        // ========== ENVIAR ACTUALIZACIÓN ==========
+        const oldBtnHtml = btn.innerHTML; 
+        btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Guardando...</span></div>'; 
+        btn.disabled = true;
+        
+        google.script.run.withSuccessHandler(res => {
+          btn.innerHTML = oldBtnHtml; 
+          btn.disabled = false;
+          
+          if(res.success) {
+              closeEditModal(); 
+              
+              // ========== CAMBIO 3: Actualizar caché y vista para TODOS los campos ==========
+              userDataCache[currentEditingField] = finalValue;
+              
+              if(currentEditingField === 'region') {
+                document.getElementById('display-region').innerText = finalValue;
+              }
+              if(currentEditingField === 'correo') {
+                document.getElementById('display-correo').innerText = finalValue;
+              }
+              if(currentEditingField === 'contacto') {
+                document.getElementById('display-contacto').innerText = finalValue;
+              }
+              
+              // ========== NUEVAS ACTUALIZACIONES DE VISTA ==========
+              if(currentEditingField === 'banco') {
+                document.getElementById('display-banco').innerText = finalValue;
+              }
+              if(currentEditingField === 'tipoCuenta') {
+                document.getElementById('display-tipo-cuenta').innerText = finalValue;
+              }
+              if(currentEditingField === 'numeroCuenta') {
+                document.getElementById('display-numero-cuenta').innerText = finalValue;
+              }
+              
+              showSuccess("Datos actualizados.");
+          } else { 
+              showWarning("Error: " + res.message); 
+          }
+        }).actualizarDatoUsuario(currentRut, currentEditingField, finalValue);
+      }
+
+      // === FUNCIONES JUSTIFICACIONES (CON SWITCH) ===
+      const motiveList = ["Turno Laboral en ISS", "Certificado Vacaciones", "Licencia Médica", "Fuerza Mayor"];
+      
+      function loadJustifSwitchState() {
+         google.script.run.withSuccessHandler(res => {
+            const switchEl = document.getElementById('justif-switch');
+            switchEl.checked = res.habilitado;
+         }).obtenerEstadoSwitchJustificaciones();
+      }
+      
+      function handleJustifSwitch() {
+         const switchEl = document.getElementById('justif-switch');
+         const isChecked = switchEl.checked;
+         
+         if (isChecked) {
+            document.getElementById('justif-deadline-modal').classList.remove('hidden');
+         } else {
+            google.script.run.withSuccessHandler(res => {
+               if (res.success) {
+                  showSuccess("Módulo de justificaciones deshabilitado.");
+               }
+            }).actualizarSwitchJustificaciones(false, "");
+         }
+      }
+      
+      function cancelJustifDeadline() {
+         document.getElementById('justif-deadline-modal').classList.add('hidden');
+         document.getElementById('justif-switch').checked = false;
+      }
+      
+      function confirmJustifDeadline() {
+         const fecha = document.getElementById('justif-deadline-date').value;
+         const hora = document.getElementById('justif-deadline-time').value;
+         
+         if (!fecha || !hora) {
+            return showWarning("Debe ingresar fecha y hora.");
+         }
+         
+         const fechaLimite = new Date(`${fecha}T${hora}`);
+         
+         google.script.run.withSuccessHandler(res => {
+            if (res.success) {
+               document.getElementById('justif-deadline-modal').classList.add('hidden');
+               showSuccess("Módulo habilitado hasta " + fechaLimite.toLocaleString('es-CL'));
+            } else {
+               showWarning(res.message);
+            }
+         }).actualizarSwitchJustificaciones(true, fechaLimite.toISOString());
+      }
+      
+      function showOutOfDeadlineWarning() {
+         document.getElementById('out-of-deadline-modal').classList.remove('hidden');
+      }
+      
+      function handleOutOfDeadlineConfirm() {
+         document.getElementById('out-of-deadline-modal').classList.add('hidden');
+         toggleJustifTab('list');
+         switchView('justifications-view');
+      }
+      
+      function toggleJustifTab(tab) { 
+         const btnForm = document.getElementById('tab-justif-form'); 
+         const btnList = document.getElementById('tab-justif-list'); 
+         const divForm = document.getElementById('justif-form-content'); 
+         const divList = document.getElementById('justif-list-content'); 
+         if (tab === 'form') { 
+            btnForm.className = "flex-1 py-2 rounded-lg text-sm font-bold transition bg-orange-100 text-orange-700"; 
+            btnList.className = "flex-1 py-2 rounded-lg text-sm font-bold transition text-slate-500 hover:bg-slate-100"; 
+            divForm.classList.remove('hidden'); 
+            divList.classList.add('hidden'); 
+            divForm.classList.add('flex');
+         } else { 
+            btnList.className = "flex-1 py-2 rounded-lg text-sm font-bold transition bg-orange-100 text-orange-700"; 
+            btnForm.className = "flex-1 py-2 rounded-lg text-sm font-bold transition text-slate-500 hover:bg-slate-100"; 
+            divForm.classList.add('hidden'); 
+            divList.classList.remove('hidden'); 
+            divList.classList.add('flex');
+            loadJustificationHistory(); 
+         } 
+      }
+      
+      function updateFileName(input) { 
+         const display = document.getElementById('file-name-display'); 
+         const area = document.getElementById('drop-area'); 
+         if (input.files && input.files[0]) { 
+            display.innerText = "Archivo: " + input.files[0].name; 
+            display.classList.add('text-green-600', 'font-bold'); 
+            area.classList.add('border-green-400', 'bg-green-50'); 
+         } else { 
+            display.innerText = "Formatos: JPG, PNG, PDF (Máx 5MB)"; 
+            display.classList.remove('text-green-600', 'font-bold'); 
+            area.classList.remove('border-green-400', 'bg-green-50'); 
+         } 
+      }
+
+      function openMotiveModal() {
+         const modal = document.getElementById('motive-modal');
+         const container = document.getElementById('motive-list-container');
+         container.innerHTML = "";
+         for(let i=0; i<motiveList.length; i++) {
+            const label = motiveList[i];
+            const isSelected = tempSelectedMotive === label;
+            const item = document.createElement('div');
+            item.className = `motive-option p-4 text-sm cursor-pointer flex items-center justify-between ${isSelected ? 'selected' : ''}`;
+            item.innerHTML = `<span>${label}</span><div class="w-5 h-5 rounded-full border ${isSelected ? 'border-[#60a5fa] flex items-center justify-center' : 'border-slate-500'}">${isSelected ? '<div class="w-2.5 h-2.5 bg-[#60a5fa] rounded-full"></div>' : ''}</div>`;
+            item.onclick = function() {
+               tempSelectedMotive = label;
+               document.getElementById('selected-motive-text').innerText = label;
+               if (label === 'Fuerza Mayor') {
+                  document.getElementById('div-justif-motivo').classList.remove('hidden');
+               } else {
+                  document.getElementById('div-justif-motivo').classList.add('hidden');
+                  document.getElementById('justif-motivo').value = "";
+               }
+               modal.classList.add('hidden');
+            };
+            container.appendChild(item);
+         }
+         modal.classList.remove('hidden');
+      }
+
+      function submitJustification() {
+        const tipo = tempSelectedMotive;
+        const motivo = document.getElementById('justif-motivo').value;
+        const fileInput = document.getElementById('justif-file');
+        const file = fileInput.files[0];
+        const rutBeneficiario = document.getElementById('justif-rut-socio').value;
+        
+        // Validaciones
+        if (!tipo) return showWarning("Debe seleccionar un tipo de evento.");
+        
+        if (tipo === 'Fuerza Mayor') {
+            if (!motivo || motivo.trim().length === 0) {
+              return showWarning("Para Fuerza Mayor debe especificar el motivo.");
+            }
+            if (motivo.length > 150) {
+              return showWarning("El motivo no puede superar los 70 caracteres.");
+            }
+        }
+        
+        // Si es Fuerza Mayor sin archivo, mostrar advertencia
+        if (tipo === 'Fuerza Mayor' && !file) {
+            document.getElementById('force-majeure-modal').classList.remove('hidden');
+            return;
+        }
+        
+        // Para otros tipos, continuar normalmente
+        executeJustificationSubmission(file, rutBeneficiario);
+      }
+
+      function confirmForceMajeureSubmission() {
+          document.getElementById('force-majeure-modal').classList.add('hidden');
+          const rutBeneficiario = document.getElementById('justif-rut-socio').value;
+          executeJustificationSubmission(null, rutBeneficiario);
+      }
+
+      function executeJustificationSubmission(file, rutBeneficiario) {
+        const tipo = tempSelectedMotive;
+        const motivo = document.getElementById('justif-motivo').value;
+        const btn = document.getElementById('btn-submit-justif');
+        const oldHtml = btn.innerHTML;
+
+        if (file && file.size > 5 * 1024 * 1024) return showWarning("El archivo es muy pesado (Máx 5MB).");
+
+        btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Subiendo...</span></div>';
+        btn.disabled = true;
+        
+        const sendData = (fileData) => {
+            google.script.run
+              .withSuccessHandler(function(res) {
+                  btn.innerHTML = oldHtml; 
+                  btn.disabled = false;
+                  
+                  if (res.success) {
+                  // Primero mostrar el éxito
+                  showSuccess("Justificación enviada.");
+                  
+                  // Limpiar formulario
+                  document.getElementById('justif-motivo').value = "";
+                  tempSelectedMotive = "";
+                  document.getElementById('selected-motive-text').innerText = "Seleccione...";
+                  document.getElementById('div-justif-motivo').classList.add('hidden');
+                  document.getElementById('justif-file').value = "";
+                  updateFileName(document.getElementById('justif-file'));
+                  document.getElementById('justif-rut-socio').value = "";
+                  
+                  // Cambiar a pestaña de historial
+                  toggleJustifTab('list');
+                  
+                  // NUEVO: Mostrar alerta de permisos si existe
+                  if (res.mostrarAlerta && res.mensajeAlerta) {
+                    // Esperar un momento para que se vea el mensaje de éxito
+                    setTimeout(function() {
+                      mostrarAlertaPermisos(res.mensajeAlerta, res.tipoAlerta || 'warning');
+                    }, 1500);
+                  }
+                } else {
+                  // Manejo de errores existente...
+                  if (res.tipoError === 'restriccion_mes' && res.justificacionExistente) {
+                    mostrarAlertaRestriccionMes(res);
+                  } else {
+                    showWarning(res.message || "Error al enviar la justificación");
+                  }
+                }
+              })
+              .withFailureHandler(function(err) {
+                  btn.innerHTML = oldHtml; 
+                  btn.disabled = false;
+                  console.error('Error en enviarJustificacion:', err); // DEBUG
+                  showWarning("Error de conexión: " + err.toString());
+              })
+              .enviarJustificacion(currentRut, tipo, motivo, fileData, rutBeneficiario);
+        };
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Data = e.target.result.split(',')[1];
+                const fileData = { base64: base64Data, mimeType: file.type, fileName: file.name };
+                sendData(fileData);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            sendData(null);
+        }
+      }
+
+      /**
+       * Muestra alerta simplificada cuando ya existe justificación en el mes
+       */
+      function mostrarAlertaRestriccionMes(response) {
+          console.log('mostrarAlertaRestriccionMes llamada con:', response);
+          
+          const justif = response.justificacionExistente;
+          const tipoBloqueo = response.tipoBloqueo;
+          
+          if (!justif) {
+              showWarning(response.mensaje || "Ya tienes una justificación para este mes");
+              return;
+          }
+          
+          const hoy = new Date();
+          const nombreMes = hoy.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
+          const mesCapitalizado = nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
+          
+          let icono = '';
+          let titulo = '';
+          let colorIcono = '';
+          
+          if (tipoBloqueo === 'enviada') {
+              icono = 'schedule';
+              titulo = `Ya tienes una justificación pendiente para ${mesCapitalizado}`;
+              colorIcono = 'text-orange-500';
+          } else if (tipoBloqueo === 'aceptada') {
+              icono = 'check_circle';
+              titulo = `Ya tienes una justificación aceptada para ${mesCapitalizado}`;
+              colorIcono = 'text-green-500';
+          } else {
+              icono = 'info';
+              titulo = `Ya existe una justificación para ${mesCapitalizado}`;
+              colorIcono = 'text-blue-500';
+          }
+          
+          const html = `
+              <div id="alerta-restriccion-mes" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 9999;">
+                  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm animate-scale-in">
+                      <div class="p-6 text-center">
+                          <div class="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center mx-auto mb-4">
+                              <span class="material-icons-round text-3xl ${colorIcono}">${icono}</span>
+                          </div>
+                          <h3 class="text-lg font-bold text-gray-800 mb-3">
+                              Justificación Existente
+                          </h3>
+                          <p class="text-sm text-gray-600 mb-5 leading-relaxed">
+                              ${titulo}
+                          </p>
+                          <button onclick="cerrarAlertaRestriccion()" 
+                                  class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg">
+                              Entendido
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          `;
+          
+          const alertaExistente = document.getElementById('alerta-restriccion-mes');
+          if (alertaExistente) {
+              alertaExistente.remove();
+          }
+          
+          document.body.insertAdjacentHTML('beforeend', html);
+      }
+
+      function cerrarAlertaRestriccion() {
+          const alerta = document.getElementById('alerta-restriccion-mes');
+          if (alerta) {
+              alerta.remove();
+          }
+      }
+
+      function scrollToHistorialJustif() {
+          toggleJustifTab('list');
+      }
+
+      function cerrarAlertaRestriccion() {
+          const alerta = document.getElementById('alerta-restriccion-mes');
+          if (alerta) {
+              alerta.remove();
+          }
+      }
+
+      function scrollToHistorialJustif() {
+          toggleJustifTab('list');
+      }
+
+      /**
+       * Hace scroll suave hacia el historial de justificaciones
+       */
+      function scrollToHistorialJustif() {
+          toggleJustifTab('list');
+      }
+
+      function loadJustificationHistory() {
+         const list = document.getElementById('justif-list');
+         const loader = document.getElementById('justif-loader');
+         const empty = document.getElementById('justif-empty');
+         list.innerHTML = ""; loader.classList.remove('hidden'); empty.classList.add('hidden');
+         google.script.run.withSuccessHandler(res => {
+            loader.classList.add('hidden');
+            if (res.success) { 
+                if (res.registros.length === 0) { empty.classList.remove('hidden'); } 
+                else { 
+                    res.registros.forEach(reg => { 
+                        let fechaStr = reg.fecha; 
+                        try { const d = parseCustomDate(reg.fecha); if(!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' }); } catch(e){} 
+                        
+                        const hasLink = reg.url && reg.url.includes('http'); 
+                        const linkHtml = hasLink ? 
+                            `<a href="${reg.url}" target="_blank" class="text-blue-500 hover:underline text-xs flex items-center gap-1 mt-1"><span class="material-icons-round text-sm">attach_file</span>Ver Comprobante</a>` : 
+                            `<span class="text-xs text-slate-400 italic">Sin archivo</span>`; 
+                        
+                        let deleteBtn = "";
+                        if(reg.estado === "Enviado") {
+                            deleteBtn = `<button onclick="initDelete('justif', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg ml-auto"><span class="material-icons-round text-lg">delete</span></button>`;
+                        }
+
+                        let statusColor = "bg-gray-100 text-gray-600";
+                        const st = (reg.estado || "").toLowerCase();
+                        if (st.includes("enviado")) statusColor = "bg-blue-100 text-blue-600"; 
+                        else if (st.includes("aceptado") && !st.includes("obs")) statusColor = "bg-green-100 text-green-600"; 
+                        else if (st.includes("obs")) statusColor = "bg-yellow-100 text-yellow-700"; 
+                        else if (st.includes("rechazado")) statusColor = "bg-red-100 text-red-600"; 
+
+                        let obsHtml = "";
+                        if(reg.obs) {
+                            obsHtml = `<div class="mt-2 p-2 bg-yellow-50 rounded border border-yellow-100 text-xs text-yellow-700"><strong>Obs:</strong> ${reg.obs}</div>`;
+                        }
+                        let motivoDisplay = reg.motivo ? `<p class="text-xs text-slate-600 mb-2 line-clamp-2">${reg.motivo}</p>` : "";
+                        let asambleaHtml = "";
+                        if(reg.asamblea) {
+                            asambleaHtml = `<div class="mt-2 flex items-center gap-1 text-xs text-indigo-600 font-semibold bg-indigo-50 px-2 py-1 rounded border border-indigo-100 inline-block"><span class="material-icons-round text-sm">event</span>Asamblea: ${reg.asamblea}</div>`;
+                        }
+                        
+                        let gestionHtml = "";
+                        if(reg.gestion && reg.gestion.toUpperCase() !== "SOCIO") {
+                           gestionHtml = `<div class="text-[10px] text-indigo-500 bg-indigo-50 px-2 py-1 rounded mb-1 inline-block"><strong>Ingresado por:</strong> ${reg.nomDirigente || "Dirigente"}</div>`;
+                        }
+
+                        const item = document.createElement('div'); 
+                        item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm"; 
+                        item.innerHTML = `
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="font-bold text-slate-800 text-sm">${reg.tipo}</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${statusColor}">${reg.estado}</span>
+                            </div>
+                            ${gestionHtml}
+                            ${motivoDisplay}
+                            ${asambleaHtml}
+                            ${obsHtml}
+                            <div class="flex justify-between items-center border-t border-slate-100 pt-2 mt-2">
+                                <span class="text-[10px] text-slate-400 font-semibold">${fechaStr}</span>
+                                ${linkHtml}
+                                ${deleteBtn}
+                            </div>`; 
+                        list.appendChild(item); 
+                    }); 
+                } 
+            }
+         }).obtenerHistorialJustificaciones(currentRut);
+      }
+
+      // === FUNCIONES APELACIONES ===
+      function toggleAppealsTab(tab) {
+         const btnForm = document.getElementById('tab-appeals-form');
+         const btnList = document.getElementById('tab-appeals-list');
+         const divForm = document.getElementById('appeals-form-content');
+         const divList = document.getElementById('appeals-list-content');
+         
+         if (tab === 'form') {
+            btnForm.className = "flex-1 py-2 rounded-lg text-sm font-bold transition bg-red-100 text-red-700";
+            btnList.className = "flex-1 py-2 rounded-lg text-sm font-bold transition text-slate-500 hover:bg-slate-100";
+            divForm.classList.remove('hidden');
+            divList.classList.add('hidden');
+            divForm.classList.add('flex');
+         } else {
+            btnList.className = "flex-1 py-2 rounded-lg text-sm font-bold transition bg-red-100 text-red-700";
+            btnForm.className = "flex-1 py-2 rounded-lg text-sm font-bold transition text-slate-500 hover:bg-slate-100";
+            divForm.classList.add('hidden');
+            divList.classList.remove('hidden');
+            divList.classList.add('flex');
+            loadAppealsHistory();
+         }
+      }
+
+      function openMonthModal() {
+         const modal = document.getElementById('month-modal');
+         const container = document.getElementById('month-list-container');
+         container.innerHTML = "";
+         
+         const hoy = new Date();
+         const diaActual = hoy.getDate();
+         const mesActual = hoy.getMonth();
+         const yearActual = hoy.getFullYear();
+         
+         const limiteInferior = new Date(2025, 2, 1);
+         limiteInferior.setHours(0, 0, 0, 0);
+         
+         const meses = [];
+         let currentDate = new Date(yearActual, mesActual, 1);
+         currentDate.setHours(0, 0, 0, 0);
+         
+         while (currentDate >= limiteInferior) {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const mesValue = `${year}-${String(month + 1).padStart(2, '0')}`;
+            
+            let disponible = true;
+            let motivoBloqueo = "";
+            
+            if (year === yearActual && month === mesActual) {
+               if (diaActual < 25) {
+                  disponible = false;
+                  motivoBloqueo = "Disponible desde el 25";
+               }
+            }
+            
+            const nombreMes = currentDate.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
+            
+            meses.push({
+               value: mesValue,
+               label: nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1),
+               disponible: disponible,
+               motivoBloqueo: motivoBloqueo
+            });
+            
+            currentDate.setMonth(currentDate.getMonth() - 1);
+         }
+         
+         meses.forEach(mes => {
+            const isSelected = tempSelectedMonth === mes.value;
+            const item = document.createElement('div');
+            
+            if (mes.disponible) {
+               item.className = `month-option p-4 text-sm cursor-pointer flex items-center justify-between ${isSelected ? 'selected' : ''}`;
+               item.innerHTML = `<span>${mes.label}</span><div class="w-5 h-5 rounded-full border ${isSelected ? 'border-[#60a5fa] flex items-center justify-center' : 'border-slate-500'}">${isSelected ? '<div class="w-2.5 h-2.5 bg-[#60a5fa] rounded-full"></div>' : ''}</div>`;
+               item.onclick = function() {
+                  tempSelectedMonth = mes.value;
+                  document.getElementById('selected-month-text').innerText = mes.label;
+                  modal.classList.add('hidden');
+               };
+            } else {
+               item.className = `month-option p-4 text-sm flex items-center justify-between opacity-50 cursor-not-allowed`;
+               item.innerHTML = `<span>${mes.label}</span><span class="text-xs text-red-400">${mes.motivoBloqueo}</span>`;
+            }
+            
+            container.appendChild(item);
+         });
+         
+         modal.classList.remove('hidden');
+      }
+
+      function openAppealMotiveModal() {
+         const motives = ["Turno Laboral en ISS", "Certificado Vacaciones", "Licencia Médica", "Fuerza Mayor"];
+         const modal = document.getElementById('appeal-motive-modal');
+         const container = document.getElementById('appeal-motive-list-container');
+         container.innerHTML = "";
+         
+         motives.forEach(motive => {
+            const isSelected = tempSelectedAppealMotive === motive;
+            const item = document.createElement('div');
+            item.className = `motive-option p-4 text-sm cursor-pointer flex items-center justify-between ${isSelected ? 'selected' : ''}`;
+            item.innerHTML = `<span>${motive}</span><div class="w-5 h-5 rounded-full border ${isSelected ? 'border-[#60a5fa] flex items-center justify-center' : 'border-slate-500'}">${isSelected ? '<div class="w-2.5 h-2.5 bg-[#60a5fa] rounded-full"></div>' : ''}</div>`;
+            item.onclick = function() {
+               tempSelectedAppealMotive = motive;
+               document.getElementById('selected-appeal-motive-text').innerText = motive;
+               
+               if (motive === "Fuerza Mayor") {
+                  document.getElementById('div-appeal-detalle').classList.remove('hidden');
+               } else {
+                  document.getElementById('div-appeal-detalle').classList.add('hidden');
+                  document.getElementById('appeal-detalle').value = "";
+               }
+               
+               const label = document.getElementById('comprobante-required-label');
+               if (motive === "Fuerza Mayor") {
+                  label.textContent = "(Opcional)";
+                  label.className = "text-slate-400";
+               } else {
+                  label.textContent = "(OBLIGATORIO)";
+                  label.className = "text-red-600 font-bold";
+               }
+               
+               modal.classList.add('hidden');
+            };
+            container.appendChild(item);
+         });
+         
+         modal.classList.remove('hidden');
+      }
+
+      function updateFileNameAppeal(input, tipo) {
+         const isComprobante = (tipo === 'comprobante');
+         const display = document.getElementById(isComprobante ? 'file-name-comprobante' : 'file-name-liquidacion');
+         const area = document.getElementById(isComprobante ? 'drop-area-comprobante' : 'drop-area-liquidacion');
+         
+         if (input.files && input.files[0]) {
+            const file = input.files[0];
+            display.innerText = "Archivo: " + file.name;
+            display.classList.add('text-green-600', 'font-bold');
+            area.classList.add(isComprobante ? 'border-green-400' : 'border-green-500', 'bg-green-50');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+               const base64Data = e.target.result.split(',')[1];
+               const fileData = { base64: base64Data, mimeType: file.type, fileName: file.name };
+               if (isComprobante) {
+                  appealFileComprobanteData = fileData;
+               } else {
+                  appealFileLiquidacionData = fileData;
+               }
+            };
+            reader.readAsDataURL(file);
+         } else {
+            display.innerText = "JPG, PNG, PDF (Máx 5MB)";
+            display.classList.remove('text-green-600', 'font-bold');
+            area.classList.remove(isComprobante ? 'border-green-400' : 'border-green-500', 'bg-green-50');
+            if (isComprobante) {
+               appealFileComprobanteData = null;
+            } else {
+               appealFileLiquidacionData = null;
+            }
+         }
+      }
+
+      function submitAppeal() {
+         const mes = tempSelectedMonth;
+         const motivo = tempSelectedAppealMotive;
+         const detalle = document.getElementById('appeal-detalle').value;
+         const rutBeneficiario = document.getElementById('appeal-rut-socio').value;
+         
+         if (!mes) return showWarning("Debe seleccionar el mes de la multa.");
+         if (!motivo) return showWarning("Debe seleccionar el motivo de la ausencia.");
+         if (motivo === "Fuerza Mayor" && !detalle) return showWarning("Para Fuerza Mayor, debe especificar el detalle.");
+         if (detalle.length > 150) return showWarning("El detalle no puede superar los 150 caracteres.");
+         
+         if (!appealFileLiquidacionData) {
+            return showWarning("La liquidación de sueldo es OBLIGATORIA para todas las apelaciones.");
+         }
+         
+         if (motivo !== "Fuerza Mayor" && !appealFileComprobanteData) {
+            return showWarning("Debe adjuntar el comprobante para este motivo.");
+         }
+         
+         showAppealWarningModal();
+      }
+
+      function showAppealWarningModal() {
+         const modal = document.getElementById('appeal-file-warning-modal');
+         const contentDiv = document.getElementById('appeal-warning-content');
+         const tipoMotivo = tempSelectedAppealMotive;
+         
+         if (tipoMotivo === "Fuerza Mayor") {
+            contentDiv.innerHTML = `
+               <p class="mb-2"><strong>COMPROBANTE (Opcional):</strong> Si bien es opcional, adjuntar un documento de respaldo aumenta significativamente la validez de tu apelación.</p>
+               <p class="mb-2"><strong>LIQUIDACIÓN:</strong> Tu liquidación de sueldo donde aparece la multa descontada.</p>
+               <p class="text-orange-600 font-semibold">⚠️ Cargar documentos incorrectos puede resultar en el RECHAZO de tu apelación.</p>
+            `;
+         } else {
+            contentDiv.innerHTML = `
+               <p class="mb-2"><strong>COMPROBANTE:</strong> Documento que prueba tu ausencia (certificado médico, vacaciones, turno ISS, etc.)</p>
+               <p class="mb-2"><strong>LIQUIDACIÓN:</strong> Tu liquidación de sueldo donde aparece la multa descontada.</p>
+               <p class="text-red-600 font-bold">❌ Si cargas documentos incorrectos, tu apelación será RECHAZADA.</p>
+            `;
+         }
+         
+         modal.classList.remove('hidden');
+      }
+
+      function confirmAppealFileWarning() {
+         document.getElementById('appeal-file-warning-modal').classList.add('hidden');
+         executeAppealSubmission();
+      }
+
+      function executeAppealSubmission() {
+         const mes = tempSelectedMonth;
+         const motivo = tempSelectedAppealMotive;
+         const detalle = document.getElementById('appeal-detalle').value;
+         const rutBeneficiario = document.getElementById('appeal-rut-socio').value;
+         const btn = document.getElementById('btn-submit-appeal');
+         const oldHtml = btn.innerHTML;
+         
+         btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Enviando...</span></div>';
+         btn.disabled = true;
+         
+         google.script.run.withSuccessHandler(res => {
+          btn.innerHTML = oldHtml;
+          btn.disabled = false;
+          
+          if (res.success) {
+            showSuccess("Apelación enviada exitosamente.");
+            
+            // Limpiar formulario
+            tempSelectedMonth = "";
+            tempSelectedAppealMotive = "";
+            appealFileComprobanteData = null;
+            appealFileLiquidacionData = null;
+            document.getElementById('selected-month-text').innerText = "Seleccione mes...";
+            document.getElementById('selected-appeal-motive-text').innerText = "Seleccione...";
+            document.getElementById('appeal-detalle').value = "";
+            document.getElementById('div-appeal-detalle').classList.add('hidden');
+            document.getElementById('appeal-file-comprobante').value = "";
+            document.getElementById('appeal-file-liquidacion').value = "";
+            updateFileNameAppeal(document.getElementById('appeal-file-comprobante'), 'comprobante');
+            updateFileNameAppeal(document.getElementById('appeal-file-liquidacion'), 'liquidacion');
+            document.getElementById('appeal-rut-socio').value = "";
+            document.getElementById('comprobante-required-label').textContent = "(Opcional)";
+            
+            toggleAppealsTab('list');
+            
+            // NUEVO: Mostrar alerta de permisos si existe
+            if (res.mostrarAlerta && res.mensajeAlerta) {
+              setTimeout(function() {
+                mostrarAlertaPermisos(res.mensajeAlerta, res.tipoAlerta || 'warning');
+              }, 1500);
+            }
+          } else {
+            showWarning(res.message);
+          }
+        }).withFailureHandler(err => {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+            showWarning("Error al enviar: " + err);
+         }).enviarApelacion(currentRut, mes, motivo, detalle, appealFileComprobanteData, appealFileLiquidacionData, rutBeneficiario);
+      }
+
+      function loadAppealsHistory() {
+         const list = document.getElementById('appeals-list');
+         const loader = document.getElementById('appeals-loader');
+         const empty = document.getElementById('appeals-empty');
+         list.innerHTML = "";
+         loader.classList.remove('hidden');
+         empty.classList.add('hidden');
+         
+         google.script.run.withSuccessHandler(res => {
+            loader.classList.add('hidden');
+            
+            if (res.success) {
+               if (res.registros.length === 0) {
+                  empty.classList.remove('hidden');
+               } else {
+                  res.registros.forEach(reg => {
+                     let fechaStr = reg.fecha;
+                     try {
+                        const d = parseCustomDate(reg.fecha);
+                        if (!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                     } catch (e) {}
+                     
+                     let mesDisplay = reg.mesApelacion;
+                     try {
+                        const fechaMes = new Date(`${reg.mesApelacion}-02`);
+                        mesDisplay = fechaMes.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
+                        mesDisplay = mesDisplay.charAt(0).toUpperCase() + mesDisplay.slice(1);
+                     } catch (e) {}
+                     
+                     const hasComprobante = reg.urlComprobante && reg.urlComprobante.includes('http');
+                     const hasLiquidacion = reg.urlLiquidacion && reg.urlLiquidacion.includes('http');
+                     const hasComprobanteDevolucion = reg.urlComprobanteDevolucion && reg.urlComprobanteDevolucion.includes('http');
+                     
+                     const linkComprobante = hasComprobante ?
+                        `<a href="${reg.urlComprobante}" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center gap-1"><span class="material-icons-round text-sm">description</span>Comprobante</a>` :
+                        `<span class="text-xs text-slate-400">Sin comprobante</span>`;
+                     
+                     const linkLiquidacion = hasLiquidacion ?
+                        `<a href="${reg.urlLiquidacion}" target="_blank" class="text-xs text-purple-600 hover:underline flex items-center gap-1 font-bold"><span class="material-icons-round text-sm">receipt_long</span>Liquidación</a>` :
+                        `<span class="text-xs text-red-400">Sin liquidación</span>`;
+                     
+                     const linkDevolucion = hasComprobanteDevolucion ?
+                        `<a href="${reg.urlComprobanteDevolucion}" target="_blank" class="text-xs text-green-600 hover:underline flex items-center gap-1 font-bold"><span class="material-icons-round text-sm">payments</span>Comprobante Devolución</a>` : ``;
+                      
+                      // CAMBIO AQUI: Mostrar botón si es Enviado O Rechazado
+                      let deleteBtn = "";
+                      if (reg.estado === "Enviado" || reg.estado === "Rechazado") {
+                        deleteBtn = `<button onclick="initDelete('appeal', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg" title="Eliminar registro"><span class="material-icons-round text-lg">delete</span></button>`;
+                      }
+                     
+                     let statusColor = "bg-gray-100 text-gray-600";
+                     const st = (reg.estado || "").toLowerCase();
+                     if (st.includes("enviado")) statusColor = "bg-blue-100 text-blue-600";
+                     else if (st.includes("aceptado") && !st.includes("obs")) statusColor = "bg-green-100 text-green-600";
+                     else if (st.includes("obs")) statusColor = "bg-yellow-100 text-yellow-700";
+                     else if (st.includes("rechazado")) statusColor = "bg-red-100 text-red-600";
+                     
+                     let obsHtml = "";
+                     if (reg.obs) {
+                        obsHtml = `<div class="mt-2 p-2 bg-yellow-50 rounded border border-yellow-100 text-xs text-yellow-700"><strong>Obs:</strong> ${reg.obs}</div>`;
+                     }
+                     
+                     let detalleDisplay = reg.detalleMotivo ? `<p class="text-xs text-slate-600 mb-2">${reg.detalleMotivo}</p>` : "";
+                     
+                     let gestionHtml = "";
+                     if (reg.gestion && reg.gestion.toUpperCase() !== "SOCIO") {
+                        gestionHtml = `<div class="text-[10px] text-indigo-500 bg-indigo-50 px-2 py-1 rounded mb-1 inline-block"><strong>Ingresado por:</strong> ${reg.nomDirigente || "Dirigente"}</div>`;
+                     }
+                     
+                     const item = document.createElement('div');
+                     item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
+                     item.innerHTML = `
+                        <div class="flex justify-between items-start mb-1">
+                           <div>
+                              <span class="font-bold text-slate-800 text-sm block">${mesDisplay}</span>
+                              <span class="text-xs text-slate-500">${reg.tipoMotivo}</span>
+                           </div>
+                           <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${statusColor}">${reg.estado}</span>
+                        </div>
+                        ${gestionHtml}
+                        ${detalleDisplay}
+                        ${obsHtml}
+                        <div class="grid grid-cols-2 gap-2 mt-2 border-t border-slate-100 pt-2">
+                           ${linkComprobante}
+                           ${linkLiquidacion}
+                        </div>
+                        ${linkDevolucion ? `<div class="mt-2 pt-2 border-t border-green-100">${linkDevolucion}</div>` : ''}
+                        <div class="flex justify-between items-center border-t border-slate-100 pt-2 mt-2">
+                           <span class="text-[10px] text-slate-400 font-semibold">${fechaStr}</span>
+                           ${deleteBtn}
+                        </div>
+                     `;
+                     list.appendChild(item);
+                  });
+               }
+            }
+         }).obtenerHistorialApelaciones(currentRut);
+      }
+
+      // === FUNCIONES PERMISO MÉDICO ===
+      function togglePermissionTab(tab) {
+         const btnForm = document.getElementById('tab-permission-form');
+         const btnList = document.getElementById('tab-permission-list');
+         const divForm = document.getElementById('permission-form-content');
+         const divList = document.getElementById('permission-list-content');
+         
+         if (tab === 'form') {
+            btnForm.className = "flex-1 py-2 rounded-lg text-sm font-bold transition bg-emerald-100 text-emerald-700";
+            btnList.className = "flex-1 py-2 rounded-lg text-sm font-bold transition text-slate-500 hover:bg-slate-100";
+            divForm.classList.remove('hidden');
+            divList.classList.add('hidden');
+
+divForm.classList.add('flex');
+         } else {
+            btnList.className = "flex-1 py-2 rounded-lg text-sm font-bold transition bg-emerald-100 text-emerald-700";
+            btnForm.className = "flex-1 py-2 rounded-lg text-sm font-bold transition text-slate-500 hover:bg-slate-100";
+            divForm.classList.add('hidden');
+            divList.classList.remove('hidden');
+            divList.classList.add('flex');
+            loadPermissionHistory();
+         }
+      }
+
+      function openPermissionTypeModal() {
+        const types = [
+          "Media jornada (Examen médico. Debe utilizar el permiso al inició o al final de la jornada laboral. En caso de utilizarlo al inicio, debe volver al lugar de trabajo. - CON GOCE DE REMUNERACIÓN)",
+          "3 días hábiles (Accidente o enfermedad grave de los padres, hijos, cónyuge, conviviente civil, hermanos, siniestros, daños o pérdidas que afecten a los bienes del trabajador - CON GOCE DE REMUNERACIÓN)",
+        ];
+        const modal = document.getElementById('permission-type-modal');
+        const container = document.getElementById('permission-type-list-container');
+        container.innerHTML = "";
+        
+        types.forEach(type => {
+          const isSelected = tempSelectedPermissionType === type;
+          const item = document.createElement('div');
+          item.className = `permission-option p-4 text-sm cursor-pointer flex items-start justify-between ${isSelected ? 'selected' : ''}`;
+          item.innerHTML = `<span class="pr-2 leading-relaxed">${type}</span><div class="w-5 h-5 rounded-full border flex-shrink-0 mt-1 ${isSelected ? 'border-[#60a5fa] flex items-center justify-center' : 'border-slate-500'}">${isSelected ? '<div class="w-2.5 h-2.5 bg-[#60a5fa] rounded-full"></div>' : ''}</div>`;
+          item.onclick = function() {
+            tempSelectedPermissionType = type;
+            document.getElementById('selected-permission-type-text').innerText = type;
+            modal.classList.add('hidden');
+          };
+          container.appendChild(item);
+        });
+        
+        modal.classList.remove('hidden');
+      }
+
+      function submitPermission() {
+        const tipo = tempSelectedPermissionType;
+        const fechaInicio = document.getElementById('permission-fecha-inicio').value;
+        const motivo = document.getElementById('permission-motivo').value;
+        const rutBeneficiario = document.getElementById('permission-rut-socio').value;
+        
+        if (!tipo) return showWarning("Debe seleccionar el tipo de permiso.");
+        if (!fechaInicio) return showWarning("Debe seleccionar la fecha de inicio del permiso.");
+        if (!motivo || motivo.trim().length < 10) return showWarning("Debe especificar el motivo (mínimo 10 caracteres).");
+        if (motivo.length > 150) return showWarning("El motivo no puede superar los 150 caracteres.");
+        
+        // Validar rango de fecha (7 días antes, 7 días después)
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const fechaSeleccionada = new Date(fechaInicio);
+        fechaSeleccionada.setHours(0, 0, 0, 0);
+
+        const sieteDiasAntes = new Date(hoy);
+        sieteDiasAntes.setDate(sieteDiasAntes.getDate() - 7);
+
+        const sieteDiasDespues = new Date(hoy);
+        sieteDiasDespues.setDate(sieteDiasDespues.getDate() + 7);
+
+        if (fechaSeleccionada < sieteDiasAntes || fechaSeleccionada > sieteDiasDespues) {
+          return showWarning("La fecha de inicio debe estar entre 7 días antes y 7 días después de hoy.");
+        }
+        
+        // Si no es MUTUO ACUERDO, continuar con advertencia normal
+        document.getElementById('permission-warning-modal').classList.remove('hidden');
+      }
+
+      function confirmPermissionSubmit() {
+         document.getElementById('permission-warning-modal').classList.add('hidden');
+         
+         const tipo = tempSelectedPermissionType;
+         const fechaInicio = document.getElementById('permission-fecha-inicio').value;
+         const motivo = document.getElementById('permission-motivo').value;
+         const rutBeneficiario = document.getElementById('permission-rut-socio').value;
+         const btn = document.getElementById('btn-submit-permission');
+         const oldHtml = btn.innerHTML;
+         
+         btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Enviando...</span></div>';
+         btn.disabled = true;
+         
+         google.script.run.withSuccessHandler(res => {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+            
+            if (res.success) {
+               showSuccess(res.message);
+               
+               tempSelectedPermissionType = "";
+               document.getElementById('selected-permission-type-text').innerText = "Seleccione...";
+               document.getElementById('permission-fecha-inicio').value = "";
+               document.getElementById('permission-motivo').value = "";
+               document.getElementById('permission-rut-socio').value = "";
+               
+               togglePermissionTab('list');
+            } else {
+               showWarning(res.message);
+            }
+         }).withFailureHandler(err => {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+            showWarning("Error: " + err);
+         }).solicitarPermisoMedico(currentRut, tipo, fechaInicio, motivo, rutBeneficiario);
+      }
+
+      function loadPermissionHistory() {
+         const list = document.getElementById('permission-list');
+         const loader = document.getElementById('permission-loader');
+         const empty = document.getElementById('permission-empty');
+         list.innerHTML = "";
+         loader.classList.remove('hidden');
+         empty.classList.add('hidden');
+         
+         google.script.run.withSuccessHandler(res => {
+            loader.classList.add('hidden');
+            
+            if (res.success) {
+               if (res.registros.length === 0) {
+                  empty.classList.remove('hidden');
+               } else {
+                  res.registros.forEach(reg => {
+                     let fechaStr = reg.fecha;
+                     try {
+                        const d = parseCustomDate(reg.fecha);
+                        if (!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                     } catch (e) {}
+                     
+                     let fechaInicioStr = reg.fechaInicio || "No especificada";
+                     try {
+                        const fi = new Date(reg.fechaInicio);
+                        if (!isNaN(fi)) fechaInicioStr = fi.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                     } catch (e) {}
+                     
+                     const hasDocumento = reg.urlDocumento && reg.urlDocumento.includes('http');
+                     
+                     let linkDocumento = "";
+                     let attachBtn = "";
+                     let deleteBtn = "";
+                     
+                     if (hasDocumento) {
+                        linkDocumento = `<a href="${reg.urlDocumento}" target="_blank" class="text-xs text-green-600 hover:underline flex items-center gap-1 font-bold"><span class="material-icons-round text-sm">check_circle</span>Ver Documento</a>`;
+                     } else {
+                        if (reg.estado === "Solicitado") {
+                           attachBtn = `<button onclick="openAttachPermissionModal('${reg.id}')" class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg font-bold hover:bg-emerald-200 transition flex items-center gap-1"><span class="material-icons-round text-sm">upload</span>Adjuntar Doc</button>`;
+                        } else {
+                           linkDocumento = `<span class="text-xs text-orange-500 italic">Pendiente documento</span>`;
+                        }
+                     }
+                     
+                     if (reg.estado === "Solicitado") {
+                        deleteBtn = `<button onclick="initDelete('permission', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg ml-2" title="Anular solicitud"><span class="material-icons-round text-lg">delete</span></button>`;
+                     }
+                     
+                     let statusColor = "bg-gray-100 text-gray-600";
+                     const st = (reg.estado || "").toLowerCase();
+                     if (st.includes("solicitado")) statusColor = "bg-blue-100 text-blue-600";
+                     else if (st.includes("documento")) statusColor = "bg-green-100 text-green-600";
+                     
+                     let gestionHtml = "";
+                     if (reg.gestion && reg.gestion.toUpperCase() !== "SOCIO") {
+                        gestionHtml = `<div class="text-[10px] text-indigo-500 bg-indigo-50 px-2 py-1 rounded mb-1 inline-block"><strong>Ingresado por:</strong> ${reg.nomDirigente || "Dirigente"}</div>`;
+                     }
+                     
+                     const item = document.createElement('div');
+                     item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
+                     item.innerHTML = `
+                        <div class="flex justify-between items-start mb-1">
+                           <span class="font-bold text-slate-800 text-sm">${reg.tipoPermiso}</span>
+                           <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${statusColor}">${reg.estado}</span>
+                        </div>
+                        ${gestionHtml}
+                        <p class="text-xs text-slate-600 mb-2 line-clamp-2">${reg.motivo}</p>
+                        <div class="text-[10px] text-slate-500 mb-2">
+                           <strong>Inicio:</strong> ${fechaInicioStr}
+                        </div>
+                        <div class="flex justify-between items-center border-t border-slate-100 pt-2 mt-2">
+                           <span class="text-[10px] text-slate-400 font-semibold">${fechaStr}</span>
+                           <div class="flex items-center gap-1">
+                              ${linkDocumento}
+                              ${attachBtn}
+                              ${deleteBtn}
+                           </div>
+                        </div>
+                     `;
+                     list.appendChild(item);
+                  });
+               }
+            }
+         }).obtenerHistorialPermisosMedicos(currentRut);
+      }
+
+      function openAttachPermissionModal(permissionId) {
+         currentPermissionIdToAttach = permissionId;
+         document.getElementById('attach-permission-doc-modal').classList.remove('hidden');
+         document.getElementById('permission-doc-file').value = "";
+         document.getElementById('permission-doc-name').innerText = "JPG, PNG, PDF (Máx 5MB)";
+      }
+
+      function closeAttachPermissionModal() {
+         document.getElementById('attach-permission-doc-modal').classList.add('hidden');
+         currentPermissionIdToAttach = "";
+      }
+
+      function updatePermissionDocName(input) {
+         const display = document.getElementById('permission-doc-name');
+         if (input.files && input.files[0]) {
+            display.innerText = "Archivo: " + input.files[0].name;
+            display.classList.add('text-emerald-600', 'font-bold');
+         } else {
+            display.innerText = "JPG, PNG, PDF (Máx 5MB)";
+            display.classList.remove('text-emerald-600', 'font-bold');
+         }
+      }
+
+      function confirmAttachPermissionDoc() {
+         const fileInput = document.getElementById('permission-doc-file');
+         if (!fileInput.files || fileInput.files.length === 0) {
+            return showWarning("Debe seleccionar un archivo.");
+         }
+         
+         const file = fileInput.files[0];
+         if (file.size > 5 * 1024 * 1024) {
+            return showWarning("El archivo es muy pesado (Máx 5MB).");
+         }
+         
+         const btn = document.getElementById('btn-attach-permission-doc');
+         const oldHtml = btn.innerHTML;
+         btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Subiendo...</span></div>';
+         btn.disabled = true;
+         
+         const reader = new FileReader();
+         reader.onload = function(e) {
+            const base64Data = e.target.result.split(',')[1];
+            const fileData = { base64: base64Data, mimeType: file.type, fileName: file.name };
+            
+            google.script.run.withSuccessHandler(res => {
+              btn.innerHTML = oldHtml;
+              btn.disabled = false;
+              
+              if (res.success) {
+                closeAttachPermissionModal();
+                showSuccess("Documento adjuntado correctamente.");
+                loadPermissionHistory();
+                
+                // NUEVO: Mostrar alerta de permisos si existe
+                if (res.mostrarAlerta && res.mensajeAlerta) {
+                  setTimeout(function() {
+                    mostrarAlertaPermisos(res.mensajeAlerta, res.tipoAlerta || 'warning');
+                  }, 1500);
+                }
+              } else {
+                showWarning(res.message);
+              }
+            }).withFailureHandler(err => {
+               btn.innerHTML = oldHtml;
+               btn.disabled = false;
+               showWarning("Error: " + err);
+            }).adjuntarDocumentoPermiso(currentPermissionIdToAttach, fileData);
+         };
+         reader.readAsDataURL(file);
+      }
+
+      // === FUNCIONES REGISTRO ASISTENCIA ===
+      function loadAttendanceRecords() {
+         switchView('attendance-records-view');
+         const list = document.getElementById('attendance-list');
+         const loader = document.getElementById('attendance-loader');
+         const empty = document.getElementById('attendance-empty');
+         list.innerHTML = "";
+         loader.classList.remove('hidden');
+         empty.classList.add('hidden');
+         
+         google.script.run.withSuccessHandler(res => {
+            loader.classList.add('hidden');
+            
+            if (res.success) {
+               if (res.registros.length === 0) {
+                  empty.classList.remove('hidden');
+               } else {
+                  res.registros.forEach(reg => {
+                     const tipoIcon = reg.tipo.toLowerCase().includes('presencial') ? 'check_circle' : 
+                                     reg.tipo.toLowerCase().includes('online') ? 'video_call' : 'cancel';
+                     const tipoColor = reg.tipo.toLowerCase().includes('presencial') ? 'text-green-600' :
+                                      reg.tipo.toLowerCase().includes('online') ? 'text-blue-600' : 'text-red-600';
+                     
+                     let gestionHtml = "";
+                     if (reg.gestion && reg.gestion !== "Socio" && reg.gestion !== "Sistema") {
+                        gestionHtml = `<div class="text-[10px] text-indigo-500 bg-indigo-50 px-2 py-1 rounded inline-block"><strong>Por:</strong> ${reg.dirigente || "Dirigente"}</div>`;
+                     }
+                     
+                     const item = document.createElement('div');
+                     item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
+                     item.innerHTML = `
+                        <div class="flex items-center justify-between mb-2">
+                           <div class="flex items-center gap-2">
+                              <span class="material-icons-round ${tipoColor}">${tipoIcon}</span>
+                              <span class="font-bold text-slate-800 text-sm">${reg.asamblea}</span>
+                           </div>
+                        </div>
+                        <div class="text-xs text-slate-600">
+                           <span class="font-semibold">Tipo:</span> ${reg.tipo}
+                        </div>
+                        ${gestionHtml}
+                     `;
+                     list.appendChild(item);
+                  });
+               }
+            }
+         }).obtenerHistorialAsistencia(currentRut);
+      }
+
+      // === FUNCIONES PANEL ADMIN ===
+      function generarInformePrestamos() {
+         document.getElementById('admin-report-modal').classList.remove('hidden');
+      }
+      
+      function confirmGenerarInforme() {
+         const btn = document.getElementById('btn-confirm-report');
+         const oldHtml = btn.innerHTML;
+         
+         btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Generando...</span></div>';
+         btn.disabled = true;
+         
+         google.script.run.withSuccessHandler(res => {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+            document.getElementById('admin-report-modal').classList.add('hidden');
+            
+            if (res.success) {
+               showSuccess("Informe generado y enviado por correo.");
+            } else {
+               showWarning(res.message || "Error al generar informe.");
+            }
+         }).withFailureHandler(err => {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+            document.getElementById('admin-report-modal').classList.add('hidden');
+            showWarning("Error: " + err);
+         }).generarInformeAdministrador();
+      }
+
+      // === FUNCIONES GESTIÓN SOCIOS ===
+      function loadManagementView() {
+         switchView('management-view');
+         currentManagementModule = 'prestamos';
+         toggleManagementTab('prestamos');
+      }
+
+      function toggleManagementTab(tab) {
+         const tabs = ['prestamos', 'justif', 'apel', 'permisos'];
+         currentManagementModule = tab;
+         
+         tabs.forEach(t => {
+            const btn = document.getElementById(`tab-mgmt-${t}`);
+            const content = document.getElementById(`mgmt-${t}-content`);
+            if (t === tab) {
+               btn.className = "px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap bg-purple-100 text-purple-700";
+               content.classList.remove('hidden');
+            } else {
+               btn.className = "px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap text-slate-500 hover:bg-slate-100";
+               content.classList.add('hidden');
+            }
+         });
+         
+         document.getElementById('mgmt-empty').classList.add('hidden');
+         loadManagementData();
+      }
+
+      function loadManagementData() {
+         const loader = document.getElementById('mgmt-loader');
+         loader.classList.remove('hidden');
+         
+         google.script.run.withSuccessHandler(res => {
+            loader.classList.add('hidden');
+            
+            if (res.success) {
+               const data = res.datos;
+               renderManagementPrestamos(data.prestamos || []);
+               renderManagementJustif(data.justificaciones || []);
+               renderManagementApel(data.apelaciones || []);
+               renderManagementPermisos(data.permisosMedicos || []);
+            } else {
+               showWarning("Error cargando gestiones.");
+            }
+         }).obtenerGestionesDirigente(currentRut);
+      }
+
+      // === ACTUALIZAR PARA GESTIÓN ADMIN (Donde salía UNDEFINED) ===
+      function renderManagementPrestamos(registros) {
+        const container = document.getElementById('mgmt-prestamos-content');
+        const empty = document.getElementById('mgmt-empty');
+        container.innerHTML = "";
+        
+        if (registros.length === 0 && currentManagementModule === 'prestamos') {
+          empty.classList.remove('hidden');
+        } else {
+          registros.forEach(reg => {
+            let statusColor = "bg-slate-100 text-slate-600";
+            const st = (reg.estado || "S/D").toLowerCase(); // Prevenir undefined
+            if (st.includes('vigente')) statusColor = "bg-green-100 text-green-600";
+            else if (st.includes('pagado')) statusColor = "bg-blue-100 text-blue-600";
+            else if (st.includes('rechazado')) statusColor = "bg-red-100 text-red-600";
+            else if (st.includes('solicitado')) statusColor = "bg-slate-100 text-slate-600";
+            else if (st.includes('enviado')) statusColor = "bg-orange-100 text-orange-600";
+            
+            let fechaStr = reg.fecha || "";
+            try {
+              const d = parseCustomDate(reg.fecha);
+              if (!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            } catch (e) {}
+            
+            let buttonsHtml = '';
+            if (st.includes('solicitado')) {
+              buttonsHtml += `<button onclick="startEditLoanManagement('${reg.id}', '${reg.tipo}', '${reg.cuotas}', '${reg.medio}')" class="text-blue-500 hover:bg-blue-50 p-1 rounded-lg" title="Editar"><span class="material-icons-round text-lg">edit</span></button>`;
+            }
+            if (st.includes('solicitado') || st.includes('pagado') || st.includes('rechazado')) {
+              buttonsHtml += `<button onclick="initDeleteManagement('loan', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg ml-1" title="Eliminar"><span class="material-icons-round text-lg">delete</span></button>`;
+            }
+            
+            const item = document.createElement('div');
+            item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
+            item.innerHTML = `
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <span class="font-bold text-slate-800 text-sm block">${reg.nombreSocio}</span>
+                  <span class="text-xs text-slate-500">${formatRut(reg.rutSocio)}</span>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${statusColor}">${reg.estado || "S/D"}</span>
+              </div>
+              <div class="flex justify-between items-center mb-2">
+                 <span class="text-xs text-slate-600 font-semibold">${reg.tipo}</span>
+                 <span class="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">${reg.monto || "$0"}</span>
+              </div>
+              <div class="flex justify-between items-center text-[10px] text-slate-500 mb-2">
+                <span><strong>Cuotas:</strong> ${reg.cuotas}</span>
+                <span><strong>Medio:</strong> ${reg.medio}</span>
+              </div>
+              <div class="flex justify-between items-center border-t border-slate-100 pt-2 mt-2">
+                <span class="text-[10px] text-slate-400"><strong>Solicitado:</strong> ${fechaStr}</span>
+                ${buttonsHtml ? `<div class="flex items-center gap-1">${buttonsHtml}</div>` : ''}
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1"><strong>Término:</strong> ${reg.fechaTermino || "S/D"}</div>
+            `;
+            container.appendChild(item);
+          });
+        }
+      }
+
+      function renderManagementJustif(registros) {
+        const container = document.getElementById('mgmt-justif-content');
+        const empty = document.getElementById('mgmt-empty');
+        container.innerHTML = "";
+        
+        if (registros.length === 0 && currentManagementModule === 'justif') {
+          empty.classList.remove('hidden');
+        } else {
+          registros.forEach(reg => {
+            let statusColor = "bg-slate-100 text-slate-600";
+            const st = (reg.estado || "").toLowerCase();
+            if (st.includes('aceptado')) statusColor = "bg-green-100 text-green-600";
+            else if (st.includes('rechazado')) statusColor = "bg-red-100 text-red-600";
+            else if (st.includes('enviado')) statusColor = "bg-blue-100 text-blue-600";
+            
+            let fechaStr = reg.fecha || "";
+            try {
+              const d = parseCustomDate(reg.fecha);
+              if (!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            } catch (e) {}
+            
+            const hasUrl = reg.url && reg.url.includes('http');
+            let linkArchivo = "";
+            if (hasUrl) {
+              linkArchivo = `<a href="${reg.url}" target="_blank" class="text-xs text-green-600 hover:underline flex items-center gap-1 font-bold"><span class="material-icons-round text-sm">description</span>Ver Archivo</a>`;
+            }
+            
+            let deleteBtn = "";
+            if (reg.estado === "Enviado") {
+              deleteBtn = `<button onclick="initDeleteManagement('justif', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg" title="Eliminar"><span class="material-icons-round text-lg">delete</span></button>`;
+            }
+            
+            const item = document.createElement('div');
+            item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
+            item.innerHTML = `
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <span class="font-bold text-slate-800 text-sm block">${reg.nombreSocio}</span>
+                  <span class="text-xs text-slate-500">${formatRut(reg.rutSocio)}</span>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${statusColor}">${reg.estado}</span>
+              </div>
+              <div class="text-xs text-slate-600 mb-2">
+                <span class="font-semibold">${reg.tipo}</span>
+              </div>
+              <p class="text-xs text-slate-600 mb-2 line-clamp-2">${reg.motivo || 'Sin motivo'}</p>
+              ${reg.obs ? `<div class="text-[10px] text-amber-600 bg-amber-50 p-2 rounded mb-2"><strong>Obs:</strong> ${reg.obs}</div>` : ''}
+              ${reg.asamblea ? `<div class="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-1 rounded inline-block mb-2"><strong>Asamblea:</strong> ${reg.asamblea}</div>` : ''}
+              <div class="flex justify-between items-center border-t border-slate-100 pt-2 mt-2">
+                <span class="text-[10px] text-slate-400"><strong>Ingresada:</strong> ${fechaStr}</span>
+                <div class="flex items-center gap-2">
+                  ${linkArchivo}
+                  ${deleteBtn}
+                </div>
+              </div>
+            `;
+            container.appendChild(item);
+          });
+        }
+      }
+
+      function renderManagementApel(registros) {
+        const container = document.getElementById('mgmt-apel-content');
+        const empty = document.getElementById('mgmt-empty');
+        container.innerHTML = "";
+        
+        if (registros.length === 0 && currentManagementModule === 'apel') {
+          empty.classList.remove('hidden');
+        } else {
+          registros.forEach(reg => {
+            let statusColor = "bg-slate-100 text-slate-600";
+            const st = (reg.estado || "").toLowerCase();
+            if (st.includes('aceptado')) statusColor = "bg-green-100 text-green-600";
+            else if (st.includes('rechazado')) statusColor = "bg-red-100 text-red-600";
+            else if (st.includes('enviado')) statusColor = "bg-blue-100 text-blue-600";
+            
+            let fechaStr = reg.fecha || "";
+            try {
+              const d = parseCustomDate(reg.fecha);
+              if (!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            } catch (e) {}
+            
+            let mesApelacionStr = reg.mesApelacion || "";
+            try {
+              const fechaMes = new Date(reg.mesApelacion + "-02");
+              if (!isNaN(fechaMes)) mesApelacionStr = fechaMes.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
+            } catch (e) {}
+            
+            const hasComprobante = reg.urlComprobante && reg.urlComprobante.includes('http');
+            const hasLiquidacion = reg.urlLiquidacion && reg.urlLiquidacion.includes('http');
+            const hasDevolucion = reg.urlComprobanteDevolucion && reg.urlComprobanteDevolucion.includes('http');
+            
+            let linksHtml = "";
+            if (hasComprobante) {
+              linksHtml += `<a href="${reg.urlComprobante}" target="_blank" class="text-xs text-green-600 hover:underline flex items-center gap-1"><span class="material-icons-round text-sm">receipt</span>Comprobante</a>`;
+            }
+            if (hasLiquidacion) {
+              linksHtml += `<a href="${reg.urlLiquidacion}" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center gap-1"><span class="material-icons-round text-sm">description</span>Liquidación</a>`;
+            }
+            if (hasDevolucion) {
+              linksHtml += `<a href="${reg.urlComprobanteDevolucion}" target="_blank" class="text-xs text-purple-600 hover:underline flex items-center gap-1"><span class="material-icons-round text-sm">payments</span>Devolución</a>`;
+            }
+            
+            let deleteBtn = "";
+            if (reg.estado === "Enviado") {
+              deleteBtn = `<button onclick="initDeleteManagement('appeal', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg" title="Eliminar"><span class="material-icons-round text-lg">delete</span></button>`;
+            }
+            
+            const item = document.createElement('div');
+            item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
+            item.innerHTML = `
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <span class="font-bold text-slate-800 text-sm block">${reg.nombreSocio}</span>
+                  <span class="text-xs text-slate-500">${formatRut(reg.rutSocio)}</span>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${statusColor}">${reg.estado}</span>
+              </div>
+              <div class="text-xs text-slate-600 mb-1">
+                <span class="font-semibold">${mesApelacionStr}</span>
+              </div>
+              <div class="text-xs text-slate-600 mb-2">
+                <strong>Motivo:</strong> ${reg.tipoMotivo}
+              </div>
+              ${reg.detalleMotivo ? `<p class="text-xs text-slate-600 mb-2 line-clamp-2">${reg.detalleMotivo}</p>` : ''}
+              ${reg.obs ? `<div class="text-[10px] text-amber-600 bg-amber-50 p-2 rounded mb-2"><strong>Obs:</strong> ${reg.obs}</div>` : ''}
+              ${linksHtml ? `<div class="flex flex-wrap gap-2 mb-2">${linksHtml}</div>` : ''}
+              <div class="flex justify-between items-center border-t border-slate-100 pt-2 mt-2">
+                <span class="text-[10px] text-slate-400"><strong>Ingresada:</strong> ${fechaStr}</span>
+                ${deleteBtn}
+              </div>
+            `;
+            container.appendChild(item);
+          });
+        }
+      }
+
+      function renderManagementPermisos(registros) {
+        const container = document.getElementById('mgmt-permisos-content');
+        const empty = document.getElementById('mgmt-empty');
+        container.innerHTML = "";
+        
+        if (registros.length === 0 && currentManagementModule === 'permisos') {
+          empty.classList.remove('hidden');
+        } else {
+          registros.forEach(reg => {
+            let statusColor = "bg-slate-100 text-slate-600";
+            const st = (reg.estado || "").toLowerCase();
+            if (st.includes('documento')) statusColor = "bg-green-100 text-green-600";
+            else if (st.includes('solicitado')) statusColor = "bg-blue-100 text-blue-600";
+            
+            let fechaStr = reg.fecha || "";
+            try {
+              const d = parseCustomDate(reg.fecha);
+              if (!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            } catch (e) {}
+            
+            let fechaInicioStr = reg.fechaInicio || "No especificada";
+            try {
+              const fi = new Date(reg.fechaInicio);
+              if (!isNaN(fi)) fechaInicioStr = fi.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            } catch (e) {}
+            
+            const hasDocumento = reg.urlDocumento && reg.urlDocumento.includes('http');
+            
+            let linkDocumento = "";
+            let deleteBtn = "";
+            
+            if (hasDocumento) {
+              linkDocumento = `<a href="${reg.urlDocumento}" target="_blank" class="text-xs text-green-600 hover:underline flex items-center gap-1 font-bold"><span class="material-icons-round text-sm">check_circle</span>Ver Documento</a>`;
+            }
+            
+            if (reg.estado === "Solicitado") {
+              deleteBtn = `<button onclick="initDeleteManagement('permission', '${reg.id}')" class="text-red-500 hover:bg-red-50 p-1 rounded-lg ml-2" title="Anular solicitud"><span class="material-icons-round text-lg">delete</span></button>`;
+            }
+            
+            const item = document.createElement('div');
+            item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
+            item.innerHTML = `
+              <div class="flex justify-between items-start mb-1">
+                <div>
+                  <span class="font-bold text-slate-800 text-sm block">${reg.nombreSocio}</span>
+                  <span class="text-xs text-slate-500">${formatRut(reg.rutSocio)}</span>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${statusColor}">${reg.estado}</span>
+              </div>
+              <div class="text-xs text-slate-600 mb-2">
+                <span class="font-semibold">${reg.tipoPermiso}</span>
+              </div>
+              <p class="text-xs text-slate-600 mb-2 line-clamp-2">${reg.motivo || 'Sin motivo'}</p>
+              <div class="text-[10px] text-slate-500 mb-2">
+                <strong>Inicio:</strong> ${fechaInicioStr}
+              </div>
+              <div class="flex justify-between items-center border-t border-slate-100 pt-2 mt-2">
+                <span class="text-[10px] text-slate-400"><strong>Solicitado:</strong> ${fechaStr}</span>
+                <div class="flex items-center gap-1">
+                  ${linkDocumento}
+                  ${deleteBtn}
+                </div>
+              </div>
+            `;
+            container.appendChild(item);
+          });
+        }
+      }
+      
+      function startEditLoanManagement(id, tipo, cuotas, medio) {
+        currentEditingLoanId = id;
+        const maxCuotas = (tipo === 'Emergencia') ? 10 : 8;
+        const selectCuotas = document.getElementById('edit-loan-cuotas');
+        selectCuotas.innerHTML = "";
+        for(let i=1; i<=maxCuotas; i++) {
+          const opt = document.createElement('option');
+          opt.value = i;
+          opt.innerText = i + (i===1 ? " Cuota" : " Cuotas");
+          if(i == cuotas) opt.selected = true;
+          selectCuotas.appendChild(opt);
+        }
+        document.getElementById('edit-loan-medio').value = medio;
+        document.getElementById('edit-loan-modal').classList.remove('hidden');
+      }
+      
+      function initDeleteManagement(type, id) {
+         deleteType = type;
+         itemToDeleteId = id;
+         document.getElementById('delete-generic-modal').classList.remove('hidden');
+      }
+
+      // ==========================================
+      // SISTEMA DE INFORMACIÓN DE ESTADOS
+      // ==========================================
+
+      let estadoActualOrganizacion = "";
+      let estadoActualNegociacion = "";
+
+      /**
+       * Muestra información detallada del estado seleccionado
+       */
+      function mostrarInfoEstado(tipoEstado) {
+        const modal = document.getElementById('info-estado-modal');
+        const titulo = document.getElementById('info-estado-titulo');
+        const icono = document.getElementById('info-estado-icon');
+        const badge = document.getElementById('info-estado-badge');
+        const descripcion = document.getElementById('info-estado-descripcion');
+        const nota = document.getElementById('info-estado-nota');
+        
+        if (tipoEstado === 'organizacion') {
+          // ESTADO EN ORGANIZACIÓN
+          titulo.innerText = "Estado en Organización";
+          icono.innerText = "business";
+          
+          if (estadoActualOrganizacion === "ACTIVO") {
+            badge.className = "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide bg-emerald-500 text-white shadow-lg";
+            badge.innerHTML = '<span class="material-icons-round text-base">check_circle</span> ACTIVO';
+            
+            descripcion.innerHTML = `
+              <div class="text-center mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 mb-3">
+                  <span class="material-icons-round text-emerald-600 text-4xl">verified_user</span>
+                </div>
+                <h4 class="text-lg font-bold text-emerald-700 mb-2">¡Socio Vigente!</h4>
+              </div>
+              <p class="text-slate-700 leading-relaxed">
+                Usted es un <strong>socio activo</strong> del Sindicato SLIM N°3. 
+                Esto significa que:
+              </p>
+              <ul class="mt-3 space-y-2 text-slate-700">
+                <li class="flex items-start gap-2">
+                  <span class="material-icons-round text-emerald-600 text-sm mt-0.5">check</span>
+                  <span>Tiene acceso completo a nuestras plataformas de formación e información laboral y sindical.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="material-icons-round text-emerald-600 text-sm mt-0.5">check</span>
+                  <span>Puede participar en asambleas y de todas nuestras actividades.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="material-icons-round text-emerald-600 text-sm mt-0.5">check</span>
+                  <span>Está cubierto por las gestiones de la organización.</span>
+                </li>
+              </ul>
+            `;
+          } else {
+            badge.className = "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide bg-red-500 text-white shadow-lg";
+            badge.innerHTML = '<span class="material-icons-round text-base">cancel</span> DESVINCULADO';
+            
+            descripcion.innerHTML = `
+              <div class="text-center mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-3">
+                  <span class="material-icons-round text-red-600 text-4xl">person_off</span>
+                </div>
+                <h4 class="text-lg font-bold text-red-700 mb-2">Socio Desvinculado</h4>
+              </div>
+              <p class="text-slate-700 leading-relaxed mb-3">
+                La empresa ha informado su <strong>desvinculación laboral</strong>, por lo tanto, 
+                también ha cesado su calidad de socio del sindicato.
+              </p>
+              <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <p class="text-xs text-slate-600 leading-relaxed">
+                  <strong>¿Crees que hay un error?</strong><br>
+                  Si consideras que esta información es incorrecta, por favor comunícate 
+                  de inmediato con la directiva del sindicato para verificar tu situación.
+                </p>
+              </div>
+            `;
+          }
+          
+          nota.classList.add('hidden');
+          
+        } else if (tipoEstado === 'negociacion') {
+          // ESTADO NEGOCIACIÓN COLECTIVA
+          titulo.innerText = "Negociación Colectiva 2026";
+          icono.innerText = "gavel";
+          
+          const estado = estadoActualNegociacion.toUpperCase();
+          
+          if (estado.includes("HABILITADO") || estado.includes("NEGOCIAR")) {
+            badge.className = "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide bg-blue-500 text-white shadow-lg";
+            badge.innerHTML = '<span class="material-icons-round text-base">how_to_vote</span> HABILITADO PARA NEGOCIAR';
+            
+            descripcion.innerHTML = `
+              <div class="text-center mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-3">
+                  <span class="material-icons-round text-blue-600 text-4xl">shield</span>
+                </div>
+                <h4 class="text-lg font-bold text-blue-700 mb-2">¡Inscrito en Negociación!</h4>
+              </div>
+              <p class="text-slate-700 leading-relaxed mb-3">
+                Usted está <strong>correctamente inscrito</strong> en la negociación colectiva 2026. 
+                Esto implica importantes derechos y responsabilidades:
+              </p>
+              
+              <div class="space-y-3">
+                <div class="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                  <h5 class="text-xs font-bold text-blue-900 mb-1 flex items-center gap-1">
+                    <span class="material-icons-round text-sm">security</span>
+                    FUERO SINDICAL
+                  </h5>
+                  <p class="text-xs text-blue-800 leading-relaxed">
+                    Desde el 19 de diciembre de 2025 hasta el término del proceso de negociación colectiva, 
+                    usted cuenta con <strong>protección especial</strong> contra el despido.
+                  </p>
+                </div>
+                
+                <div class="p-3 bg-purple-50 rounded-lg border-l-4 border-purple-500">
+                  <h5 class="text-xs font-bold text-purple-900 mb-1 flex items-center gap-1">
+                    <span class="material-icons-round text-sm">how_to_vote</span>
+                    DERECHO A VOTO
+                  </h5>
+                  <p class="text-xs text-purple-800 leading-relaxed">
+                    Debe participar activamente en el <strong>proceso de votación</strong> 
+                    de la huelga legal cuando corresponda.
+                  </p>
+                </div>
+                
+                <div class="p-3 bg-amber-50 rounded-lg border-l-4 border-amber-500">
+                  <h5 class="text-xs font-bold text-amber-900 mb-1 flex items-center gap-1">
+                    <span class="material-icons-round text-sm">front_hand</span>
+                    OBLIGACIÓN DE HUELGA
+                  </h5>
+                  <p class="text-xs text-amber-800 leading-relaxed">
+                    En caso de activarse la huelga legal, <strong>debe participar activamente</strong> 
+                    de esta etapa. Su participación es fundamenta y obligatoria.
+                  </p>
+                </div>
+              </div>
+            `;
+            nota.classList.remove('hidden');
+            
+          } else if (estado.includes("EXTENSION") || estado.includes("BENEFICIO")) {
+            badge.className = "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide bg-purple-500 text-white shadow-lg";
+            badge.innerHTML = '<span class="material-icons-round text-base">extension</span> EXTENSIÓN DE BENEFICIOS';
+            
+            descripcion.innerHTML = `
+              <div class="text-center mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 mb-3">
+                  <span class="material-icons-round text-purple-600 text-4xl">people_alt</span>
+                </div>
+                <h4 class="text-lg font-bold text-purple-700 mb-2">Extensión de Beneficios</h4>
+              </div>
+              <p class="text-slate-700 leading-relaxed mb-3">
+                Usted <strong>NO está inscrito</strong> para la negociación colectiva 2026. 
+                Sin embargo, actualmente recibe los beneficios aun vigentes y también recibirá los 
+                obtenidos posterior a la negociación colectiva 2026 mediante extensión.
+              </p>
+              
+              <div class="space-y-3">
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <h5 class="text-xs font-bold text-slate-900 mb-2">Restricciones Aplicables:</h5>
+                  <ul class="space-y-1.5 text-xs text-slate-700">
+                    <li class="flex items-start gap-2">
+                      <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
+                      <span>No cuenta con fuero sindical durante el proceso.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                      <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
+                      <span>No puede participar en la votación de la huelga.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                      <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
+                      <span>No puede participar de la huelga legal.</span>
+                    </li>
+                  </ul>
+                </div>
+                
+                <div class="p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
+                  <p class="text-xs text-green-800 leading-relaxed">
+                    <strong>Beneficio:</strong> Una vez concluida la negociación, recibirá automáticamente 
+                    los beneficios pactados mediante el mecanismo de extensión.
+                  </p>
+                </div>
+              </div>
+            `;
+            nota.classList.add('hidden');
+            
+          } else if (estado.includes("OTRO") || estado.includes("CONT")) {
+            badge.className = "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide bg-amber-500 text-white shadow-lg";
+            badge.innerHTML = '<span class="material-icons-round text-base">description</span> OTRO CONTRATO COLECTIVO';
+            
+            descripcion.innerHTML = `
+              <div class="text-center mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 mb-3">
+                  <span class="material-icons-round text-amber-600 text-4xl">assignment</span>
+                </div>
+                <h4 class="text-lg font-bold text-amber-700 mb-2">Contrato Colectivo Vigente</h4>
+              </div>
+              <p class="text-slate-700 leading-relaxed mb-3">
+                Usted mantiene un <strong>contrato colectivo vigente</strong> con su sindicato anterior. 
+                Esta situación implica las siguientes condiciones:
+              </p>
+              
+              <div class="space-y-3">
+                <div class="p-3 bg-amber-50 rounded-lg border-l-4 border-amber-500">
+                  <h5 class="text-xs font-bold text-amber-900 mb-1">Contrato Actual</h5>
+                  <p class="text-xs text-amber-800 leading-relaxed">
+                    Sus beneficios sindicales están regulados por el contrato colectivo de su organización 
+                    sindical anterior, el cual permanece vigente hasta su fecha de vencimiento.
+                  </p>
+                </div>
+                
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <h5 class="text-xs font-bold text-slate-900 mb-2">Limitaciones en Negociación 2026:</h5>
+                  <ul class="space-y-1.5 text-xs text-slate-700">
+                    <li class="flex items-start gap-2">
+                      <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
+                      <span>No cuenta con fuero sindical para esta negociación</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                      <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
+                      <span>No puede participar en la votación de huelga</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                      <span class="material-icons-round text-red-500 text-sm mt-0.5">cancel</span>
+                      <span>No puede participar de la huelga legal</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            `;
+            nota.classList.add('hidden');
+            
+          } else {
+            // S/D o sin datos
+            badge.className = "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide bg-slate-400 text-white shadow-lg";
+            badge.innerHTML = '<span class="material-icons-round text-base">help_outline</span> SIN DATOS';
+            
+            descripcion.innerHTML = `
+              <div class="text-center mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-3">
+                  <span class="material-icons-round text-slate-400 text-4xl">info</span>
+                </div>
+                <h4 class="text-lg font-bold text-slate-700 mb-2">Información No Disponible</h4>
+              </div>
+              <p class="text-slate-700 leading-relaxed mb-3">
+                Actualmente no contamos con información sobre tu estado en la negociación colectiva 2026.
+              </p>
+              <div class="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                <p class="text-xs text-blue-900 leading-relaxed">
+                  <strong>¿Qué hacer?</strong><br>
+                  Por favor, comunícate con la directiva del sindicato para verificar tu situación 
+                  y asegurarte de estar correctamente registrado en el proceso de negociación.
+                </p>
+              </div>
+            `;
+            nota.classList.add('hidden');
           }
         }
         
-        // ==========================================
-        // 5. USUARIO NO ENCONTRADO
-        // ==========================================
-        Logger.log('⚠️ Usuario no encontrado con RUT: ' + rutBuscado);
-        return {
-          success: false,
-          message: 'No se encontró ningún usuario con el RUT ' + formatRutDisplay(rutBuscado) + ' en el sistema.'
-        };
+        modal.classList.remove('hidden');
+
+        // Esperar un frame para que el navegador procese el display
+        requestAnimationFrame(() => {
+          const modalCard = modal.querySelector('.modal-card');
+          if (modalCard) {
+            modalCard.scrollTop = 0; // Resetear scroll al inicio
+          }
+        });
+      }
+
+      /**
+       * Cierra el modal de información de estado
+       */
+      function cerrarInfoEstado() {
+        document.getElementById('info-estado-modal').classList.add('hidden');
+      }
+
+      // ==========================================
+      // CONSULTAR ID CREDENCIAL
+      // ==========================================
+      function consultarIdCredencial() {
+        const rutInput = document.getElementById('search-rut-input');
+        const loader = document.getElementById('id-credential-loader');
+        const resultDiv = document.getElementById('id-credential-result');
         
-      } catch (e) {
-        Logger.log('❌ ERROR en consultarIdCredencialBackend: ' + e.toString());
-        Logger.log('   Stack: ' + e.stack);
-        return {
-          success: false,
-          message: 'Error inesperado: ' + e.toString()
-        };
-      }
-    }
+        const rutBuscar = rutInput.value.trim();
+        
+        // Validación básica
+        if (!rutBuscar || rutBuscar.length < 8) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'RUT Incompleto',
+            text: 'Por favor ingresa un RUT válido para buscar.',
+            confirmButtonColor: '#14b8a6'
+          });
+          return;
+        }
+        
+        // Mostrar loader
+        loader.classList.remove('hidden');
+        resultDiv.classList.add('hidden');
+        resultDiv.innerHTML = '';
+        
+        // Llamar al backend
+        google.script.run
+          .withSuccessHandler(function(response) {
+            loader.classList.add('hidden');
 
-    /**
-     * Función auxiliar para formatear RUT para mostrar
-     * (Puedes usar la existente si ya tienes una)
-     */
-    function formatRutDisplay(rut) {
-      if (!rut) return '';
-      const cleaned = cleanRut(rut);
-      if (cleaned.length < 2) return cleaned;
-      
-      const dv = cleaned.slice(-1);
-      const numero = cleaned.slice(0, -1);
-      
-      // Formatear con puntos
-      const formatted = numero.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-      
-      return formatted + '-' + dv;
-    }
+            // ⭐ DEBUGGING: Ver qué datos llegan
+            console.log('=== RESPUESTA COMPLETA ===');
+            console.log(response);
+            console.log('QR Registro:', response.qrRegistro);
+            console.log('Tipo de QR:', typeof response.qrRegistro);
+            console.log('Longitud QR:', response.qrRegistro ? response.qrRegistro.length : 0);
+            
+            if (response.success) {
+              // CASO EXITOSO: Mostrar ID Credencial y QR
+              resultDiv.innerHTML = `
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                  <div class="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+                    <div class="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center">
+                      <span class="material-icons-round text-white text-lg">check_circle</span>
+                    </div>
+                    <h4 class="text-sm font-bold text-slate-800">Usuario Encontrado</h4>
+                  </div>
+                  
+                  <div class="space-y-3">
+                    <div>
+                      <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nombre Completo</label>
+                      <div class="font-bold text-slate-900 text-base">${response.nombre}</div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">RUT</label>
+                        <div class="text-sm font-bold text-slate-800">${formatRutDisplay(response.rut)}</div>
+                      </div>
+                      
+                      <div>
+                        <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Estado</label>
+                        <div class="text-sm font-bold ${response.estado === 'VIGENTE' ? 'text-green-600' : 'text-red-600'}">${response.estado}</div>
+                      </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl border-2 border-teal-300 p-4 mt-4">
+                      <label class="block text-[10px] font-bold text-teal-700 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <span class="material-icons-round text-sm">badge</span>
+                        ID CREDENCIAL
+                      </label>
+                      <div class="font-mono text-2xl font-bold text-teal-900 tracking-wide">${response.idCredencial || 'S/D'}</div>
+                    </div>
+                    
+                    ${response.qrRegistro && response.qrRegistro.trim().length > 0 ? `
+                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-300 p-4 mt-4">
+                      <label class="block text-[10px] font-bold text-purple-700 uppercase tracking-wider mb-3 flex items-center gap-1">
+                        <span class="material-icons-round text-sm">qr_code_2</span>
+                        CÓDIGO QR DE REGISTRO
+                      </label>
+                      <div class="flex justify-center">
+                        <img 
+                          src="${response.qrRegistro}" 
+                          alt="QR de Registro" 
+                          class="w-48 h-48 border-4 border-white rounded-lg shadow-md"
+                          onerror="this.parentElement.innerHTML='<div class=\\'text-xs text-red-600\\'>Error al cargar QR</div>'"
+                        >
+                      </div>
+                      <p class="text-[10px] text-center text-purple-600 mt-2 italic">Código QR para vinculación de dispositivo</p>
+                    </div>
+                    ` : ''}
+                    
+                    ${response.cargo ? `
+                    <div class="mt-3 pt-3 border-t border-slate-100">
+                      <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cargo</label>
+                      <div class="text-sm text-slate-700">${response.cargo}</div>
+                    </div>
+                    ` : ''}
+                  </div>
+                </div>
+              `;
+              resultDiv.classList.remove('hidden');
+            } else {
+              // CASO ERROR: Usuario no encontrado u otro error
+              resultDiv.innerHTML = `
+                <div class="bg-red-50 rounded-xl border border-red-200 p-5">
+                  <div class="flex items-center gap-2 mb-2">
+                    <div class="w-8 h-8 rounded-lg bg-red-500 flex items-center justify-center">
+                      <span class="material-icons-round text-white text-lg">error</span>
+                    </div>
+                    <h4 class="text-sm font-bold text-red-800">No Encontrado</h4>
+                  </div>
+                  <p class="text-sm text-red-700">${response.message || 'No se encontró ningún usuario con ese RUT en el sistema.'}</p>
+                </div>
+              `;
+              resultDiv.classList.remove('hidden');
+            }
+          })
+          .withFailureHandler(function(error) {
+            loader.classList.add('hidden');
+            Swal.fire({
+              icon: 'error',
+              title: 'Error de Conexión',
+              text: 'No se pudo realizar la consulta. Verifica tu conexión e intenta nuevamente.',
+              confirmButtonColor: '#14b8a6'
+            });
+            console.error('Error:', error);
+          })
+          .consultarIdCredencialBackend(currentRut, rutBuscar);
+      }
 
-    /**
-     * Extrae la URL de una fórmula =IMAGE("URL")
-     * @param {string} formula - Fórmula de Google Sheets
-     * @returns {string} URL extraída o string vacío
-     */
-    function extraerUrlDeImagen(formula) {
-      if (!formula || typeof formula !== 'string') {
-        return '';
-      }
-      
-      // Buscar patrón: =IMAGE("URL")
-      const regex = /=IMAGE\s*\(\s*"([^"]+)"\s*\)/i;
-      const match = formula.match(regex);
-      
-      if (match && match[1]) {
-        Logger.log('✅ URL extraída de fórmula IMAGE: ' + match[1]);
-        return match[1];
-      }
-      
-      // Si no es fórmula IMAGE, puede ser una URL directa
-      if (formula.startsWith('http')) {
-        return formula;
-      }
-      
-      Logger.log('⚠️ No se pudo extraer URL de: ' + formula);
-      return '';
-    }
+    </script>
+  </body>
+</html>
