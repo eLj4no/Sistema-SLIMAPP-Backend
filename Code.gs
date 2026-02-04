@@ -3729,66 +3729,218 @@ function corregirPermisosJustificacionesExistentes() {
   }
 }
 
-// ==========================================
-// SISTEMA DE MÉTRICAS Y MONITOREO
-// ==========================================
+    // ==========================================
+    // SISTEMA DE MÉTRICAS Y MONITOREO
+    // ==========================================
 
-/**
- * Registra métricas de uso para análisis de performance
- */
-function registrarMetrica(operacion, duracion, exito) {
-  try {
-    var properties = PropertiesService.getScriptProperties();
-    var fecha = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
-    var key = 'metrics_' + fecha + '_' + operacion;
-    
-    var existing = properties.getProperty(key);
-    var metrics = existing ? JSON.parse(existing) : { count: 0, totalDuration: 0, errors: 0 };
-    
-    metrics.count++;
-    metrics.totalDuration += duracion;
-    if (!exito) metrics.errors++;
-    
-    properties.setProperty(key, JSON.stringify(metrics));
-  } catch (e) {
-    // No hacer nada si falla el logging
-    Logger.log('Error logging metrics: ' + e);
-  }
-}
-
-/**
- * Wrapper para medir performance de funciones críticas
- */
-function medirPerformance(nombreFuncion, funcionCallback) {
-  var inicio = new Date().getTime();
-  var exito = true;
-  
-  try {
-    return funcionCallback();
-  } catch (e) {
-    exito = false;
-    throw e;
-  } finally {
-    var duracion = new Date().getTime() - inicio;
-    registrarMetrica(nombreFuncion, duracion, exito);
-  }
-}
-
-/**
- * Ver métricas del día (ejecutar manualmente desde editor)
- */
-function verMetricasHoy() {
-  var properties = PropertiesService.getScriptProperties();
-  var fecha = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
-  var allProps = properties.getProperties();
-  
-  Logger.log('=== MÉTRICAS ' + fecha + ' ===');
-  for (var key in allProps) {
-    if (key.startsWith('metrics_' + fecha)) {
-      var operacion = key.replace('metrics_' + fecha + '_', '');
-      var data = JSON.parse(allProps[key]);
-      Logger.log(operacion + ': ' + data.count + ' llamadas, avg: ' + 
-                 (data.totalDuration / data.count).toFixed(0) + 'ms, errores: ' + data.errors);
+    /**
+     * Registra métricas de uso para análisis de performance
+     */
+    function registrarMetrica(operacion, duracion, exito) {
+      try {
+        var properties = PropertiesService.getScriptProperties();
+        var fecha = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+        var key = 'metrics_' + fecha + '_' + operacion;
+        
+        var existing = properties.getProperty(key);
+        var metrics = existing ? JSON.parse(existing) : { count: 0, totalDuration: 0, errors: 0 };
+        
+        metrics.count++;
+        metrics.totalDuration += duracion;
+        if (!exito) metrics.errors++;
+        
+        properties.setProperty(key, JSON.stringify(metrics));
+      } catch (e) {
+        // No hacer nada si falla el logging
+        Logger.log('Error logging metrics: ' + e);
+      }
     }
-  }
-}
+
+    /**
+     * Wrapper para medir performance de funciones críticas
+     */
+    function medirPerformance(nombreFuncion, funcionCallback) {
+      var inicio = new Date().getTime();
+      var exito = true;
+      
+      try {
+        return funcionCallback();
+      } catch (e) {
+        exito = false;
+        throw e;
+      } finally {
+        var duracion = new Date().getTime() - inicio;
+        registrarMetrica(nombreFuncion, duracion, exito);
+      }
+    }
+
+    /**
+     * Ver métricas del día (ejecutar manualmente desde editor)
+     */
+    function verMetricasHoy() {
+      var properties = PropertiesService.getScriptProperties();
+      var fecha = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      var allProps = properties.getProperties();
+      
+      Logger.log('=== MÉTRICAS ' + fecha + ' ===');
+      for (var key in allProps) {
+        if (key.startsWith('metrics_' + fecha)) {
+          var operacion = key.replace('metrics_' + fecha + '_', '');
+          var data = JSON.parse(allProps[key]);
+          Logger.log(operacion + ': ' + data.count + ' llamadas, avg: ' + 
+                    (data.totalDuration / data.count).toFixed(0) + 'ms, errores: ' + data.errors);
+        }
+      }
+    }
+
+    // ==========================================
+    // CONSULTA DE ID CREDENCIAL
+    // ==========================================
+
+    /**
+     * Consulta el ID Credencial de un usuario por RUT
+     * Solo accesible para roles DIRIGENTE y ADMIN
+     * @param {string} rutConsultante - RUT del usuario que realiza la consulta
+     * @param {string} rutBuscado - RUT del usuario a buscar
+     * @returns {Object} {success: boolean, idCredencial: string, nombre: string, ...}
+     */
+    function consultarIdCredencialBackend(rutConsultante, rutBuscado) {
+      try {
+        // ==========================================
+        // 1. VALIDAR PERMISOS DEL CONSULTANTE
+        // ==========================================
+        const validacion = verificarRolUsuario(rutConsultante, ['DIRIGENTE', 'ADMIN']);
+        
+        if (!validacion.autorizado) {
+          Logger.log('❌ Acceso denegado a consulta de ID Credencial');
+          Logger.log('   RUT consultante: ' + rutConsultante);
+          Logger.log('   Rol: ' + validacion.rol);
+          return {
+            success: false,
+            message: 'No tienes permisos para realizar esta consulta.'
+          };
+        }
+        
+        Logger.log('✅ Consulta de ID Credencial autorizada');
+        Logger.log('   Consultante: ' + rutConsultante + ' (' + validacion.rol + ')');
+        Logger.log('   Buscando: ' + rutBuscado);
+        
+        // ==========================================
+        // 2. LIMPIAR Y VALIDAR RUT BUSCADO
+        // ==========================================
+        const rutLimpio = cleanRut(rutBuscado);
+        
+        if (!rutLimpio || rutLimpio.length < 7) {
+          return {
+            success: false,
+            message: 'RUT inválido o incompleto.'
+          };
+        }
+        
+        // ==========================================
+        // 3. BUSCAR USUARIO EN LA BASE DE DATOS
+        // ==========================================
+        const sheet = getSheet('USUARIOS', 'USUARIOS');
+        if (!sheet) {
+          Logger.log('❌ No se pudo acceder a la hoja de usuarios');
+          return {
+            success: false,
+            message: 'Error al acceder a la base de datos.'
+          };
+        }
+        
+        const COL = CONFIG.COLUMNAS.USUARIOS;
+        const lastRow = sheet.getLastRow();
+        
+        if (lastRow < 2) {
+          return {
+            success: false,
+            message: 'No hay usuarios registrados en el sistema.'
+          };
+        }
+        
+        const data = sheet.getRange(2, 1, lastRow - 1, COL.ESTADO_NEG_COLECT + 1).getDisplayValues();
+        
+        // ==========================================
+        // 4. BUSCAR COINCIDENCIA
+        // ==========================================
+        for (let i = 0; i < data.length; i++) {
+          if (cleanRut(data[i][COL.RUT]) === rutLimpio) {
+            const rolUsuarioBuscado = String(data[i][COL.ROL] || 'SOCIO').trim().toUpperCase();
+            
+            // ==========================================
+            // 4.1 VALIDAR RESTRICCIÓN POR ROL
+            // ==========================================
+            // Si el consultante es DIRIGENTE, solo puede ver SOCIOS
+            if (validacion.rol === 'DIRIGENTE' && rolUsuarioBuscado !== 'SOCIO') {
+              Logger.log('⚠️ ACCESO RESTRINGIDO:');
+              Logger.log('   Consultante: ' + rutConsultante + ' (DIRIGENTE)');
+              Logger.log('   Usuario buscado: ' + data[i][COL.NOMBRE] + ' (' + rolUsuarioBuscado + ')');
+              Logger.log('   Motivo: Los dirigentes solo pueden consultar usuarios con rol SOCIO');
+              
+              return {
+                success: false,
+                message: 'Acceso restringido: Solo puedes consultar información de usuarios con rol SOCIO.',
+                restricted: true
+              };
+            }
+            
+            // ==========================================
+            // 4.2 USUARIO ENCONTRADO Y AUTORIZADO
+            // ==========================================
+            const usuario = {
+              success: true,
+              rut: data[i][COL.RUT],
+              nombre: data[i][COL.NOMBRE],
+              cargo: data[i][COL.CARGO],
+              estado: data[i][COL.ESTADO],
+              rol: rolUsuarioBuscado,
+              idCredencial: data[i][COL.ID_CREDENCIAL] || 'S/D',
+              qrRegistro: data[i][COL.QR_REGISTRO] || ''
+            };
+            
+            Logger.log('✅ Usuario encontrado y acceso autorizado:');
+            Logger.log('   Consultante: ' + rutConsultante + ' (' + validacion.rol + ')');
+            Logger.log('   Usuario: ' + usuario.nombre + ' (' + usuario.rol + ')');
+            Logger.log('   ID Credencial: ' + usuario.idCredencial);
+            
+            return usuario;
+          }
+        }
+        
+        // ==========================================
+        // 5. USUARIO NO ENCONTRADO
+        // ==========================================
+        Logger.log('⚠️ Usuario no encontrado con RUT: ' + rutBuscado);
+        return {
+          success: false,
+          message: 'No se encontró ningún usuario con el RUT ' + formatRutDisplay(rutBuscado) + ' en el sistema.'
+        };
+        
+      } catch (e) {
+        Logger.log('❌ ERROR en consultarIdCredencialBackend: ' + e.toString());
+        Logger.log('   Stack: ' + e.stack);
+        return {
+          success: false,
+          message: 'Error inesperado: ' + e.toString()
+        };
+      }
+    }
+
+    /**
+     * Función auxiliar para formatear RUT para mostrar
+     * (Puedes usar la existente si ya tienes una)
+     */
+    function formatRutDisplay(rut) {
+      if (!rut) return '';
+      const cleaned = cleanRut(rut);
+      if (cleaned.length < 2) return cleaned;
+      
+      const dv = cleaned.slice(-1);
+      const numero = cleaned.slice(0, -1);
+      
+      // Formatear con puntos
+      const formatted = numero.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      
+      return formatted + '-' + dv;
+    }
