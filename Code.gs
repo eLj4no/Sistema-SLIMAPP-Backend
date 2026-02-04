@@ -3860,6 +3860,9 @@ function corregirPermisosJustificacionesExistentes() {
         }
         
         const data = sheet.getRange(2, 1, lastRow - 1, COL.ESTADO_NEG_COLECT + 1).getDisplayValues();
+
+        // Leer las FÓRMULAS de la columna QR para extraer la URL
+        const formulasQR = sheet.getRange(2, COL.QR_REGISTRO + 1, lastRow - 1, 1).getFormulas();
         
         // ==========================================
         // 4. BUSCAR COINCIDENCIA
@@ -3888,6 +3891,11 @@ function corregirPermisosJustificacionesExistentes() {
             // ==========================================
             // 4.2 USUARIO ENCONTRADO Y AUTORIZADO
             // ==========================================
+
+            // Extraer URL del QR desde la fórmula =IMAGE()
+            const formulaQR = formulasQR[i][0]; // Fórmula de la columna QR
+            const urlQR = extraerUrlDeImagen(formulaQR);
+
             const usuario = {
               success: true,
               rut: data[i][COL.RUT],
@@ -3896,14 +3904,16 @@ function corregirPermisosJustificacionesExistentes() {
               estado: data[i][COL.ESTADO],
               rol: rolUsuarioBuscado,
               idCredencial: data[i][COL.ID_CREDENCIAL] || 'S/D',
-              qrRegistro: data[i][COL.QR_REGISTRO] || ''
+              qrRegistro: urlQR
             };
             
             Logger.log('✅ Usuario encontrado y acceso autorizado:');
             Logger.log('   Consultante: ' + rutConsultante + ' (' + validacion.rol + ')');
             Logger.log('   Usuario: ' + usuario.nombre + ' (' + usuario.rol + ')');
             Logger.log('   ID Credencial: ' + usuario.idCredencial);
-            
+            Logger.log('   Fórmula QR: ' + formulaQR);
+            Logger.log('   URL QR extraída: ' + urlQR);
+
             return usuario;
           }
         }
@@ -3943,4 +3953,32 @@ function corregirPermisosJustificacionesExistentes() {
       const formatted = numero.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
       
       return formatted + '-' + dv;
+    }
+
+    /**
+     * Extrae la URL de una fórmula =IMAGE("URL")
+     * @param {string} formula - Fórmula de Google Sheets
+     * @returns {string} URL extraída o string vacío
+     */
+    function extraerUrlDeImagen(formula) {
+      if (!formula || typeof formula !== 'string') {
+        return '';
+      }
+      
+      // Buscar patrón: =IMAGE("URL")
+      const regex = /=IMAGE\s*\(\s*"([^"]+)"\s*\)/i;
+      const match = formula.match(regex);
+      
+      if (match && match[1]) {
+        Logger.log('✅ URL extraída de fórmula IMAGE: ' + match[1]);
+        return match[1];
+      }
+      
+      // Si no es fórmula IMAGE, puede ser una URL directa
+      if (formula.startsWith('http')) {
+        return formula;
+      }
+      
+      Logger.log('⚠️ No se pudo extraer URL de: ' + formula);
+      return '';
     }
