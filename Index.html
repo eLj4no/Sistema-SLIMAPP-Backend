@@ -316,6 +316,14 @@
                  <div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-slate-800 text-white flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">admin_panel_settings</span></div>
                  <span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Panel Admin</span>
               </button>
+
+              <button id="btn-consulta-id" onclick="navAction('ConsultaID')" class="hidden glass-card group flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-teal-200 relative overflow-hidden">
+              <div class="absolute inset-0 bg-teal-50 opacity-0 group-hover:opacity-100 transition duration-300"></div>
+              <div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10">
+                <span class="material-icons-round text-xl md:text-2xl">badge</span>
+              </div>
+              <span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Consultar ID</span>
+            </button>
           </div>
         </div>
           
@@ -938,6 +946,65 @@
                  </div>
               </button>
            </div>
+        </div>
+      </section>
+
+      <!-- VISTA: CONSULTA ID CREDENCIAL -->
+      <section id="id-credential-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4">
+        <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-teal-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+          <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition">
+            <span class="material-icons-round">arrow_back</span>
+          </button>
+          <h2 class="text-lg font-bold z-10">Consulta ID Credencial</h2>
+        </div>
+
+        <div class="p-6 bg-slate-50/50 flex-grow overflow-y-auto">
+          
+          <!-- TARJETA: FORMULARIO DE BÚSQUEDA -->
+          <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl border border-teal-200 p-5 mb-4">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center">
+                <span class="material-icons-round text-white text-lg">badge</span>
+              </div>
+              <h4 class="text-sm font-bold text-slate-800">Buscar por RUT</h4>
+            </div>
+            <p class="text-xs text-slate-600 mb-4">Ingresa el RUT del socio para consultar su ID de credencial asignado en el sistema.</p>
+            
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">RUT del Socio *</label>
+                <input 
+                  type="text" 
+                  id="search-rut-input" 
+                  placeholder="12.345.678-9" 
+                  maxlength="12"
+                  oninput="formatRutInput(this)"
+                  class="w-full px-3 py-2 border border-teal-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
+                >
+              </div>
+              
+              <button 
+                onclick="consultarIdCredencial()" 
+                class="w-full bg-teal-600 text-white font-bold py-2.5 rounded-lg hover:bg-teal-700 active:scale-95 transition flex items-center justify-center gap-2"
+              >
+                <span class="material-icons-round text-lg">search</span>
+                Buscar ID Credencial
+              </button>
+            </div>
+          </div>
+
+          <!-- LOADER -->
+          <div id="id-credential-loader" class="hidden flex flex-col items-center justify-center py-10">
+            <div class="loader mb-3"></div>
+            <p class="text-xs text-slate-500">Consultando...</p>
+          </div>
+
+          <!-- RESULTADO -->
+          <div id="id-credential-result" class="hidden">
+            <!-- Aquí se mostrará el resultado dinámicamente -->
+          </div>
+
         </div>
       </section>
 
@@ -2096,6 +2163,15 @@
         btnAdmin.classList.add('hidden');
         switchContainer.classList.add('hidden');
       }
+
+      // ========== BOTÓN CONSULTA ID ==========
+      const btnConsultaId = document.getElementById('btn-consulta-id');
+      if (esAdmin || esDirigente) {
+        btnConsultaId.classList.remove('hidden'); 
+        btnConsultaId.classList.add('flex');
+      } else {
+        btnConsultaId.classList.add('hidden');
+      }
       
       // ========== VALIDACIÓN DE ESTADO DESVINCULADO ==========
       // Si es DESVINCULADO pero NO es ADMIN, mostrar advertencia al intentar acciones
@@ -2112,10 +2188,10 @@
           return;
         }
         
-        ['login-view','dashboard-view','logout-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view'].forEach(id => document.getElementById(id).classList.add('hidden'));
+        ['login-view','dashboard-view','logout-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view'].forEach(id => document.getElementById(id).classList.add('hidden'));
         const view = document.getElementById(viewId);
         view.classList.remove('hidden');
-        if (['dashboard-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view'].includes(viewId)) view.classList.add('flex');
+        if (['dashboard-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view'].includes(viewId)) view.classList.add('flex');
       }
 
       function handleLogout() {
@@ -2194,6 +2270,10 @@
            switchView('permission-view');
         } else if (module === 'PanelAdmin') {
            switchView('admin-panel-view');
+        } else if (module === 'ConsultaID') {
+           switchView('id-credential-view');
+           document.getElementById('search-rut-input').value = '';
+           document.getElementById('id-credential-result').classList.add('hidden');
         } else if (module === 'GestionSocios') {
            loadManagementView();
         } else {
@@ -4491,6 +4571,131 @@ divForm.classList.add('flex');
        */
       function cerrarInfoEstado() {
         document.getElementById('info-estado-modal').classList.add('hidden');
+      }
+
+      // ==========================================
+      // CONSULTAR ID CREDENCIAL
+      // ==========================================
+      function consultarIdCredencial() {
+        const rutInput = document.getElementById('search-rut-input');
+        const loader = document.getElementById('id-credential-loader');
+        const resultDiv = document.getElementById('id-credential-result');
+        
+        const rutBuscar = rutInput.value.trim();
+        
+        // Validación básica
+        if (!rutBuscar || rutBuscar.length < 8) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'RUT Incompleto',
+            text: 'Por favor ingresa un RUT válido para buscar.',
+            confirmButtonColor: '#14b8a6'
+          });
+          return;
+        }
+        
+        // Mostrar loader
+        loader.classList.remove('hidden');
+        resultDiv.classList.add('hidden');
+        resultDiv.innerHTML = '';
+        
+        // Llamar al backend
+        google.script.run
+          .withSuccessHandler(function(response) {
+            loader.classList.add('hidden');
+            
+            if (response.success) {
+              // CASO EXITOSO: Mostrar ID Credencial y QR
+              resultDiv.innerHTML = `
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                  <div class="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+                    <div class="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center">
+                      <span class="material-icons-round text-white text-lg">check_circle</span>
+                    </div>
+                    <h4 class="text-sm font-bold text-slate-800">Usuario Encontrado</h4>
+                  </div>
+                  
+                  <div class="space-y-3">
+                    <div>
+                      <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nombre Completo</label>
+                      <div class="font-bold text-slate-900 text-base">${response.nombre}</div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">RUT</label>
+                        <div class="text-sm font-bold text-slate-800">${formatRutDisplay(response.rut)}</div>
+                      </div>
+                      
+                      <div>
+                        <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Estado</label>
+                        <div class="text-sm font-bold ${response.estado === 'VIGENTE' ? 'text-green-600' : 'text-red-600'}">${response.estado}</div>
+                      </div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl border-2 border-teal-300 p-4 mt-4">
+                      <label class="block text-[10px] font-bold text-teal-700 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <span class="material-icons-round text-sm">badge</span>
+                        ID CREDENCIAL
+                      </label>
+                      <div class="font-mono text-2xl font-bold text-teal-900 tracking-wide">${response.idCredencial || 'S/D'}</div>
+                    </div>
+                    
+                    ${response.qrRegistro ? `
+                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-300 p-4 mt-4">
+                      <label class="block text-[10px] font-bold text-purple-700 uppercase tracking-wider mb-3 flex items-center gap-1">
+                        <span class="material-icons-round text-sm">qr_code_2</span>
+                        CÓDIGO QR DE REGISTRO
+                      </label>
+                      <div class="flex justify-center">
+                        <img 
+                          src="${response.qrRegistro}" 
+                          alt="QR de Registro" 
+                          class="w-48 h-48 border-4 border-white rounded-lg shadow-md"
+                          onerror="this.parentElement.innerHTML='<div class=\\'text-xs text-red-600\\'>Error al cargar QR</div>'"
+                        >
+                      </div>
+                      <p class="text-[10px] text-center text-purple-600 mt-2 italic">Código QR para vinculación de dispositivo</p>
+                    </div>
+                    ` : ''}
+                    
+                    ${response.cargo ? `
+                    <div class="mt-3 pt-3 border-t border-slate-100">
+                      <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cargo</label>
+                      <div class="text-sm text-slate-700">${response.cargo}</div>
+                    </div>
+                    ` : ''}
+                  </div>
+                </div>
+              `;
+              resultDiv.classList.remove('hidden');
+            } else {
+              // CASO ERROR: Usuario no encontrado u otro error
+              resultDiv.innerHTML = `
+                <div class="bg-red-50 rounded-xl border border-red-200 p-5">
+                  <div class="flex items-center gap-2 mb-2">
+                    <div class="w-8 h-8 rounded-lg bg-red-500 flex items-center justify-center">
+                      <span class="material-icons-round text-white text-lg">error</span>
+                    </div>
+                    <h4 class="text-sm font-bold text-red-800">No Encontrado</h4>
+                  </div>
+                  <p class="text-sm text-red-700">${response.message || 'No se encontró ningún usuario con ese RUT en el sistema.'}</p>
+                </div>
+              `;
+              resultDiv.classList.remove('hidden');
+            }
+          })
+          .withFailureHandler(function(error) {
+            loader.classList.add('hidden');
+            Swal.fire({
+              icon: 'error',
+              title: 'Error de Conexión',
+              text: 'No se pudo realizar la consulta. Verifica tu conexión e intenta nuevamente.',
+              confirmButtonColor: '#14b8a6'
+            });
+            console.error('Error:', error);
+          })
+          .consultarIdCredencialBackend(currentRut, rutBuscar);
       }
 
     </script>
