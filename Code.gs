@@ -2548,9 +2548,72 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
         }
         if (!beneficiario) return { success: false, message: "RUT del socio no encontrado." };
       }
-      
-      const idUnico = Utilities.getUuid();
+
+      // ========================================
+      // ✅ VALIDACIÓN: UN PERMISO POR DÍA
+      // ========================================
       const fechaHoy = new Date();
+      const fechaHoyStr = Utilities.formatDate(fechaHoy, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+
+      // Obtener todos los permisos del beneficiario
+      const dataPermisos = sheetPermisos.getDataRange().getDisplayValues();
+      let permisoDelDia = null;
+
+      for (let i = 1; i < dataPermisos.length; i++) {
+        const rowRut = cleanRut(dataPermisos[i][COL_PERM.RUT]);
+        
+        if (rowRut === cleanRut(beneficiario.rut)) {
+          const fechaSolicitud = dataPermisos[i][COL_PERM.FECHA_SOLICITUD];
+          let fechaSolicitudStr = "";
+          
+          // Convertir fecha a string yyyy-MM-dd
+          if (fechaSolicitud && fechaSolicitud.toString().trim() !== "") {
+            try {
+              const fechaObj = new Date(fechaSolicitud);
+              if (!isNaN(fechaObj.getTime())) {
+                fechaSolicitudStr = Utilities.formatDate(fechaObj, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+              }
+            } catch (e) {
+              // Si hay error al parsear fecha, continuar
+              continue;
+            }
+          }
+          
+          // Comparar fechas
+          if (fechaSolicitudStr === fechaHoyStr) {
+            permisoDelDia = {
+              id: dataPermisos[i][COL_PERM.ID],
+              tipo: dataPermisos[i][COL_PERM.TIPO_PERMISO],
+              fechaInicio: dataPermisos[i][COL_PERM.FECHA_INICIO],
+              estado: dataPermisos[i][COL_PERM.ESTADO],
+              hora: fechaSolicitud
+            };
+            break;
+          }
+        }
+      }
+
+      // Si existe un permiso del día, rechazar la solicitud
+      if (permisoDelDia) {
+        const mensajeError = `Ya existe una solicitud de permiso médico registrada el día de hoy.\n\n` +
+          `📋 DETALLES DEL PERMISO EXISTENTE:\n` +
+          `• Tipo: ${permisoDelDia.tipo}\n` +
+          `• Fecha de inicio: ${permisoDelDia.fechaInicio}\n` +
+          `• Estado: ${permisoDelDia.estado}\n` +
+          `• ID: ${permisoDelDia.id}\n\n` +
+          `⚠️ RESTRICCIÓN: Solo se permite una solicitud de permiso médico por día.\n\n` +
+          `Si cometió un error, puede anular el permiso existente desde el historial y crear uno nuevo mañana, o contactar con la directiva para solicitar modificaciones.`;
+        
+        return { 
+          success: false, 
+          message: mensajeError
+        };
+      }
+      // ========================================
+      // FIN VALIDACIÓN
+      // ========================================
+
+      const idUnico = Utilities.getUuid();
       const estado = "Solicitado";
       
       let gestion = "Socio";
@@ -2887,25 +2950,11 @@ function eliminarPermisoMedico(idPermiso) {
               "#ef4444"
             );
           }
-          
-          enviarCorreoEstilizado(
-            CORREO_REPRESENTANTE_LEGAL,
-            "Permiso Médico Anulado - Sindicato SLIM n°3",
-            "Solicitud de Permiso Anulada",
-            `La solicitud de permiso médico del trabajador <strong>${beneficiario.nombre}</strong> ha sido anulada. No se hará uso de este permiso.`,
-            { 
-              "ID": idPermiso,
-              "Trabajador": beneficiario.nombre,
-              "RUT": beneficiario.rut,
-              "Tipo Permiso": tipoPermiso,
-              "Fecha Inicio": fechaInicio,
-              "Estado": "Anulado por el usuario"
-            },
-            "#475569"
-          );
-          
+
+          // ✅ ELIMINADO: Ya no se envía correo al representante legal al anular
+
           sheet.deleteRow(i + 1);
-          return { success: true, message: "Permiso anulado y notificaciones enviadas." };
+          return { success: true, message: "Permiso anulado correctamente." };
         }
       }
       
