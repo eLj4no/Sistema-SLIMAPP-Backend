@@ -294,13 +294,7 @@
           <div class="flex-grow p-4 md:p-8 pt-2"><div class="grid grid-cols-2 md:grid-cols-3 gap-3 pb-4">
               <button onclick="navAction('Mis Datos')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-blue-200 relative overflow-hidden"><div class="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">badge</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Mis Datos</span></button>
               
-              <button onclick="navAction('RegistroAsistencia')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-teal-200 relative overflow-hidden">
-              <div class="absolute inset-0 bg-teal-50 opacity-0 group-hover:opacity-100 transition duration-300"></div>
-              <div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10">
-                  <span class="material-icons-round text-xl md:text-2xl">event_available</span>
-              </div>
-              <span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Registro Asistencia</span>
-              </button>
+              <button onclick="navAction('RegistroAsistencia')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-green-200 relative overflow-hidden"><div class="absolute inset-0 bg-green-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">history_edu</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Registro Asistencia</span></button>
 
               <button onclick="navAction('Justificaciones')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-orange-200 relative overflow-hidden"><div class="absolute inset-0 bg-orange-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">assignment_late</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Justificaciones</span></button>
               
@@ -872,68 +866,27 @@
         </div>
       </section>
 
-      <!-- ============================================ -->
       <!-- VISTA: REGISTRO ASISTENCIA -->
-      <!-- ============================================ -->
       <section id="attendance-records-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4 h-[90vh]">
-        <!-- HEADER -->
         <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden flex-shrink-0">
-          <div class="absolute top-0 right-0 w-32 h-32 bg-green-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
-          <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition">
-            <span class="material-icons-round">arrow_back</span>
-          </button>
-          <h2 class="text-lg font-bold z-10">Registro de Asistencia</h2>
+           <div class="absolute top-0 right-0 w-32 h-32 bg-green-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+           <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><span class="material-icons-round">arrow_back</span></button>
+           <h2 class="text-lg font-bold z-10">Historial de Asistencia</h2>
         </div>
 
-        <!-- CONTENIDO PRINCIPAL -->
         <div class="flex-grow flex flex-col bg-slate-50/50 overflow-hidden">
-          
-          <!-- TABS -->
-          <div class="flex p-4 gap-2 border-b border-slate-200 bg-white/50 flex-shrink-0">
-            <button onclick="toggleAttendanceTab('status')" id="tab-attendance-status" class="flex-1 py-2 rounded-lg text-sm font-bold transition bg-green-100 text-green-700">
-              Estado
-            </button>
-            <button onclick="toggleAttendanceTab('history')" id="tab-attendance-history" class="flex-1 py-2 rounded-lg text-sm font-bold transition text-slate-500 hover:bg-slate-100">
-              Historial
-            </button>
-          </div>
+           <div class="p-4 border-b border-slate-200 bg-white/50 flex-shrink-0">
+              <p class="text-xs text-slate-500">Registro histórico de participación en asambleas.</p>
+           </div>
 
-          <!-- TAB: ESTADO DE VINCULACIÓN -->
-          <div id="attendance-status-content" class="flex-col h-full p-4 overflow-y-auto flex">
-            <h3 class="text-xl font-bold text-slate-800 mb-1">Estado del Dispositivo</h3>
-            <p class="text-xs text-slate-500 mb-4">Verifica si tu dispositivo está vinculado al sistema</p>
-
-            <!-- Loader -->
-            <div id="loader-status" class="hidden flex flex-col items-center justify-center py-10">
-              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-3"></div>
-              <p class="text-slate-600 text-sm font-medium">Verificando estado...</p>
-            </div>
-
-            <!-- Estado de Vinculación -->
-            <div id="estado-vinculacion-content"></div>
-          </div>
-
-          <!-- TAB: HISTORIAL -->
-          <div id="attendance-history-content" class="hidden flex-col h-full p-4 overflow-y-auto">
-            <h3 class="text-xl font-bold text-slate-800 mb-1">Historial de Participación</h3>
-            <p class="text-xs text-slate-500 mb-4">Registro de todas tus asistencias</p>
-
-            <!-- Loader -->
-            <div id="loader-history" class="hidden flex flex-col items-center justify-center py-10">
-              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-3"></div>
-              <p class="text-slate-600 text-sm font-medium">Cargando historial...</p>
-            </div>
-
-            <!-- Contenido del Historial -->
-            <div id="historial-content"></div>
-
-            <!-- Mensaje vacío -->
-            <div id="historial-empty" class="hidden text-center py-10">
-              <span class="material-icons-round text-slate-300 text-6xl mb-3 block opacity-50">event_busy</span>
-              <p class="text-slate-500 text-sm">No hay registros de asistencia</p>
-            </div>
-          </div>
-
+           <div id="attendance-list-content" class="flex-col h-full p-4 overflow-y-auto flex">
+              <div id="attendance-loader" class="flex justify-center py-10 hidden"><div class="loader"></div></div>
+              <div id="attendance-list" class="space-y-3"></div>
+              <div id="attendance-empty" class="hidden text-center py-10 text-slate-400 text-sm">
+                 <span class="material-icons-round text-4xl mb-2 block opacity-50">event_busy</span>
+                 No hay registros de asistencia encontrados.
+              </div>
+           </div>
         </div>
       </section>
 
@@ -2326,192 +2279,6 @@
         } else {
            showConstruction(module);
         }
-      }
-
-      function navAction(action) {
-          console.log('🔹 Navegación:', action);
-          
-          switch(action) {
-              case 'MisDatos':
-                  abrirMisDatos();
-                  break;
-              case 'Justificaciones':
-                  abrirJustificaciones();
-                  break;
-              case 'Apelaciones':
-                  abrirApelaciones();
-                  break;
-              case 'Prestamos':
-                  abrirPrestamos();
-                  break;
-              case 'PermisosMedicos':
-                  abrirPermisosMedicos();
-                  break;
-              case 'ConsultaID':
-                  abrirConsultaId();
-                  break;
-              case 'RegistroAsistencia':  // ⭐ NUEVO
-                  abrirRegistroAsistencia();
-                  break;
-              case 'PanelAdmin':
-                  abrirPanelAdmin();
-                  break;
-              default:
-                  console.warn('⚠️ Acción no reconocida:', action);
-          }
-      }
-
-      // ==========================================
-      // NAVEGACIÓN: Registro Asistencia
-      // ==========================================
-      function abrirRegistroAsistencia() {
-          switchView('attendance-records-view');  // ⭐ Usar el nombre correcto
-          cargarHistorialAsistencia();
-      }
-
-      // ==========================================
-      // CARGAR HISTORIAL DE ASISTENCIA
-      // ==========================================
-      function cargarHistorialAsistencia() {
-          const loader = document.getElementById('loader-asistencia');
-          const contenido = document.getElementById('contenido-asistencia');
-          const estadoVinculacion = document.getElementById('estado-vinculacion');
-          
-          // Mostrar loader
-          loader.classList.remove('hidden');
-          contenido.innerHTML = '';
-          
-          // Verificar RUT en localStorage
-          const rutLocal = localStorage.getItem('qr_access_rut');
-          
-          if (!rutLocal) {
-              loader.classList.add('hidden');
-              estadoVinculacion.innerHTML = `
-                  <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
-                      <div class="flex items-start">
-                          <span class="material-icons-round text-red-600 mr-3 text-2xl">error</span>
-                          <div>
-                              <h3 class="text-sm font-bold text-red-800 mb-1">Dispositivo No Vinculado</h3>
-                              <p class="text-xs text-red-700">
-                                  Para usar el sistema de asistencia, debes vincular tu dispositivo escaneando tu código QR personal. 
-                                  Acércate a la directiva del sindicato.
-                              </p>
-                          </div>
-                      </div>
-                  </div>
-              `;
-              contenido.innerHTML = `
-                  <div class="text-center py-8">
-                      <span class="material-icons-round text-slate-300 text-6xl mb-4">mobile_off</span>
-                      <p class="text-slate-500">Vincula tu dispositivo para acceder al historial</p>
-                  </div>
-              `;
-              return;
-          }
-          
-          // Obtener historial
-          google.script.run
-              .withSuccessHandler(function(response) {
-                  loader.classList.add('hidden');
-                  
-                  if (!response.success) {
-                      mostrarErrorAsistencia(response.message);
-                      return;
-                  }
-                  
-                  // Mostrar estado de vinculación
-                  estadoVinculacion.innerHTML = `
-                      <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-lg">
-                          <div class="flex items-start">
-                              <span class="material-icons-round text-green-600 mr-3 text-2xl">check_circle</span>
-                              <div>
-                                  <h3 class="text-sm font-bold text-green-800 mb-1">Dispositivo Vinculado</h3>
-                                  <p class="text-xs text-green-700">
-                                      Tu dispositivo está correctamente vinculado al sistema de asistencia.
-                                      <br><strong>RUT:</strong> ${formatRut(rutLocal)}
-                                  </p>
-                              </div>
-                          </div>
-                      </div>
-                  `;
-                  
-                  // Mostrar historial
-                  if (response.asistencias.length === 0) {
-                      contenido.innerHTML = `
-                          <div class="text-center py-12">
-                              <span class="material-icons-round text-slate-300 text-6xl mb-4">event_busy</span>
-                              <h3 class="text-lg font-bold text-slate-700 mb-2">Sin Registros</h3>
-                              <p class="text-slate-500 text-sm">Aún no tienes asistencias registradas en el sistema.</p>
-                          </div>
-                      `;
-                      return;
-                  }
-                  
-                  // Construir tabla de historial
-                  let html = `
-                      <div class="mb-4 flex items-center justify-between">
-                          <div>
-                              <h3 class="text-lg font-bold text-slate-800">Historial de Participación</h3>
-                              <p class="text-sm text-slate-600">Total de asistencias: <strong class="text-teal-600">${response.totalAsistencias}</strong></p>
-                          </div>
-                      </div>
-                      
-                      <div class="space-y-3">
-                  `;
-                  
-                  response.asistencias.forEach(function(asistencia, index) {
-                      const esPar = index % 2 === 0;
-                      const bgColor = esPar ? 'bg-gradient-to-r from-teal-50 to-cyan-50' : 'bg-white';
-                      
-                      html += `
-                          <div class="${bgColor} border border-slate-200 rounded-xl p-4 hover:shadow-md transition-all">
-                              <div class="flex items-start justify-between">
-                                  <div class="flex-1">
-                                      <div class="flex items-center gap-2 mb-2">
-                                          <span class="material-icons-round text-teal-600 text-lg">event</span>
-                                          <h4 class="font-bold text-slate-800 text-sm">${asistencia.actividad}</h4>
-                                      </div>
-                                      <div class="grid grid-cols-2 gap-2 text-xs">
-                                          <div>
-                                              <span class="text-slate-500">Fecha:</span>
-                                              <span class="font-semibold text-slate-700">${asistencia.fecha}</span>
-                                          </div>
-                                          <div>
-                                              <span class="text-slate-500">Tipo:</span>
-                                              <span class="font-semibold text-slate-700">${asistencia.tipo || 'Presencial'}</span>
-                                          </div>
-                                      </div>
-                                  </div>
-                                  <div class="ml-4">
-                                      <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                                          <span class="material-icons-round text-sm mr-1">check</span>
-                                          Registrado
-                                      </span>
-                                  </div>
-                              </div>
-                          </div>
-                      `;
-                  });
-                  
-                  html += '</div>';
-                  contenido.innerHTML = html;
-              })
-              .withFailureHandler(function(error) {
-                  loader.classList.add('hidden');
-                  mostrarErrorAsistencia('Error de conexión: ' + error.message);
-              })
-              .obtenerHistorialAsistencia(rutLocal);
-      }
-
-      function mostrarErrorAsistencia(mensaje) {
-          const contenido = document.getElementById('contenido-asistencia');
-          contenido.innerHTML = `
-              <div class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-                  <span class="material-icons-round text-red-500 text-5xl mb-3">error_outline</span>
-                  <h3 class="text-lg font-bold text-red-800 mb-2">Error</h3>
-                  <p class="text-sm text-red-600">${mensaje}</p>
-              </div>
-          `;
       }
 
       function recuperarContrasena() {
@@ -4115,275 +3882,53 @@ divForm.classList.add('flex');
          reader.readAsDataURL(file);
       }
 
-      // ==========================================
-      // FUNCIONES: REGISTRO ASISTENCIA
-      // ==========================================
-
+      // === FUNCIONES REGISTRO ASISTENCIA ===
       function loadAttendanceRecords() {
-        switchView('attendance-records-view');
-        toggleAttendanceTab('status');
-      }
-
-      function toggleAttendanceTab(tab) {
-        const btnStatus = document.getElementById('tab-attendance-status');
-        const btnHistory = document.getElementById('tab-attendance-history');
-        const contentStatus = document.getElementById('attendance-status-content');
-        const contentHistory = document.getElementById('attendance-history-content');
-        
-        if (tab === 'status') {
-          btnStatus.className = "flex-1 py-2 rounded-lg text-sm font-bold transition bg-green-100 text-green-700";
-          btnHistory.className = "flex-1 py-2 rounded-lg text-sm font-bold transition text-slate-500 hover:bg-slate-100";
-          contentStatus.classList.remove('hidden');
-          contentStatus.classList.add('flex');
-          contentHistory.classList.add('hidden');
-          cargarEstadoVinculacion();
-        } else {
-          btnStatus.className = "flex-1 py-2 rounded-lg text-sm font-bold transition text-slate-500 hover:bg-slate-100";
-          btnHistory.className = "flex-1 py-2 rounded-lg text-sm font-bold transition bg-green-100 text-green-700";
-          contentStatus.classList.add('hidden');
-          contentHistory.classList.remove('hidden');
-          contentHistory.classList.add('flex');
-          cargarHistorialAsistencia();
-        }
-      }
-
-      function cargarEstadoVinculacion() {
-        const loader = document.getElementById('loader-status');
-        const contenido = document.getElementById('estado-vinculacion-content');
-        
-        loader.classList.remove('hidden');
-        contenido.innerHTML = '';
-        
-        const rutLocal = localStorage.getItem('qr_access_rut');
-        
-        if (!rutLocal) {
-          loader.classList.add('hidden');
-          contenido.innerHTML = `
-            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl mb-4">
-              <div class="flex items-start gap-3">
-                <span class="material-icons-round text-red-600 text-2xl">mobile_off</span>
-                <div>
-                  <h4 class="font-bold text-red-800 text-sm mb-1">Dispositivo No Vinculado</h4>
-                  <p class="text-xs text-red-700 leading-relaxed">
-                    Tu dispositivo no está vinculado al sistema de asistencia. 
-                    Para poder registrar tu participación en actividades, debes escanear tu código QR personal.
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div class="bg-white rounded-xl p-4 border border-slate-200">
-              <h4 class="font-bold text-slate-800 text-sm mb-2 flex items-center gap-2">
-                <span class="material-icons-round text-blue-600">info</span>
-                ¿Cómo vincular mi dispositivo?
-              </h4>
-              <ol class="text-xs text-slate-600 space-y-2 ml-1">
-                <li class="flex items-start gap-2">
-                  <span class="font-bold text-blue-600">1.</span>
-                  <span>Acércate a la directiva del sindicato</span>
-                </li>
-                <li class="flex items-start gap-2">
-                  <span class="font-bold text-blue-600">2.</span>
-                  <span>Solicita tu código QR personal de vinculación</span>
-                </li>
-                <li class="flex items-start gap-2">
-                  <span class="font-bold text-blue-600">3.</span>
-                  <span>Escanea el QR con este mismo dispositivo</span>
-                </li>
-                <li class="flex items-start gap-2">
-                  <span class="font-bold text-blue-600">4.</span>
-                  <span>¡Listo! Ya podrás registrar tu asistencia</span>
-                </li>
-              </ol>
-            </div>
-          `;
-          return;
-        }
-        
-        google.script.run
-          .withSuccessHandler(function(response) {
+         switchView('attendance-records-view');
+         const list = document.getElementById('attendance-list');
+         const loader = document.getElementById('attendance-loader');
+         const empty = document.getElementById('attendance-empty');
+         list.innerHTML = "";
+         loader.classList.remove('hidden');
+         empty.classList.add('hidden');
+         
+         google.script.run.withSuccessHandler(res => {
             loader.classList.add('hidden');
             
-            if (response.vinculado) {
-              contenido.innerHTML = `
-                <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-xl mb-4">
-                  <div class="flex items-start gap-3">
-                    <span class="material-icons-round text-green-600 text-2xl">check_circle</span>
-                    <div class="flex-1">
-                      <h4 class="font-bold text-green-800 text-sm mb-1">Dispositivo Vinculado</h4>
-                      <p class="text-xs text-green-700 leading-relaxed mb-2">
-                        Tu dispositivo está correctamente vinculado al sistema de asistencia.
-                      </p>
-                      <div class="bg-white/60 rounded-lg p-2 text-xs">
-                        <div class="flex justify-between items-center">
-                          <span class="text-slate-600">RUT:</span>
-                          <span class="font-bold text-slate-800">${formatRut(rutLocal)}</span>
+            if (res.success) {
+               if (res.registros.length === 0) {
+                  empty.classList.remove('hidden');
+               } else {
+                  res.registros.forEach(reg => {
+                     const tipoIcon = reg.tipo.toLowerCase().includes('presencial') ? 'check_circle' : 
+                                     reg.tipo.toLowerCase().includes('online') ? 'video_call' : 'cancel';
+                     const tipoColor = reg.tipo.toLowerCase().includes('presencial') ? 'text-green-600' :
+                                      reg.tipo.toLowerCase().includes('online') ? 'text-blue-600' : 'text-red-600';
+                     
+                     let gestionHtml = "";
+                     if (reg.gestion && reg.gestion !== "Socio" && reg.gestion !== "Sistema") {
+                        gestionHtml = `<div class="text-[10px] text-indigo-500 bg-indigo-50 px-2 py-1 rounded inline-block"><strong>Por:</strong> ${reg.dirigente || "Dirigente"}</div>`;
+                     }
+                     
+                     const item = document.createElement('div');
+                     item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
+                     item.innerHTML = `
+                        <div class="flex items-center justify-between mb-2">
+                           <div class="flex items-center gap-2">
+                              <span class="material-icons-round ${tipoColor}">${tipoIcon}</span>
+                              <span class="font-bold text-slate-800 text-sm">${reg.asamblea}</span>
+                           </div>
                         </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="bg-white rounded-xl p-4 border border-slate-200">
-                  <h4 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
-                    <span class="material-icons-round text-green-600">qr_code_scanner</span>
-                    ¿Cómo registrar mi asistencia?
-                  </h4>
-                  <ol class="text-xs text-slate-600 space-y-2 ml-1">
-                    <li class="flex items-start gap-2">
-                      <span class="font-bold text-green-600">1.</span>
-                      <span>Busca el código QR en el punto de control de la actividad</span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                      <span class="font-bold text-green-600">2.</span>
-                      <span>Escanea el QR con tu dispositivo móvil</span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                      <span class="font-bold text-green-600">3.</span>
-                      <span>Se registrará automáticamente tu asistencia</span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                      <span class="font-bold text-green-600">4.</span>
-                      <span>Verifica tu registro en la pestaña "Historial"</span>
-                    </li>
-                  </ol>
-                </div>
-              `;
-            } else {
-              contenido.innerHTML = `
-                <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl">
-                  <div class="flex items-start gap-3">
-                    <span class="material-icons-round text-red-600 text-2xl">error</span>
-                    <div>
-                      <h4 class="font-bold text-red-800 text-sm mb-1">Error de Vinculación</h4>
-                      <p class="text-xs text-red-700">${response.mensaje || 'No se pudo verificar el estado'}</p>
-                    </div>
-                  </div>
-                </div>
-              `;
-            }
-          })
-          .withFailureHandler(function(error) {
-            loader.classList.add('hidden');
-            contenido.innerHTML = `
-              <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl">
-                <div class="flex items-start gap-3">
-                  <span class="material-icons-round text-red-600 text-2xl">error</span>
-                  <div>
-                    <h4 class="font-bold text-red-800 text-sm mb-1">Error de Conexión</h4>
-                    <p class="text-xs text-red-700">No se pudo conectar con el servidor</p>
-                  </div>
-                </div>
-              </div>
-            `;
-          })
-          .verificarDispositivoVinculado(rutLocal);
-      }
-
-      function cargarHistorialAsistencia() {
-        const loader = document.getElementById('loader-history');
-        const contenido = document.getElementById('historial-content');
-        const empty = document.getElementById('historial-empty');
-        
-        loader.classList.remove('hidden');
-        contenido.innerHTML = '';
-        empty.classList.add('hidden');
-        
-        const rutLocal = localStorage.getItem('qr_access_rut');
-        
-        if (!rutLocal) {
-          loader.classList.add('hidden');
-          contenido.innerHTML = `
-            <div class="text-center py-10">
-              <span class="material-icons-round text-slate-300 text-6xl mb-4">mobile_off</span>
-              <h3 class="text-lg font-bold text-slate-700 mb-2">Dispositivo No Vinculado</h3>
-              <p class="text-slate-500 text-sm">Vincula tu dispositivo para ver el historial</p>
-            </div>
-          `;
-          return;
-        }
-        
-        google.script.run
-          .withSuccessHandler(function(response) {
-            loader.classList.add('hidden');
-            
-            if (!response.success) {
-              contenido.innerHTML = `
-                <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-                  <span class="material-icons-round text-red-500 text-4xl mb-2">error_outline</span>
-                  <h3 class="text-sm font-bold text-red-800 mb-1">Error</h3>
-                  <p class="text-xs text-red-600">${response.message}</p>
-                </div>
-              `;
-              return;
-            }
-            
-            if (response.asistencias.length === 0) {
-              empty.classList.remove('hidden');
-              return;
-            }
-            
-            // Construir lista de asistencias
-            let html = `
-              <div class="mb-3 bg-gradient-to-r from-green-50 to-teal-50 p-3 rounded-xl border border-green-100">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <p class="text-xs text-slate-600">Total de asistencias</p>
-                    <p class="text-2xl font-bold text-green-600">${response.totalAsistencias}</p>
-                  </div>
-                  <span class="material-icons-round text-green-600 text-4xl">event_available</span>
-                </div>
-              </div>
-              <div class="space-y-2">
-            `;
-            
-            response.asistencias.forEach(function(asistencia, index) {
-              const isRecent = index < 3;
-              const borderColor = isRecent ? 'border-green-200' : 'border-slate-200';
-              const bgColor = isRecent ? 'bg-gradient-to-r from-green-50 to-teal-50' : 'bg-white';
-              
-              html += `
-                <div class="${bgColor} border ${borderColor} rounded-xl p-3 hover:shadow-md transition-all">
-                  <div class="flex items-start justify-between mb-2">
-                    <div class="flex items-start gap-2 flex-1">
-                      <span class="material-icons-round text-green-600 text-lg mt-0.5">event</span>
-                      <div class="flex-1">
-                        <h4 class="font-bold text-slate-800 text-xs leading-tight mb-1">${asistencia.actividad}</h4>
-                        <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px]">
-                          <div class="flex items-center gap-1">
-                            <span class="material-icons-round text-slate-400" style="font-size: 12px;">schedule</span>
-                            <span class="text-slate-600">${asistencia.fecha}</span>
-                          </div>
-                          <div class="flex items-center gap-1">
-                            <span class="material-icons-round text-slate-400" style="font-size: 12px;">location_on</span>
-                            <span class="text-slate-600">${asistencia.tipo || 'Presencial'}</span>
-                          </div>
+                        <div class="text-xs text-slate-600">
+                           <span class="font-semibold">Tipo:</span> ${reg.tipo}
                         </div>
-                      </div>
-                    </div>
-                    <span class="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold bg-green-100 text-green-700 whitespace-nowrap ml-2">
-                      <span class="material-icons-round" style="font-size: 12px; margin-right: 2px;">check</span>
-                      Registrado
-                    </span>
-                  </div>
-                </div>
-              `;
-            });
-            
-            html += '</div>';
-            contenido.innerHTML = html;
-          })
-          .withFailureHandler(function(error) {
-            loader.classList.add('hidden');
-            contenido.innerHTML = `
-              <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-                <span class="material-icons-round text-red-500 text-4xl mb-2">error_outline</span>
-                <h3 class="text-sm font-bold text-red-800 mb-1">Error de Conexión</h3>
-                <p class="text-xs text-red-600">No se pudo cargar el historial</p>
-              </div>
-            `;
-          })
-          .obtenerHistorialAsistencia(rutLocal);
+                        ${gestionHtml}
+                     `;
+                     list.appendChild(item);
+                  });
+               }
+            }
+         }).obtenerHistorialAsistencia(currentRut);
       }
 
       // === FUNCIONES PANEL ADMIN ===
