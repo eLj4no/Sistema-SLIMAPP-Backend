@@ -1,34 +1,19 @@
 /**
- * Servir HTML - Punto de entrada principal
+ * Servir HTML
  */
 function doGet(e) {
-  // ==========================================
-  // SISTEMA DE ASISTENCIA (Puntos de Control)
-  // ==========================================
-  if (e.parameter.control || (e.parameter.action === 'checkin' && e.parameter.asamblea)) {
-    const template = HtmlService.createTemplateFromFile('QR_Asistencia');
-    template.params = e.parameter;
-    return template.evaluate()
-        .setTitle('Control de Asistencia - Sindicato SLIM n°3')
-        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-        .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
-  }
-  
-  // ==========================================
-  // SISTEMA DE VINCULACIÓN (QR Personal)
-  // ==========================================
+  // Verificar si viene de un QR (con parámetros action, rut o asamblea)
   if (e.parameter.action || e.parameter.rut || e.parameter.asamblea) {
+    // Servir página QR con los parámetros
     const template = HtmlService.createTemplateFromFile('QR_Access');
-    template.data = e.parameter;
+    template.data = e.parameter; // Pasar parámetros a la página
     return template.evaluate()
         .setTitle('Control QR - Sindicato SLIM n°3')
         .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
         .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
   }
   
-  // ==========================================
-  // PÁGINA PRINCIPAL (Dashboard)
-  // ==========================================
+  // Si no hay parámetros QR, servir página principal
   return HtmlService.createHtmlOutputFromFile('Index')
       .setTitle('Sindicato SLIM n°3 - App Socios')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
@@ -44,8 +29,7 @@ const CONFIG = {
     JUSTIFICACIONES: "1Hwbly__MXjl9uwJb-spXdah-R3v9SAMOCFHem92uOUg",
     APELACIONES: "11nrvVsf84THWQ7j6NfAr_unyIcBV7aykxACS8R27PwE",
     PRESTAMOS: "1h-_sJD4rOCuMjlfSouP7a6gfoodHyzI4MOBRUyOW5XU",
-    PERMISOS_MEDICOS: "1VYfm7cOgL3mVfVoI8DubIm8WG2srzQw9a6DtIEs3UMM",
-    ASISTENCIA: "1SRQ8Mlc6bBdb0mitAfn4I-EUAS4BOrZRbqS9YAmg3Sk"
+    PERMISOS_MEDICOS: "1VYfm7cOgL3mVfVoI8DubIm8WG2srzQw9a6DtIEs3UMM"
   },
   HOJAS: {
     USUARIOS: "BD_SLIMAPP",
@@ -54,9 +38,7 @@ const CONFIG = {
     APELACIONES: "BD_APELACIONES",
     PRESTAMOS: "BD_PRESTAMOS",
     VALIDACION_PRESTAMOS: "Validación-Prestamos",
-    PERMISOS_MEDICOS: "BD_Permisos medicos",
-    ASISTENCIA: "BD_ASISTENCIA",           // ⭐ NUEVO
-    PUNTOS_CONTROL: "PUNTOS_CONTROL"       // ⭐ NUEVO
+    PERMISOS_MEDICOS: "BD_Permisos medicos"
   },
   CARPETAS: {
     JUSTIFICACIONES: "1UD9hQz1FuacSb3QYrahRl7IfvlpKn8v6",
@@ -66,7 +48,7 @@ const CONFIG = {
     PERMISOS_MEDICOS: "1nCYxD5sJLszBBA6s2DquGW8vlKGZp4ty"
   },
   CORREOS: {
-    REPRESENTANTE_LEGAL: "penailillo.fetrasiss@gmail.com"
+    REPRESENTANTE_LEGAL: "juancarlos.pacheco@cl.issworld.com"
   },
   COLUMNAS: {
     USUARIOS: {
@@ -162,14 +144,6 @@ const CONFIG = {
       GESTION: 12,
       NOMBRE_DIRIGENTE: 13,
       CORREO_DIRIGENTE: 14
-    },
-    ASISTENCIA: {
-      FECHA_HORA: 0,
-      RUT: 1,
-      NOMBRE: 2,
-      ASAMBLEA: 3,
-      TIPO_ASISTENCIA: 4,
-      GESTION: 5
     }
   }
 };
@@ -2647,7 +2621,7 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
           "Motivo": motivo,
           "Fecha Solicitud": fechaHoy.toLocaleDateString()
         },
-        "##10b981"
+        "#10b981"
       );
       
       if (gestion === "Dirigente" && correoDirigente && correoDirigente.includes("@") && correoDirigente !== beneficiario.correo) {
@@ -4007,342 +3981,4 @@ function corregirPermisosJustificacionesExistentes() {
       
       Logger.log('⚠️ No se pudo extraer URL de: ' + formula);
       return '';
-    }
-
-    // ==========================================
-    // SISTEMA DE ASISTENCIA QR
-    // ==========================================
-
-    /**
-     * Valida que el usuario existe y está activo para asistencia
-     * @param {string} rut - RUT del usuario
-     * @returns {Object} {success: boolean, nombre: string, error: string}
-     */
-    function validarUsuarioAsistencia(rut) {
-      try {
-        const rutLimpio = cleanRut(rut);
-        
-        if (!rutLimpio || rutLimpio.length < 7) {
-          return {
-            success: false,
-            error: "RUT inválido"
-          };
-        }
-        
-        Logger.log('🔍 Validando usuario para asistencia: ' + rutLimpio);
-        
-        const usuario = obtenerUsuarioPorRut(rutLimpio);
-        
-        if (!usuario.encontrado) {
-          Logger.log('❌ Usuario no encontrado');
-          return {
-            success: false,
-            error: "RUT no encontrado en el sistema."
-          };
-        }
-        
-        const estado = String(usuario.estado || "").toUpperCase();
-        
-        Logger.log('✅ Usuario encontrado: ' + usuario.nombre);
-        Logger.log('   Estado: ' + estado);
-        
-        if (estado === "DESVINCULADO") {
-          Logger.log('⚠️ Usuario desvinculado');
-          return {
-            success: false,
-            error: "Usuario desvinculado. No puedes registrar asistencia. Contacta con la directiva."
-          };
-        }
-        
-        return {
-          success: true,
-          nombre: usuario.nombre,
-          rut: usuario.rut
-        };
-        
-      } catch (e) {
-        Logger.log('❌ Error en validarUsuarioAsistencia: ' + e.toString());
-        return {
-          success: false,
-          error: "Error del servidor: " + e.toString()
-        };
-      }
-    }
-
-    /**
-     * Registra la asistencia del usuario en una actividad
-     * @param {string} rut - RUT del usuario
-     * @param {string} nombreControl - Nombre del punto de control
-     * @returns {Object} {success: boolean, message: string, ...}
-     */
-    function registrarAsistencia(rut, nombreControl) {
-      const lock = LockService.getScriptLock();
-      
-      try {
-        if (!lock.tryLock(30000)) {
-          return {
-            success: false,
-            message: "Sistema ocupado, intenta nuevamente."
-          };
-        }
-        
-        Logger.log('═══════════════════════════════════════');
-        Logger.log('🔵 INICIO REGISTRO DE ASISTENCIA');
-        Logger.log('   RUT recibido: ' + rut);
-        Logger.log('   Punto de control: ' + nombreControl);
-        Logger.log('═══════════════════════════════════════');
-        
-        // 1. VALIDAR USUARIO
-        const usuario = validarUsuarioAsistencia(rut);
-        
-        if (!usuario.success) {
-          Logger.log('❌ Validación fallida: ' + usuario.error);
-          return {
-            success: false,
-            message: usuario.error
-          };
-        }
-        
-        Logger.log('✅ Usuario validado: ' + usuario.nombre);
-        
-        // 2. VERIFICAR DUPLICADOS
-        const ss = getSpreadsheet('ASISTENCIA');
-        const sheetAsistencia = ss.getSheetByName(CONFIG.HOJAS.ASISTENCIA);
-        
-        if (!sheetAsistencia) {
-          Logger.log('❌ No se encontró la hoja de asistencia');
-          return {
-            success: false,
-            message: "Error: No se encontró la hoja de asistencia"
-          };
-        }
-        
-        const data = sheetAsistencia.getDataRange().getDisplayValues();
-        const COL = CONFIG.COLUMNAS.ASISTENCIA;
-        const rutLimpio = cleanRut(rut);
-        
-        Logger.log('📊 Total de registros existentes: ' + (data.length - 1));
-        
-        // Verificar si ya registró en esta actividad
-        for (let i = 1; i < data.length; i++) {
-          const rutRegistrado = cleanRut(data[i][COL.RUT]);
-          const asambleaRegistrada = data[i][COL.ASAMBLEA];
-          
-          if (rutRegistrado === rutLimpio && asambleaRegistrada === nombreControl) {
-            Logger.log('⚠️ Ya registrado anteriormente en fila: ' + (i + 1));
-            return {
-              success: false,
-              message: "Ya registraste tu asistencia en esta actividad.",
-              yaRegistrado: true
-            };
-          }
-        }
-        
-        // 3. REGISTRAR ASISTENCIA
-        const ahora = new Date();
-        const fechaHora = Utilities.formatDate(ahora, "America/Santiago", "dd/MM/yyyy HH:mm:ss");
-        
-        sheetAsistencia.appendRow([
-          fechaHora,
-          usuario.rut,
-          usuario.nombre,
-          nombreControl,
-          "",
-          "Sistema QR"
-        ]);
-        
-        Logger.log('✅ Asistencia registrada exitosamente');
-        Logger.log('   Fecha/Hora: ' + fechaHora);
-        Logger.log('   Nueva fila: ' + (data.length + 1));
-        
-        // ==========================================
-        // 4. ENVIAR NOTIFICACIÓN POR CORREO
-        // ==========================================
-        let correoEnviado = false;
-        let mensajeCorreo = "";
-        
-        // Obtener correo del usuario
-        const usuarioCompleto = obtenerUsuarioPorRut(usuario.rut);
-        const correoUsuario = usuarioCompleto.correo || "";
-        
-        if (correoUsuario && correoUsuario.includes("@")) {
-          try {
-            Logger.log('📧 Enviando notificación a: ' + correoUsuario);
-            
-            enviarCorreoEstilizado(
-              correoUsuario,
-              "Asistencia Registrada - Sindicato SLIM n°3",
-              "¡Asistencia Registrada!",
-              `Hola <strong>${usuario.nombre}</strong>, tu asistencia ha sido registrada exitosamente en el sistema.`,
-              {
-                "Actividad": nombreControl,
-                "Fecha y Hora": fechaHora,
-                "RUT": formatRutDisplay(usuario.rut),
-                "Tipo": "Registro QR"
-              },
-              "#10b981"
-            );
-            
-            correoEnviado = true;
-            mensajeCorreo = "Confirmación enviada a tu correo.";
-            Logger.log('✅ Correo enviado exitosamente');
-            
-          } catch (errorCorreo) {
-            Logger.log('⚠️ Error al enviar correo: ' + errorCorreo.toString());
-            mensajeCorreo = "No se pudo enviar confirmación por correo, pero tu asistencia está registrada.";
-          }
-        } else {
-          Logger.log('⚠️ Usuario sin correo registrado');
-          mensajeCorreo = "No tienes correo registrado. Puedes ver tu registro desde el módulo 'Registro Asistencia' en la aplicación.";
-        }
-        
-        Logger.log('═══════════════════════════════════════');
-        
-        return {
-          success: true,
-          message: "Asistencia registrada exitosamente",
-          nombre: usuario.nombre,
-          rut: usuario.rut,
-          asamblea: nombreControl,
-          fecha: fechaHora,
-          correoEnviado: correoEnviado,
-          mensajeCorreo: mensajeCorreo
-        };
-        
-      } catch (e) {
-        Logger.log('❌ ERROR en registrarAsistencia: ' + e.toString());
-        Logger.log('   Stack: ' + e.stack);
-        return {
-          success: false,
-          message: "Error inesperado: " + e.toString()
-        };
-        
-      } finally {
-        lock.releaseLock();
-      }
-    }
-
-    /**
-     * Obtiene el historial de asistencias del usuario
-     * @param {string} rut - RUT del usuario
-     * @returns {Object} {success: boolean, asistencias: Array, dispositivoVinculado: boolean}
-     */
-    function obtenerHistorialAsistencia(rut) {
-      try {
-        const rutLimpio = cleanRut(rut);
-        
-        if (!rutLimpio || rutLimpio.length < 7) {
-          return {
-            success: false,
-            message: "RUT inválido"
-          };
-        }
-        
-        Logger.log('📊 Obteniendo historial de asistencia para: ' + rutLimpio);
-        
-        // Verificar que el usuario existe
-        const usuario = obtenerUsuarioPorRut(rutLimpio);
-        
-        if (!usuario.encontrado) {
-          return {
-            success: false,
-            message: "Usuario no encontrado"
-          };
-        }
-        
-        // Obtener asistencias
-        const ss = getSpreadsheet('ASISTENCIA');
-        const sheetAsistencia = ss.getSheetByName(CONFIG.HOJAS.ASISTENCIA);
-        
-        if (!sheetAsistencia) {
-          Logger.log('❌ No se encontró la hoja de asistencia');
-          return {
-            success: true,
-            asistencias: [],
-            totalAsistencias: 0,
-            nombreUsuario: usuario.nombre,
-            dispositivoVinculado: false,
-            mensaje: "No hay registros de asistencia disponibles"
-          };
-        }
-        
-        const data = sheetAsistencia.getDataRange().getDisplayValues();
-        const COL = CONFIG.COLUMNAS.ASISTENCIA;
-        const asistencias = [];
-        
-        // Filtrar asistencias del usuario
-        for (let i = 1; i < data.length; i++) {
-          const rutRegistrado = cleanRut(data[i][COL.RUT]);
-          
-          if (rutRegistrado === rutLimpio) {
-            asistencias.push({
-              fecha: data[i][COL.FECHA_HORA],
-              actividad: data[i][COL.ASAMBLEA],
-              tipo: data[i][COL.TIPO_ASISTENCIA] || 'Presencial',
-              gestion: data[i][COL.GESTION]
-            });
-          }
-        }
-        
-        // Ordenar por fecha (más reciente primero)
-        asistencias.reverse();
-        
-        Logger.log('✅ Historial obtenido: ' + asistencias.length + ' registros');
-        
-        return {
-          success: true,
-          asistencias: asistencias,
-          totalAsistencias: asistencias.length,
-          nombreUsuario: usuario.nombre,
-          dispositivoVinculado: true, // Si puede hacer la consulta, está vinculado
-          correoUsuario: usuario.correo || ""
-        };
-        
-      } catch (e) {
-        Logger.log('❌ Error en obtenerHistorialAsistencia: ' + e.toString());
-        return {
-          success: false,
-          message: "Error al obtener historial: " + e.toString()
-        };
-      }
-    }
-
-    /**
-     * Verifica si el dispositivo está vinculado (tiene RUT en localStorage)
-     * Esta función solo valida que el RUT exista en el sistema
-     * @param {string} rut - RUT a verificar
-     * @returns {Object} {vinculado: boolean, nombre: string}
-     */
-    function verificarDispositivoVinculado(rut) {
-      try {
-        const rutLimpio = cleanRut(rut);
-        
-        if (!rutLimpio || rutLimpio.length < 7) {
-          return {
-            vinculado: false,
-            mensaje: "RUT inválido"
-          };
-        }
-        
-        const usuario = obtenerUsuarioPorRut(rutLimpio);
-        
-        if (!usuario.encontrado) {
-          return {
-            vinculado: false,
-            mensaje: "Usuario no encontrado"
-          };
-        }
-        
-        return {
-          vinculado: true,
-          nombre: usuario.nombre,
-          rut: usuario.rut
-        };
-        
-      } catch (e) {
-        return {
-          vinculado: false,
-          mensaje: "Error de verificación"
-        };
-      }
     }
