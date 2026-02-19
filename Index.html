@@ -670,10 +670,11 @@
                         <div class="flex flex-col items-center justify-center pt-5 pb-6">
                             <span class="material-icons-round text-3xl text-slate-400 mb-2">cloud_upload</span>
                             <p class="text-xs text-slate-500"><span class="font-semibold">Toque para subir</span></p>
-                            <p class="text-[10px] text-slate-400 mt-1" id="file-name-display">Formatos: JPG, PNG, PDF (Máx 5MB)</p>
+                            <p class="text-[10px] text-slate-400 mt-1" id="file-name-display">Formatos: JPG, PNG, PDF (Máx 15MB)</p>
                         </div>
                         <input id="justif-file" type="file" class="hidden" accept="image/*,application/pdf" capture="environment" onchange="updateFileName(this)" />
                     </label>
+                    <p id="justif-file-requirement" class="hidden text-[10px] mt-1.5 font-medium"></p>
                  </div>
 
                  <button onclick="submitJustification()" id="btn-submit-justif" class="w-full py-3 rounded-xl bg-slate-900 text-white font-bold shadow-lg shadow-slate-500/30 hover:bg-slate-800 transition flex items-center justify-center gap-2 mt-4">
@@ -2969,6 +2970,18 @@
                   document.getElementById('justif-motivo').value = "";
                }
                modal.classList.add('hidden');
+               
+               // Actualizar indicador de requerimiento de archivo
+               const hintEl = document.getElementById('justif-file-requirement');
+               const tiposObligatorios = ['Turno Laboral en ISS', 'Certificado Vacaciones', 'Licencia Médica'];
+               if (tiposObligatorios.includes(label)) {
+                  hintEl.textContent = '⚠️ El comprobante es OBLIGATORIO para este tipo de evento.';
+                  hintEl.className = 'text-[10px] mt-1.5 font-semibold text-red-500';
+               } else {
+                  hintEl.textContent = '✓ El comprobante es opcional para Fuerza Mayor.';
+                  hintEl.className = 'text-[10px] mt-1.5 font-medium text-slate-400';
+               }
+               hintEl.classList.remove('hidden');
             };
             container.appendChild(item);
          }
@@ -2994,13 +3007,24 @@
             }
         }
         
-        // Si es Fuerza Mayor sin archivo, mostrar advertencia
+        // Tipos que requieren comprobante obligatorio
+        const tiposConArchivoObligatorio = ['Turno Laboral en ISS', 'Certificado Vacaciones', 'Licencia Médica'];
+        if (tiposConArchivoObligatorio.includes(tipo) && !file) {
+            return showWarning("El comprobante es OBLIGATORIO para «" + tipo + "».\n\nAdjunte un archivo JPG, PNG o PDF de hasta 15MB antes de continuar.");
+        }
+        
+        // Validar tamaño del archivo si existe
+        if (file && file.size > 15 * 1024 * 1024) {
+            return showWarning("El archivo adjunto supera el tamaño máximo permitido (15MB).\n\nReduzca el tamaño del archivo e inténtelo nuevamente.");
+        }
+
+        // Si es Fuerza Mayor sin archivo, mostrar advertencia (es opcional)
         if (tipo === 'Fuerza Mayor' && !file) {
             document.getElementById('force-majeure-modal').classList.remove('hidden');
             return;
         }
         
-        // Para otros tipos, continuar normalmente
+        // Continuar con el envío
         executeJustificationSubmission(file, rutBeneficiario);
       }
 
@@ -3016,7 +3040,7 @@
         const btn = document.getElementById('btn-submit-justif');
         const oldHtml = btn.innerHTML;
 
-        if (file && file.size > 5 * 1024 * 1024) return showWarning("El archivo es muy pesado (Máx 5MB).");
+        if (file && file.size > 15 * 1024 * 1024) return showWarning("El archivo es muy pesado (Máx 15MB).");
 
         btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Subiendo...</span></div>';
         btn.disabled = true;
@@ -3038,6 +3062,7 @@
                   document.getElementById('div-justif-motivo').classList.add('hidden');
                   document.getElementById('justif-file').value = "";
                   updateFileName(document.getElementById('justif-file'));
+                  document.getElementById('justif-file-requirement').classList.add('hidden');
                   document.getElementById('justif-rut-socio').value = "";
                   
                   // Cambiar a pestaña de historial
@@ -3742,10 +3767,33 @@ divForm.classList.add('flex');
                } else {
                   res.registros.forEach(reg => {
                      let fechaStr = reg.fecha;
-                     try {
-                        const d = parseCustomDate(reg.fecha);
-                        if (!isNaN(d)) fechaStr = d.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
-                     } catch (e) {}
+                      try {
+                        // Intentar parsear la fecha de diferentes formas
+                        let d = null;
+                        
+                        // Opción 1: Si viene como string tipo "12/2/2026 18:10:26"
+                        if (typeof reg.fecha === 'string' && reg.fecha.includes('/')) {
+                            d = parseCustomDate(reg.fecha);
+                        } 
+                        // Opción 2: Si viene como Date object o timestamp
+                        else {
+                            d = new Date(reg.fecha);
+                        }
+                        
+                        // Validar que la fecha es válida
+                        if (d && !isNaN(d.getTime())) {
+                            const dia = String(d.getDate()).padStart(2, '0');
+                            const mes = String(d.getMonth() + 1).padStart(2, '0');
+                            const anio = d.getFullYear();
+                            const hora = String(d.getHours()).padStart(2, '0');
+                            const minutos = String(d.getMinutes()).padStart(2, '0');
+                            
+                            // Formato final: dd/mm/yyyy - hh:mm
+                            fechaStr = `${dia}/${mes}/${anio} - ${hora}:${minutos}`;
+                        }
+                      } catch (e) {
+                        console.log('Error formateando fecha:', e);
+                      }
                      
                      let fechaInicioStr = reg.fechaInicio || "No especificada";
                      try {
