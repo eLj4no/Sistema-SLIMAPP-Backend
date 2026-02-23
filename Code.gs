@@ -148,6 +148,90 @@ const CONFIG = {
   }
 };
 
+// ==========================================
+// FUNCIÓN HELPER: FORMATEAR FECHA A dd/mm/yyyy - hh:mm
+// ==========================================
+
+/**
+ * Formatea una fecha a formato dd/mm/yyyy - hh:mm
+ * @param {Date|string} fecha - Fecha a formatear
+ * @returns {string} Fecha formateada o string vacío si es inválida
+ */
+function formatearFechaConHora(fecha) {
+  try {
+    if (!fecha) return "";
+    
+    let fechaObj;
+    
+    // Si es string, convertir a Date
+    if (typeof fecha === 'string') {
+      fechaObj = new Date(fecha);
+    } else if (fecha instanceof Date) {
+      fechaObj = fecha;
+    } else {
+      return fecha.toString(); // Devolver como está si no se puede procesar
+    }
+    
+    // Validar que la fecha es válida
+    if (isNaN(fechaObj.getTime())) {
+      return fecha.toString();
+    }
+    
+    // Extraer componentes
+    const dia = String(fechaObj.getDate()).padStart(2, '0');
+    const mes = String(fechaObj.getMonth() + 1).padStart(2, '0');
+    const anio = fechaObj.getFullYear();
+    const hora = String(fechaObj.getHours()).padStart(2, '0');
+    const minutos = String(fechaObj.getMinutes()).padStart(2, '0');
+    
+    // Formato: dd/mm/yyyy - hh:mm
+    return `${dia}/${mes}/${anio} - ${hora}:${minutos}`;
+    
+  } catch (e) {
+    Logger.log('Error formateando fecha: ' + e.toString());
+    return fecha ? fecha.toString() : "";
+  }
+}
+
+/**
+ * Formatea una fecha a formato dd/mm/yyyy (sin hora)
+ * @param {Date|string} fecha - Fecha a formatear
+ * @returns {string} Fecha formateada o string vacío si es inválida
+ */
+function formatearFechaSinHora(fecha) {
+  try {
+    if (!fecha) return "";
+    
+    let fechaObj;
+    
+    // Si es string, convertir a Date
+    if (typeof fecha === 'string') {
+      fechaObj = new Date(fecha);
+    } else if (fecha instanceof Date) {
+      fechaObj = fecha;
+    } else {
+      return fecha.toString();
+    }
+    
+    // Validar que la fecha es válida
+    if (isNaN(fechaObj.getTime())) {
+      return fecha.toString();
+    }
+    
+    // Extraer componentes
+    const dia = String(fechaObj.getDate()).padStart(2, '0');
+    const mes = String(fechaObj.getMonth() + 1).padStart(2, '0');
+    const anio = fechaObj.getFullYear();
+    
+    // Formato: dd/mm/yyyy
+    return `${dia}/${mes}/${anio}`;
+    
+  } catch (e) {
+    Logger.log('Error formateando fecha: ' + e.toString());
+    return fecha ? fecha.toString() : "";
+  }
+}
+
 /**
  * Función helper para obtener un spreadsheet específico
  * @param {string} spreadsheetKey - Clave del spreadsheet en CONFIG.SPREADSHEETS
@@ -269,8 +353,8 @@ function subirArchivoConPermisos(archivoData, carpetaId, nombreArchivo, correosP
   try {
     // Validar tamaño del archivo
     const sizeInBytes = (archivoData.base64.length * 3) / 4;
-    if (sizeInBytes > 5 * 1024 * 1024) {
-      resultado.mensajeError = "El archivo es demasiado grande (máximo 5MB).";
+    if (sizeInBytes > 15 * 1024 * 1024) {
+      resultado.mensajeError = "El archivo es demasiado grande (máximo 15MB).";
       return resultado;
     }
     
@@ -1149,18 +1233,18 @@ function obtenerHistorialPrestamos(rutInput) {
       }
 
       registros.push({
-        id: row[COL.ID] || "",
-        fecha: row[COL.FECHA] || "",
-        tipo: tipo,
-        monto: monto,
-        cuotas: cuotas,
-        medio: medio,
-        estado: row[COL.ESTADO] || "Solicitado",
-        observacion: observacion,
-        fechaTermino: fechaTerminoStr,
-        gestion: row[COL.GESTION] || "Socio",
-        nomDirigente: row[COL.NOMBRE_DIRIGENTE] || ""
-      });
+      id: row[COL.ID] || "",
+      fecha: formatearFechaConHora(row[COL.FECHA]) || "",
+      tipo: tipo,
+      monto: monto,
+      cuotas: cuotas,
+      medio: medio,
+      estado: row[COL.ESTADO] || "Solicitado",
+      observacion: observacion,
+      fechaTermino: formatearFechaSinHora(row[COL.FECHA_TERMINO]),
+      gestion: row[COL.GESTION] || "Socio",
+      nomDirigente: row[COL.NOMBRE_DIRIGENTE] || ""
+    });
       
       Logger.log('✅ Préstamo agregado: ' + row[COL.ID] + ' - ' + tipo);
     }
@@ -1857,12 +1941,12 @@ function obtenerHistorialJustificaciones(rutInput) {
     const rutLimpio = cleanRut(rutInput);
     const registros = [];
 
-    for (let i = 0; i < data.length; i++) { // ⭐ CAMBIO: Empezar en 0 porque data ya no tiene header
+    for (let i = 0; i < data.length; i++) {
       const row = data[i];
       if (cleanRut(row[COL.RUT]) === rutLimpio) {
         registros.push({
           id: row[COL.ID],
-          fecha: row[COL.FECHA],
+          fecha: formatearFechaConHora(row[COL.FECHA]),
           tipo: row[COL.MOTIVO],
           motivo: row[COL.ARGUMENTO],
           url: row[COL.RESPALDO],
@@ -2322,12 +2406,12 @@ function obtenerHistorialApelaciones(rutInput) {
     const rutLimpio = cleanRut(rutInput);
     const registros = [];
     
-    for (let i = 0; i < data.length; i++) { // ⭐ CAMBIO: Empezar en 0
+    for (let i = 0; i < data.length; i++) {
       const row = data[i];
       if (cleanRut(row[COL.RUT]) === rutLimpio) {
         registros.push({
           id: row[COL.ID],
-          fecha: row[COL.FECHA_SOLICITUD],
+          fecha: formatearFechaConHora(row[COL.FECHA_SOLICITUD]),  // ✅ CORREGIDO
           mesApelacion: row[COL.MES_APELACION],
           tipoMotivo: row[COL.TIPO_MOTIVO],
           detalleMotivo: row[COL.DETALLE_MOTIVO],
@@ -2500,7 +2584,8 @@ function procesarPermisosComprobantesDevolucion() {
 }
 
 // ==========================================
-// MÓDULO: PERMISO MÉDICO
+// MÓDULO: PERMISO MÉDICO - VERSIÓN CORREGIDA V2
+// Comparación directa de fechas sin conversiones problemáticas
 // ==========================================
 
 function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rutBeneficiario) {
@@ -2516,6 +2601,9 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
       
       const dataUsers = sheetUsers.getDataRange().getDisplayValues();
       
+      // ========================================
+      // VALIDACIÓN DE USUARIO GESTOR
+      // ========================================
       let gestor = null;
       const rutLimpioGestor = cleanRut(rutGestor);
       for (let i = 1; i < dataUsers.length; i++) {
@@ -2530,6 +2618,9 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
       }
       if (!gestor) return { success: false, message: "Error de sesión." };
       
+      // ========================================
+      // DETERMINAR BENEFICIARIO
+      // ========================================
       let rutTarget = rutBeneficiario ? cleanRut(rutBeneficiario) : rutLimpioGestor;
       let beneficiario = null;
       
@@ -2550,69 +2641,137 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
       }
 
       // ========================================
-      // ✅ VALIDACIÓN: UN PERMISO POR DÍA
+      // VALIDACIÓN DE FECHA DE INICIO
       // ========================================
-      const fechaHoy = new Date();
-      const fechaHoyStr = Utilities.formatDate(fechaHoy, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      const fechaInicioObj = new Date(fechaInicio + 'T12:00:00');
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      fechaInicioObj.setHours(0, 0, 0, 0);
 
-      // Obtener todos los permisos del beneficiario
+      const diffDias = Math.floor((fechaInicioObj - hoy) / (1000 * 60 * 60 * 24));
+
+      if (diffDias < -7 || diffDias > 7) {
+        return {
+          success: false,
+          message: "La fecha de inicio debe estar dentro del rango de 7 días antes o después de hoy."
+        };
+      }
+
+      // ========================================
+      // ✅ VALIDACIÓN MEJORADA: UN PERMISO ACTIVO POR FECHA DE INICIO
+      // Usando comparación directa de strings
+      // ========================================
+      
+      // Normalizar la fecha de entrada a formato yyyy-MM-dd
+      const fechaInicioNormalizada = fechaInicio.trim(); // "2026-02-12"
+      
+      Logger.log(`🔍 Validando para RUT: ${beneficiario.rut} | Fecha Inicio: ${fechaInicioNormalizada}`);
+
+      // Obtener TODOS los datos de permisos
       const dataPermisos = sheetPermisos.getDataRange().getDisplayValues();
-      let permisoDelDia = null;
+      let permisoConMismaFechaInicio = null;
+      let permisoAnuladoMismaFecha = null;
 
       for (let i = 1; i < dataPermisos.length; i++) {
         const rowRut = cleanRut(dataPermisos[i][COL_PERM.RUT]);
         
         if (rowRut === cleanRut(beneficiario.rut)) {
-          const fechaSolicitud = dataPermisos[i][COL_PERM.FECHA_SOLICITUD];
-          let fechaSolicitudStr = "";
+          // Obtener fecha de inicio del registro (columna G, índice 6)
+          let fechaInicioRegistro = dataPermisos[i][COL_PERM.FECHA_INICIO];
           
-          // Convertir fecha a string yyyy-MM-dd
-          if (fechaSolicitud && fechaSolicitud.toString().trim() !== "") {
-            try {
-              const fechaObj = new Date(fechaSolicitud);
-              if (!isNaN(fechaObj.getTime())) {
-                fechaSolicitudStr = Utilities.formatDate(fechaObj, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+          // Normalizar a string yyyy-MM-dd
+          let fechaInicioRegistroNormalizada = "";
+          
+          if (fechaInicioRegistro && fechaInicioRegistro.toString().trim() !== "") {
+            // Si ya viene como "2026-02-12", usarlo directamente
+            if (fechaInicioRegistro.toString().match(/^\d{4}-\d{2}-\d{2}$/)) {
+              fechaInicioRegistroNormalizada = fechaInicioRegistro.toString().trim();
+            } else {
+              // Si viene en otro formato, intentar parsearlo
+              try {
+                const fechaObj = new Date(fechaInicioRegistro);
+                if (!isNaN(fechaObj.getTime())) {
+                  const year = fechaObj.getFullYear();
+                  const month = String(fechaObj.getMonth() + 1).padStart(2, '0');
+                  const day = String(fechaObj.getDate()).padStart(2, '0');
+                  fechaInicioRegistroNormalizada = `${year}-${month}-${day}`;
+                }
+              } catch (e) {
+                Logger.log(`⚠️ Error parseando fecha en fila ${i + 1}: ${e}`);
+                continue;
               }
-            } catch (e) {
-              // Si hay error al parsear fecha, continuar
-              continue;
             }
           }
           
-          // Comparar fechas
-          if (fechaSolicitudStr === fechaHoyStr) {
-            permisoDelDia = {
-              id: dataPermisos[i][COL_PERM.ID],
-              tipo: dataPermisos[i][COL_PERM.TIPO_PERMISO],
-              fechaInicio: dataPermisos[i][COL_PERM.FECHA_INICIO],
-              estado: dataPermisos[i][COL_PERM.ESTADO],
-              hora: fechaSolicitud
-            };
-            break;
+          Logger.log(`  Fila ${i + 1}: Fecha=${fechaInicioRegistroNormalizada} | Estado=${dataPermisos[i][COL_PERM.ESTADO]}`);
+          
+          // COMPARACIÓN DIRECTA DE STRINGS
+          if (fechaInicioRegistroNormalizada === fechaInicioNormalizada) {
+            const estadoPermiso = dataPermisos[i][COL_PERM.ESTADO];
+            
+            Logger.log(`  ⚠️ MATCH ENCONTRADO! Estado: ${estadoPermiso}`);
+            
+            // Distinguir entre anulados y activos
+            if (estadoPermiso === "Anulado") {
+              permisoAnuladoMismaFecha = {
+                id: dataPermisos[i][COL_PERM.ID],
+                tipo: dataPermisos[i][COL_PERM.TIPO_PERMISO],
+                fechaSolicitud: dataPermisos[i][COL_PERM.FECHA_SOLICITUD]
+              };
+              // NO hacer break, seguir buscando por si hay uno activo
+            } else {
+              // Permiso ACTIVO con la misma fecha de inicio
+              permisoConMismaFechaInicio = {
+                id: dataPermisos[i][COL_PERM.ID],
+                tipo: dataPermisos[i][COL_PERM.TIPO_PERMISO],
+                estado: estadoPermiso,
+                fechaSolicitud: dataPermisos[i][COL_PERM.FECHA_SOLICITUD],
+                fechaInicio: fechaInicioRegistro
+              };
+              Logger.log(`  🚫 BLOQUEANDO: Permiso activo encontrado ID ${permisoConMismaFechaInicio.id}`);
+              break; // Encontramos uno activo, detener búsqueda
+            }
           }
         }
       }
 
-      // Si existe un permiso del día, rechazar la solicitud
-      if (permisoDelDia) {
-        const mensajeError = `Ya existe una solicitud de permiso médico registrada el día de hoy.\n\n` +
+      // Si existe un permiso ACTIVO con la misma fecha de inicio, rechazar
+      if (permisoConMismaFechaInicio) {
+        const fechaSolicitudStr = new Date(permisoConMismaFechaInicio.fechaSolicitud).toLocaleDateString('es-CL');
+        
+        const mensajeError = `❌ Ya existe un permiso médico ACTIVO con la misma fecha de inicio.\n\n` +
           `📋 DETALLES DEL PERMISO EXISTENTE:\n` +
-          `• Tipo: ${permisoDelDia.tipo}\n` +
-          `• Fecha de inicio: ${permisoDelDia.fechaInicio}\n` +
-          `• Estado: ${permisoDelDia.estado}\n` +
-          `• ID: ${permisoDelDia.id}\n\n` +
-          `⚠️ RESTRICCIÓN: Solo se permite una solicitud de permiso médico por día.\n\n` +
-          `Si cometió un error, puede anular el permiso existente desde el historial y crear uno nuevo mañana, o contactar con la directiva para solicitar modificaciones.`;
+          `• ID: ${permisoConMismaFechaInicio.id}\n` +
+          `• Tipo: ${permisoConMismaFechaInicio.tipo}\n` +
+          `• Estado: ${permisoConMismaFechaInicio.estado}\n` +
+          `• Fecha de solicitud: ${fechaSolicitudStr}\n` +
+          `• Fecha de inicio: ${fechaInicioNormalizada}\n\n` +
+          `⚠️ RESTRICCIÓN: No se puede solicitar más de un permiso para la misma fecha de inicio.\n\n` +
+          `Si cometió un error, puede anular el permiso existente desde el historial y crear uno nuevo, o contactar con la directiva para solicitar modificaciones.`;
+        
+        Logger.log(`🚫 SOLICITUD RECHAZADA: ${mensajeError}`);
         
         return { 
           success: false, 
           message: mensajeError
         };
       }
+
+      // Informar si hubo uno anulado (solo para logs)
+      if (permisoAnuladoMismaFecha) {
+        Logger.log(`ℹ️ INFO: Usuario ya anuló un permiso para la fecha ${fechaInicioNormalizada} (ID: ${permisoAnuladoMismaFecha.id}). Permitiendo crear uno nuevo.`);
+      } else {
+        Logger.log(`✅ VALIDACIÓN PASADA: No hay permisos activos para la fecha ${fechaInicioNormalizada}`);
+      }
+      
       // ========================================
-      // FIN VALIDACIÓN
+      // FIN VALIDACIÓN PRIMERA FASE
       // ========================================
 
+      // ========================================
+      // PREPARAR DATOS DEL REGISTRO
+      // ========================================
+      const fechaHoyCompleta = new Date();
       const idUnico = Utilities.getUuid();
       const estado = "Solicitado";
       
@@ -2626,15 +2785,15 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
         correoDirigente = gestor.correo;
       }
       
-      // Preparar datos según nueva estructura
+      // Preparar datos según estructura
       const newRow = [];
       newRow[COL_PERM.ID] = idUnico;
-      newRow[COL_PERM.FECHA_SOLICITUD] = fechaHoy;
+      newRow[COL_PERM.FECHA_SOLICITUD] = fechaHoyCompleta;
       newRow[COL_PERM.RUT] = beneficiario.rut;
       newRow[COL_PERM.NOMBRE] = beneficiario.nombre;
       newRow[COL_PERM.CORREO] = beneficiario.correo;
       newRow[COL_PERM.TIPO_PERMISO] = tipoPermiso;
-      newRow[COL_PERM.FECHA_INICIO] = fechaInicio;
+      newRow[COL_PERM.FECHA_INICIO] = fechaInicioNormalizada; // ✅ Guardar como string normalizado
       newRow[COL_PERM.MOTIVO_DETALLE] = motivo;
       newRow[COL_PERM.URL_DOCUMENTO] = "Sin documento";
       newRow[COL_PERM.ESTADO] = estado;
@@ -2644,27 +2803,77 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
       newRow[COL_PERM.NOMBRE_DIRIGENTE] = nomDirigente;
       newRow[COL_PERM.CORREO_DIRIGENTE] = correoDirigente;
       
-      sheetPermisos.appendRow(newRow);
+      // ========================================
+      // 🔥 DOBLE VALIDACIÓN: Prevenir race conditions
+      // Re-validar justo antes de escribir
+      // ========================================
+      Logger.log(`🔄 SEGUNDA VALIDACIÓN (anti-race-condition)...`);
       
+      const dataPermisosPreEscritura = sheetPermisos.getDataRange().getDisplayValues();
+      for (let i = 1; i < dataPermisosPreEscritura.length; i++) {
+        const rowRut = cleanRut(dataPermisosPreEscritura[i][COL_PERM.RUT]);
+        if (rowRut === cleanRut(beneficiario.rut)) {
+          let fechaInicioRegistro = dataPermisosPreEscritura[i][COL_PERM.FECHA_INICIO];
+          let fechaInicioRegistroNormalizada = "";
+          
+          if (fechaInicioRegistro && fechaInicioRegistro.toString().trim() !== "") {
+            if (fechaInicioRegistro.toString().match(/^\d{4}-\d{2}-\d{2}$/)) {
+              fechaInicioRegistroNormalizada = fechaInicioRegistro.toString().trim();
+            } else {
+              try {
+                const fechaObj = new Date(fechaInicioRegistro);
+                const year = fechaObj.getFullYear();
+                const month = String(fechaObj.getMonth() + 1).padStart(2, '0');
+                const day = String(fechaObj.getDate()).padStart(2, '0');
+                fechaInicioRegistroNormalizada = `${year}-${month}-${day}`;
+              } catch (e) {
+                continue;
+              }
+            }
+          }
+          
+          const estadoPermiso = dataPermisosPreEscritura[i][COL_PERM.ESTADO];
+          
+          if (fechaInicioRegistroNormalizada === fechaInicioNormalizada && estadoPermiso !== "Anulado") {
+            Logger.log(`⚠️ RACE CONDITION DETECTADA Y BLOQUEADA para RUT ${beneficiario.rut} - Fecha inicio: ${fechaInicioNormalizada}`);
+            return { 
+              success: false, 
+              message: "Se detectó otra solicitud en proceso con la misma fecha de inicio. Por favor, recarga la página y verifica tu historial." 
+            };
+          }
+        }
+      }
+      
+      Logger.log(`✅ Segunda validación pasada. Procediendo a escribir...`);
+      
+      // ========================================
+      // ESCRIBIR REGISTRO (PROTEGIDO POR LOCK)
+      // ========================================
+      sheetPermisos.appendRow(newRow);
+      Logger.log(`✅ Permiso creado exitosamente. ID: ${idUnico}`);
+      
+      // ========================================
+      // ENVIAR NOTIFICACIONES
+      // ========================================
       if (beneficiario.correo && beneficiario.correo.includes("@")) {
         let mensajeExtra = gestion === "Dirigente" ? `<br><em>(Ingresado por: ${nomDirigente})</em>` : "";
         
-        const fechaInicioObj = new Date(fechaInicio);
-        const fechaInicioStr = fechaInicioObj.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' });
+        const fechaInicioObjEmail = new Date(fechaInicioNormalizada);
+        const fechaInicioEmailStr = fechaInicioObjEmail.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' });
         
         enviarCorreoEstilizado(
           beneficiario.correo,
           "Solicitud Permiso Médico - Sindicato SLIM n°3",
           "Permiso Médico Solicitado",
-          `Hola ${beneficiario.nombre}, se ha registrado tu solicitud de permiso médico. <strong>IMPORTANTE:</strong> Debes adjuntar el documento de respaldo en el historial del módulo a vez realizada la atención médica.`,
+          `Hola ${beneficiario.nombre}, se ha registrado tu solicitud de permiso médico. <strong>IMPORTANTE:</strong> Debes adjuntar el documento de respaldo en el historial del módulo una vez realizada la atención médica.`,
           { 
             "ID": idUnico,
+            "Trabajador": beneficiario.nombre,
+            "RUT": beneficiario.rut,
             "Tipo": tipoPermiso,
-            "Fecha Inicio": fechaInicioStr,
+            "Fecha Inicio": new Date(fechaInicio + 'T12:00:00').toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' }),
             "Motivo": motivo,
-            "Gestión": gestion + mensajeExtra,
-            "Estado": estado,
-            "Acción Requerida": "Adjuntar documento de respaldo"
+            "Fecha Solicitud": fechaHoy.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' })
           },
           "#10b981"
         );
@@ -2680,9 +2889,9 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
           "Trabajador": beneficiario.nombre,
           "RUT": beneficiario.rut,
           "Tipo": tipoPermiso,
-          "Fecha Inicio": fechaInicio,
+          "Fecha Inicio": fechaInicioNormalizada,
           "Motivo": motivo,
-          "Fecha Solicitud": fechaHoy.toLocaleDateString()
+          "Fecha Solicitud": fechaHoyCompleta.toLocaleDateString()
         },
         "#10b981"
       );
@@ -2701,12 +2910,13 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
       return { success: true, message: "Permiso médico solicitado. No olvides adjuntar el documento de respaldo." };
       
     } catch (e) {
+      Logger.log("❌ Error en solicitarPermisoMedico: " + e.toString());
       return { success: false, message: "Error: " + e.toString() };
     } finally {
       lock.releaseLock();
     }
   } else {
-    return { success: false, message: "Servidor ocupado." };
+    return { success: false, message: "Servidor ocupado. Intenta nuevamente." };
   }
 }
 
@@ -2874,10 +3084,10 @@ function obtenerHistorialPermisosMedicos(rutInput) {
     
     var lastRow = sheet.getLastRow();
     if (lastRow < 2) return { success: true, registros: [] };
-    
-    // ⭐ CORRECCIÓN: Calcular correctamente el número de columnas
+
+    // ⭐ CORRECCIÓN: Usar getValues() para obtener objetos Date reales
     var lastCol = sheet.getLastColumn();
-    var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getDisplayValues();
+    var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
     
     const rutLimpio = cleanRut(rutInput);
     const registros = [];
@@ -2887,9 +3097,9 @@ function obtenerHistorialPermisosMedicos(rutInput) {
       if (cleanRut(row[COL.RUT]) === rutLimpio) {
         registros.push({
           id: row[COL.ID],
-          fecha: row[COL.FECHA_SOLICITUD],
+          fecha: formatearFechaConHora(row[COL.FECHA_SOLICITUD]),
           tipoPermiso: row[COL.TIPO_PERMISO],
-          fechaInicio: row[COL.FECHA_INICIO],
+          fechaInicio: formatearFechaSinHora(row[COL.FECHA_INICIO]),
           motivo: row[COL.MOTIVO_DETALLE],
           urlDocumento: row[COL.URL_DOCUMENTO],
           estado: row[COL.ESTADO],
@@ -2950,11 +3160,25 @@ function eliminarPermisoMedico(idPermiso) {
               "#ef4444"
             );
           }
-
-          // ✅ ELIMINADO: Ya no se envía correo al representante legal al anular
-
+          
+          enviarCorreoEstilizado(
+            CORREO_REPRESENTANTE_LEGAL,
+            "Permiso Médico Anulado - Sindicato SLIM n°3",
+            "Solicitud de Permiso Anulada",
+            `La solicitud de permiso médico del trabajador <strong>${beneficiario.nombre}</strong> ha sido anulada. No se hará uso de este permiso.`,
+            { 
+              "ID": idPermiso,
+              "Trabajador": beneficiario.nombre,
+              "RUT": beneficiario.rut,
+              "Tipo Permiso": tipoPermiso,
+              "Fecha Inicio": fechaInicio,
+              "Estado": "Anulado por el usuario"
+            },
+            "#475569"
+          );
+          
           sheet.deleteRow(i + 1);
-          return { success: true, message: "Permiso anulado correctamente." };
+          return { success: true, message: "Permiso anulado y notificaciones enviadas." };
         }
       }
       
@@ -3450,15 +3674,24 @@ function adjustColor(hexColor, percent) {
 }
 
 function formatRutServer(rut) {
+  // ✅ CORRECCIÓN: Convertir a string primero para evitar error con números
   if (!rut) return "";
-  let value = rut.replace(/[^0-9kK]/g, '').toUpperCase();
+  
+  // Convertir a string si es número u otro tipo
+  let rutString = String(rut).trim();
+  
+  // Limpiar y formatear
+  let value = rutString.replace(/[^0-9kK]/g, '').toUpperCase();
   if (value.length < 2) return value;
+  
   const body = value.slice(0, -1);
   const dv = value.slice(-1);
+  
   let formattedBody = "";
   for (let i = body.length - 1, j = 0; i >= 0; i--, j++) {
     formattedBody = body.charAt(i) + ((j > 0 && j % 3 === 0) ? "." : "") + formattedBody;
   }
+  
   return formattedBody + "-" + dv;
 }
 
@@ -4031,3 +4264,4 @@ function corregirPermisosJustificacionesExistentes() {
       Logger.log('⚠️ No se pudo extraer URL de: ' + formula);
       return '';
     }
+
