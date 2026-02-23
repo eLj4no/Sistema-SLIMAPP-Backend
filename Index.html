@@ -752,7 +752,7 @@
                         <div class="flex flex-col items-center justify-center pt-4 pb-5">
                             <span class="material-icons-round text-2xl text-slate-400 mb-1">description</span>
                             <p class="text-xs text-slate-500"><span class="font-semibold">Toque para subir comprobante</span></p>
-                            <p class="text-[10px] text-slate-400 mt-1" id="file-name-comprobante">JPG, PNG, PDF (Máx 5MB)</p>
+                            <p class="text-[10px] text-slate-400 mt-1" id="file-name-comprobante">JPG, PNG, PDF (Máx 15MB)</p>
                         </div>
                         <input id="appeal-file-comprobante" type="file" class="hidden" accept="image/*,application/pdf" capture="environment" onchange="updateFileNameAppeal(this, 'comprobante')" />
                     </label>
@@ -767,7 +767,7 @@
                         <div class="flex flex-col items-center justify-center pt-4 pb-5">
                             <span class="material-icons-round text-2xl text-red-400 mb-1">receipt_long</span>
                             <p class="text-xs text-red-600"><span class="font-bold">Toque para subir liquidación</span></p>
-                            <p class="text-[10px] text-red-400 mt-1" id="file-name-liquidacion">JPG, PNG, PDF (Máx 5MB)</p>
+                            <p class="text-[10px] text-red-400 mt-1" id="file-name-liquidacion">JPG, PNG, PDF (Máx 15MB)</p>
                         </div>
                         <input id="appeal-file-liquidacion" type="file" class="hidden" accept="image/*,application/pdf" capture="environment" onchange="updateFileNameAppeal(this, 'liquidacion')" />
                     </label>
@@ -3406,6 +3406,16 @@
          
          if (input.files && input.files[0]) {
             const file = input.files[0];
+            
+            if (file.size > 15 * 1024 * 1024) {
+               input.value = "";
+               display.innerText = "JPG, PNG, PDF (Máx 15MB)";
+               display.classList.remove('text-green-600', 'font-bold');
+               area.classList.remove(isComprobante ? 'border-green-400' : 'border-green-500', 'bg-green-50');
+               if (isComprobante) { appealFileComprobanteData = null; } else { appealFileLiquidacionData = null; }
+               return showWarning("El archivo supera el tamaño máximo permitido (15MB).\n\nReduzca el tamaño e inténtelo nuevamente.");
+            }
+            
             display.innerText = "Archivo: " + file.name;
             display.classList.add('text-green-600', 'font-bold');
             area.classList.add(isComprobante ? 'border-green-400' : 'border-green-500', 'bg-green-50');
@@ -3422,7 +3432,7 @@
             };
             reader.readAsDataURL(file);
          } else {
-            display.innerText = "JPG, PNG, PDF (Máx 5MB)";
+            display.innerText = "JPG, PNG, PDF (Máx 15MB)";
             display.classList.remove('text-green-600', 'font-bold');
             area.classList.remove(isComprobante ? 'border-green-400' : 'border-green-500', 'bg-green-50');
             if (isComprobante) {
