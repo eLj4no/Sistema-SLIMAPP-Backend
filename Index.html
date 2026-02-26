@@ -3597,6 +3597,7 @@
                      let statusColor = "bg-gray-100 text-gray-600";
                      const st = (reg.estado || "").toLowerCase();
                      if (st.includes("enviado")) statusColor = "bg-blue-100 text-blue-600";
+                     else if (st === "pagado") statusColor = "bg-green-500 text-white font-bold";
                      else if (st.includes("aceptado") && !st.includes("obs")) statusColor = "bg-green-100 text-green-600";
                      else if (st.includes("obs")) statusColor = "bg-yellow-100 text-yellow-700";
                      else if (st.includes("rechazado")) statusColor = "bg-red-100 text-red-600";
