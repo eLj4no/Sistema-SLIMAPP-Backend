@@ -2333,7 +2333,7 @@ function enviarApelacion(rutGestor, mesApelacion, tipoMotivo, detalleMotivo, arc
           "Comprobante de Apelación",
           `Hola <strong>${beneficiario.nombre}</strong>, hemos recibido correctamente tu apelación de multa. A continuación los detalles registrados:`,
           datosCorreoSocio,
-          "#dc2626" // Color rojo para apelaciones
+          "#1d4ed8" // Color azul institucional para confirmación de ingreso
         );
       }
       
@@ -2501,10 +2501,11 @@ function verificarCambiosApelaciones() {
         : String(mesApelRaw);
       const tipoMotivo = row[COL.TIPO_MOTIVO];
       const obs = row[COL.OBSERVACION];
+      const urlDevolucion = row[COL.URL_COMPROBANTE_DEVOLUCION];
       
       if (estadoActual !== estadoNotif) {
         if (correo && correo.includes("@")) {
-          let color = "#dc2626";
+          let color = "#ea580c";
           let titulo = "Actualización de Apelación";
           
           if (estadoActual.includes("Aceptado")) { 
@@ -2513,6 +2514,9 @@ function verificarCambiosApelaciones() {
           } else if (estadoActual.includes("Rechazado")) { 
             color = "#b91c1c"; 
             titulo = "Apelación Rechazada"; 
+          } else if (estadoActual === "Pagado") {
+            color = "#065f46";
+            titulo = "Devolución de Multa Procesada";
           }
           
           // Extraer año y mes desde el string "yyyy-MM" (seguro porque getDisplayValues devuelve texto)
@@ -2522,18 +2526,29 @@ function verificarCambiosApelaciones() {
           const fechaMes = new Date(añoMes, numMes, 15, 12, 0, 0); // Anclado al mediodía local
           const nombreMes = fechaMes.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
           
+          // Construir enlace comprobante de devolución si existe y el estado es Pagado
+          const linkDevolucion = (estadoActual === "Pagado" && urlDevolucion && String(urlDevolucion).includes("http"))
+            ? `<a href="${urlDevolucion}" style="color: #065f46; text-decoration: none; font-weight: bold;">Ver Comprobante de Devolución</a>`
+            : "";
+
+          const datosCorreoApelacion = {
+            "ID": idRegistro,
+            "MES APELADO": nombreMes.toUpperCase(),
+            "MOTIVO": tipoMotivo,
+            "NUEVO ESTADO": estadoActual,
+            "OBSERVACIÓN": obs || "Sin observaciones"
+          };
+
+          if (estadoActual === "Pagado" && linkDevolucion) {
+            datosCorreoApelacion["COMPROBANTE DEVOLUCIÓN"] = linkDevolucion;
+          }
+
           enviarCorreoEstilizado(
             correo, 
             titulo + " - Sindicato SLIM n°3", 
             titulo, 
             `Hola ${nombre}, el estado de tu apelación ha cambiado.`, 
-            { 
-              "ID": idRegistro,
-              "Mes Apelado": nombreMes.toUpperCase(),
-              "Motivo": tipoMotivo, 
-              "Nuevo Estado": estadoActual, 
-              "Observación": obs || "Sin observaciones" 
-            }, 
+            datosCorreoApelacion, 
             color
           );
         }
