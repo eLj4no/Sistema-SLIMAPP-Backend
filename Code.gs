@@ -2278,6 +2278,12 @@ function enviarApelacion(rutGestor, mesApelacion, tipoMotivo, detalleMotivo, arc
       newRow[COL_APEL.URL_COMPROBANTE_DEVOLUCION] = "";
       
       sheetApelaciones.appendRow(newRow);
+
+      // Forzar formato texto en la celda MES_APELACION para evitar conversión automática a Date
+      var lastRowApel = sheetApelaciones.getLastRow();
+      sheetApelaciones.getRange(lastRowApel, COL_APEL.MES_APELACION + 1)
+        .setNumberFormat('@STRING@')
+        .setValue(mesApelacion);
       
       // Validación de celda (opcional, para integridad)
       var lastRow = sheetApelaciones.getLastRow();
@@ -2478,7 +2484,7 @@ function verificarCambiosApelaciones() {
       return;
     }
     
-    const data = sheet.getDataRange().getValues();
+    const data = sheet.getDataRange().getDisplayValues();
     const COL = CONFIG.COLUMNAS.APELACIONES;
     
     for (let i = 1; i < data.length; i++) {
@@ -2488,7 +2494,11 @@ function verificarCambiosApelaciones() {
       const estadoNotif = String(row[COL.NOTIFICADO]);
       const correo = row[COL.CORREO];
       const nombre = row[COL.NOMBRE];
-      const mesApel = String(row[COL.MES_APELACION]);
+      // Manejar tanto Date object (celda formateada como fecha) como String "yyyy-MM"
+      const mesApelRaw = row[COL.MES_APELACION];
+      const mesApel = (mesApelRaw instanceof Date)
+        ? Utilities.formatDate(mesApelRaw, "GMT", "yyyy-MM")  // GMT lee el valor UTC correcto
+        : String(mesApelRaw);
       const tipoMotivo = row[COL.TIPO_MOTIVO];
       const obs = row[COL.OBSERVACION];
       
@@ -2505,8 +2515,11 @@ function verificarCambiosApelaciones() {
             titulo = "Apelación Rechazada"; 
           }
           
+          // Extraer año y mes desde el string "yyyy-MM" (seguro porque getDisplayValues devuelve texto)
           const partesMes = mesApel.split("-");
-          const fechaMes = new Date(`${mesApel}-02`);
+          const añoMes = parseInt(partesMes[0]);
+          const numMes = parseInt(partesMes[1]) - 1; // 0-indexed para el constructor de Date
+          const fechaMes = new Date(añoMes, numMes, 15, 12, 0, 0); // Anclado al mediodía local
           const nombreMes = fechaMes.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
           
           enviarCorreoEstilizado(
