@@ -1464,9 +1464,10 @@ function obtenerEstadoSwitchJustificaciones() {
       sheetConfig.appendRow([false, ""]);
     }
     
-    const data = sheetConfig.getRange(2, 1, 1, 2).getValues();
+    const data = sheetConfig.getRange(2, 1, 1, 3).getValues();
     const habilitado = data[0][0] === true || data[0][0] === "TRUE" || data[0][0] === "true";
     const fechaLimiteValue = data[0][1];
+    const maxJustifMes = (data[0][2] && !isNaN(parseInt(data[0][2]))) ? parseInt(data[0][2]) : 1;
     
     if (habilitado && fechaLimiteValue) {
       // Convertir ambas fechas a UTC para comparación justa
@@ -1483,7 +1484,8 @@ function obtenerEstadoSwitchJustificaciones() {
         sheetConfig.getRange(2, 1).setValue(false);
         var resultado = { 
         habilitado: habilitado, 
-        fechaLimite: fechaLimiteValue 
+        fechaLimite: fechaLimiteValue,
+        maxJustifMes: maxJustifMes
       };
       
       // ✅ Guardar en caché por 5 minutos
@@ -1499,7 +1501,8 @@ function obtenerEstadoSwitchJustificaciones() {
     
     return { 
       habilitado: habilitado, 
-      fechaLimite: fechaLimiteValue 
+      fechaLimite: fechaLimiteValue,
+      maxJustifMes: maxJustifMes
     };
     
   } catch (e) {
@@ -1515,7 +1518,7 @@ function obtenerEstadoSwitchJustificaciones() {
 /**
  * Actualizar estado del switch de justificaciones
  */
-function actualizarSwitchJustificaciones(nuevoEstado, fechaLimite) {
+function actualizarSwitchJustificaciones(nuevoEstado, fechaLimite, maxJustifMes) {
   var lock = LockService.getScriptLock();
   if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
     try {
@@ -1524,14 +1527,16 @@ function actualizarSwitchJustificaciones(nuevoEstado, fechaLimite) {
       
       if (!sheetConfig) {
         sheetConfig = ss.insertSheet(CONFIG.HOJAS.CONFIG_JUSTIFICACIONES);
-        sheetConfig.appendRow(["Habilitado", "Fecha Límite"]);
-        sheetConfig.appendRow([false, ""]);
+        sheetConfig.appendRow(["Habilitado", "Fecha Límite", "Max_Justif_Mes"]);
+        sheetConfig.appendRow([false, "", 1]);
       }
       
       sheetConfig.getRange(2, 1).setValue(nuevoEstado);
       if (fechaLimite) {
         sheetConfig.getRange(2, 2).setValue(fechaLimite);
       }
+      const maxValor = (maxJustifMes && !isNaN(parseInt(maxJustifMes))) ? parseInt(maxJustifMes) : 1;
+      sheetConfig.getRange(2, 3).setValue(maxValor);
       
       return { success: true, message: "Estado actualizado correctamente." };
       
@@ -1598,6 +1603,10 @@ function validarJustificacionMesActual(rut) {
       }
     }
     
+    // Obtener límite configurado dinámicamente
+    const configSwitch = obtenerEstadoSwitchJustificaciones();
+    const maxPermitido = configSwitch.maxJustifMes || 1;
+
     // Si no hay justificaciones para este mes, permitir
     if (justificacionesDelMes.length === 0) {
       return {
@@ -1607,37 +1616,15 @@ function validarJustificacionMesActual(rut) {
       };
     }
     
+    // Obtener nombre del mes actual
+    const nombreMes = hoy.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
+
     // Verificar el estado de las justificaciones existentes
     const hayEnviada = justificacionesDelMes.some(j => j.estado === 'Enviado');
     const hayAceptada = justificacionesDelMes.some(j => j.estado === 'Aceptado' || j.estado === 'Aceptado/Obs');
     const todasRechazadas = justificacionesDelMes.every(j => j.estado === 'Rechazado');
-    
-    // Obtener nombre del mes actual
-    const nombreMes = hoy.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
-    
-    // Si hay una justificación Enviada, bloquear
-    if (hayEnviada) {
-      const justificacion = justificacionesDelMes.find(j => j.estado === 'Enviado');
-      return {
-        permitido: false,
-        mensaje: `Ya tienes una justificación pendiente para ${nombreMes}`,
-        justificacionExistente: justificacion,
-        tipoBloqueo: 'enviada'
-      };
-    }
-    
-    // Si hay una justificación Aceptada, bloquear
-    if (hayAceptada) {
-      const justificacion = justificacionesDelMes.find(j => j.estado === 'Aceptado' || j.estado === 'Aceptado/Obs');
-      return {
-        permitido: false,
-        mensaje: `Ya tienes una justificación aceptada para ${nombreMes}`,
-        justificacionExistente: justificacion,
-        tipoBloqueo: 'aceptada'
-      };
-    }
-    
-    // Si todas están rechazadas, permitir nuevo intento
+
+    // Si todas están rechazadas, permitir nuevo intento sin contar el límite
     if (todasRechazadas) {
       return {
         permitido: true,
@@ -1645,12 +1632,54 @@ function validarJustificacionMesActual(rut) {
         justificacionExistente: justificacionesDelMes[0]
       };
     }
+
+    // Contar solo las activas (Enviado + Aceptado)
+    const activasDelMes = justificacionesDelMes.filter(j => 
+      j.estado === 'Enviado' || j.estado === 'Aceptado' || j.estado === 'Aceptado/Obs'
+    );
+
+    // Si el número de activas NO alcanza el límite, permitir
+    if (activasDelMes.length < maxPermitido) {
+      return {
+        permitido: true,
+        mensaje: "Puede enviar la justificación",
+        justificacionExistente: null
+      };
+    }
+
+    // Superó el límite — bloquear
+    const justificacionRef = activasDelMes[0];
     
-    // Caso por defecto (no debería llegar aquí)
+    if (hayEnviada) {
+      const justificacion = activasDelMes.find(j => j.estado === 'Enviado');
+      return {
+        permitido: false,
+        mensaje: maxPermitido > 1 
+          ? `Ya tienes ${activasDelMes.length} justificación(es) activas para ${nombreMes} (límite: ${maxPermitido})`
+          : `Ya tienes una justificación pendiente para ${nombreMes}`,
+        justificacionExistente: justificacion || justificacionRef,
+        tipoBloqueo: 'enviada'
+      };
+    }
+
+    if (hayAceptada) {
+      const justificacion = activasDelMes.find(j => j.estado === 'Aceptado' || j.estado === 'Aceptado/Obs');
+      return {
+        permitido: false,
+        mensaje: maxPermitido > 1
+          ? `Ya tienes ${activasDelMes.length} justificación(es) aceptadas para ${nombreMes} (límite: ${maxPermitido})`
+          : `Ya tienes una justificación aceptada para ${nombreMes}`,
+        justificacionExistente: justificacion || justificacionRef,
+        tipoBloqueo: 'aceptada'
+      };
+    }
+
+    // Caso por defecto
     return {
-      permitido: true,
-      mensaje: "Verificación completada",
-      justificacionExistente: null
+      permitido: false,
+      mensaje: `Límite de justificaciones alcanzado para ${nombreMes}`,
+      justificacionExistente: justificacionRef,
+      tipoBloqueo: 'enviada'
     };
     
   } catch (error) {
