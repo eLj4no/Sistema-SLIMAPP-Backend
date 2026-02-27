@@ -4322,3 +4322,144 @@ function corregirPermisosJustificacionesExistentes() {
       return '';
     }
 
+    // ==========================================
+    // GENERADOR DE LINKS DE REGISTRO Y CÓDIGOS QR
+    // ==========================================
+
+    /**
+     * URL base del Web App (con formato /a/~/macros/s/ para Google Workspace).
+     * Actualizar el DEPLOYMENT_ID si se crea una nueva implementación.
+     */
+    const WEBAPP_BASE_URL = 'https://script.google.com/a/~/macros/s/AKfycbzrmy_GgdzMpOLfycvxxUPHU6iyuL9Jv6As_4kxG7mG8oQ4RbV-ALUZw0oeSJnqbvvc/exec';
+
+    /**
+     * Genera el "Link Registro" (columna P) y el código QR (columna Q)
+     * para todos los usuarios que aún no tienen esos datos.
+     *
+     * - Solo escribe en filas donde la columna P esté vacía (Link Registro).
+     * - Solo escribe el QR en filas donde la columna Q no tenga fórmula IMAGE.
+     * - No sobreescribe datos existentes.
+     *
+     * Ejecutar manualmente desde el editor de Apps Script.
+     */
+    function generarLinksRegistroYQR() {
+      try {
+        Logger.log('🚀 Iniciando generarLinksRegistroYQR...');
+        Logger.log('🔗 URL base: ' + WEBAPP_BASE_URL);
+
+        // 1. Acceder a la hoja de usuarios
+        const sheet = getSheet('USUARIOS', 'USUARIOS');
+        if (!sheet) {
+          Logger.log('❌ No se pudo acceder a la hoja de usuarios.');
+          return;
+        }
+
+        const COL       = CONFIG.COLUMNAS.USUARIOS;
+        const lastRow   = sheet.getLastRow();
+
+        if (lastRow < 2) {
+          Logger.log('⚠️ No hay usuarios en la hoja.');
+          return;
+        }
+
+        const totalFilas = lastRow - 1;
+
+        // 2. Leer columnas necesarias en un solo bloque para eficiencia
+        //    RUT (A=1) → col índice COL.RUT+1
+        //    LINK_REGISTRO (P=16) → col índice COL.LINK_REGISTRO+1
+        //    QR_REGISTRO (Q=17) → col índice COL.QR_REGISTRO+1
+        const rangoRut         = sheet.getRange(2, COL.RUT + 1,          totalFilas, 1).getValues();
+        const rangoLinkActual  = sheet.getRange(2, COL.LINK_REGISTRO + 1, totalFilas, 1).getValues();
+
+        // Para el QR necesitamos leer las FÓRMULAS (no los valores) para detectar si ya existe =IMAGE(...)
+        const rangoQRFormulas  = sheet.getRange(2, COL.QR_REGISTRO + 1,  totalFilas, 1).getFormulas();
+
+        let generadosLink  = 0;
+        let generadosQR    = 0;
+        let omitidosLink   = 0;
+        let omitidosQR     = 0;
+        let sinRut         = 0;
+
+        // 3. Recorrer fila por fila
+        for (let i = 0; i < totalFilas; i++) {
+          const rutRaw      = String(rangoRut[i][0]).trim();
+          const linkActual  = String(rangoLinkActual[i][0]).trim();
+          const qrFormula   = String(rangoQRFormulas[i][0]).trim();
+          const filaSheet   = i + 2; // Fila real en la hoja (1-based, saltando cabecera)
+
+          // Saltar filas sin RUT válido
+          if (!rutRaw || rutRaw === '' || rutRaw === '0' || rutRaw.toLowerCase() === 'false') {
+            sinRut++;
+            continue;
+          }
+
+          // Limpiar RUT usando la función existente del proyecto
+          const rutLimpio = cleanRut(rutRaw);
+          if (!rutLimpio || rutLimpio.length < 7) {
+            Logger.log('⚠️ Fila ' + filaSheet + ': RUT inválido → ' + rutRaw);
+            sinRut++;
+            continue;
+          }
+
+          // ─────────────────────────────────────────────────
+          // 3a. LINK REGISTRO (Columna P)
+          // ─────────────────────────────────────────────────
+          const tieneLink = linkActual !== '' && linkActual !== '0' && linkActual.toLowerCase() !== 'false';
+
+          if (tieneLink) {
+            omitidosLink++;
+          } else {
+            // Construir link con el formato exacto del ejemplo
+            const linkRegistro = WEBAPP_BASE_URL + '?action=register&rut=' + rutLimpio;
+            sheet.getRange(filaSheet, COL.LINK_REGISTRO + 1).setValue(linkRegistro);
+            Logger.log('✅ Link generado | Fila ' + filaSheet + ' | RUT: ' + rutLimpio);
+            generadosLink++;
+          }
+
+          // ─────────────────────────────────────────────────
+          // 3b. CÓDIGO QR (Columna Q) — Fórmula =IMAGE(...)
+          // ─────────────────────────────────────────────────
+          const tieneQR = qrFormula.toUpperCase().includes('IMAGE');
+
+          if (tieneQR) {
+            omitidosQR++;
+          } else {
+            // Construir el link (puede que se acabe de generar arriba o ya existía)
+            const linkParaQR = tieneLink
+              ? linkActual  // Usar el que ya estaba en la hoja
+              : WEBAPP_BASE_URL + '?action=register&rut=' + rutLimpio;
+
+            // URL-encodear el link para incrustarlo en la URL de quickchart.io
+            const linkEncoded = encodeURIComponent(linkParaQR);
+
+            // Construir la fórmula IMAGE igual al ejemplo proporcionado
+            const formulaQR = '=IMAGE("https://quickchart.io/qr?size=300&text=' + linkEncoded + '")';
+
+            sheet.getRange(filaSheet, COL.QR_REGISTRO + 1).setFormula(formulaQR);
+            Logger.log('✅ QR generado   | Fila ' + filaSheet + ' | RUT: ' + rutLimpio);
+            generadosQR++;
+          }
+
+          // Pausa cada 100 filas para no superar límites de Apps Script
+          if ((generadosLink + generadosQR) % 100 === 0 && (generadosLink + generadosQR) > 0) {
+            Utilities.sleep(300);
+          }
+        }
+
+        // 4. Resumen final en el log
+        Logger.log('');
+        Logger.log('══════════════════════════════════════════════════');
+        Logger.log('📊 RESUMEN — generarLinksRegistroYQR');
+        Logger.log('   🔗 Links generados  : ' + generadosLink);
+        Logger.log('   📷 QR generados     : ' + generadosQR);
+        Logger.log('   ⏭️  Links existentes : ' + omitidosLink);
+        Logger.log('   ⏭️  QR existentes    : ' + omitidosQR);
+        Logger.log('   ⚠️  Sin RUT válido   : ' + sinRut);
+        Logger.log('══════════════════════════════════════════════════');
+
+      } catch (e) {
+        Logger.log('❌ Error en generarLinksRegistroYQR: ' + e.toString());
+        Logger.log('   Stack: ' + e.stack);
+        throw e;
+      }
+    }
