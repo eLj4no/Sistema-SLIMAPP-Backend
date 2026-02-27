@@ -1106,6 +1106,13 @@
                   <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Hora</label>
                   <input type="time" id="justif-deadline-time" class="input-modern w-full px-4 py-3 rounded-lg text-sm">
                </div>
+               <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Máx. Justificaciones por Mes</label>
+                  <div class="flex items-center gap-3">
+                     <input type="number" id="justif-max-por-mes" min="1" max="10" value="1" class="input-modern w-24 px-4 py-3 rounded-lg text-sm text-center font-bold">
+                     <p class="text-xs text-slate-500 flex-1">Normalmente <strong>1</strong>. Aumenta durante negociación colectiva u otras actividades extraordinarias.</p>
+                  </div>
+               </div>
             </div>
 
             <div class="flex gap-3 mt-6">
@@ -2862,6 +2869,11 @@
          google.script.run.withSuccessHandler(res => {
             const switchEl = document.getElementById('justif-switch');
             switchEl.checked = res.habilitado;
+            // Cargar el límite actual en el input del modal
+            const inputMax = document.getElementById('justif-max-por-mes');
+            if (inputMax) {
+              inputMax.value = res.maxJustifMes || 1;
+            }
          }).obtenerEstadoSwitchJustificaciones();
       }
       
@@ -2888,9 +2900,14 @@
       function confirmJustifDeadline() {
          const fecha = document.getElementById('justif-deadline-date').value;
          const hora = document.getElementById('justif-deadline-time').value;
+         const maxInput = document.getElementById('justif-max-por-mes');
+         const maxVal = maxInput ? parseInt(maxInput.value) : 1;
          
          if (!fecha || !hora) {
             return showWarning("Debe ingresar fecha y hora.");
+         }
+         if (isNaN(maxVal) || maxVal < 1 || maxVal > 10) {
+            return showWarning("El límite de justificaciones debe ser entre 1 y 10.");
          }
          
          const fechaLimite = new Date(`${fecha}T${hora}`);
@@ -2898,11 +2915,11 @@
          google.script.run.withSuccessHandler(res => {
             if (res.success) {
                document.getElementById('justif-deadline-modal').classList.add('hidden');
-               showSuccess("Módulo habilitado hasta " + fechaLimite.toLocaleString('es-CL'));
+               showSuccess(`Módulo habilitado hasta ${fechaLimite.toLocaleString('es-CL')} · Límite: ${maxVal} justificación(es) por mes`);
             } else {
                showWarning(res.message);
             }
-         }).actualizarSwitchJustificaciones(true, fechaLimite.toISOString());
+         }).actualizarSwitchJustificaciones(true, fechaLimite.toISOString(), maxVal);
       }
       
       function showOutOfDeadlineWarning() {
