@@ -1107,11 +1107,9 @@
                   <input type="time" id="justif-deadline-time" class="input-modern w-full px-4 py-3 rounded-lg text-sm">
                </div>
                <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Máx. Justificaciones por Mes</label>
-                  <div class="flex items-center gap-3">
-                     <input type="number" id="justif-max-por-mes" min="1" max="10" value="1" class="input-modern w-24 px-4 py-3 rounded-lg text-sm text-center font-bold">
-                     <p class="text-xs text-slate-500 flex-1">Normalmente <strong>1</strong>. Aumenta durante negociación colectiva u otras actividades extraordinarias.</p>
-                  </div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Fecha del Evento <span class="text-slate-400 font-normal normal-case">(opcional)</span></label>
+                  <input type="date" id="justif-fecha-evento" class="input-modern w-full px-4 py-3 rounded-lg text-sm">
+                  <p class="text-xs text-slate-400 mt-1">Si se indica, la restricción aplica por evento. Sin fecha, aplica por mes calendario.</p>
                </div>
             </div>
 
@@ -2869,10 +2867,11 @@
          google.script.run.withSuccessHandler(res => {
             const switchEl = document.getElementById('justif-switch');
             switchEl.checked = res.habilitado;
-            // Cargar el límite actual en el input del modal
-            const inputMax = document.getElementById('justif-max-por-mes');
-            if (inputMax) {
-              inputMax.value = res.maxJustifMes || 1;
+            // Cargar la fecha del evento si existe
+            const inputEvento = document.getElementById('justif-fecha-evento');
+            if (inputEvento && res.fechaEvento) {
+              // Extraer solo la parte de fecha "YYYY-MM-DD"
+              inputEvento.value = res.fechaEvento.split('T')[0];
             }
          }).obtenerEstadoSwitchJustificaciones();
       }
@@ -2900,26 +2899,27 @@
       function confirmJustifDeadline() {
          const fecha = document.getElementById('justif-deadline-date').value;
          const hora = document.getElementById('justif-deadline-time').value;
-         const maxInput = document.getElementById('justif-max-por-mes');
-         const maxVal = maxInput ? parseInt(maxInput.value) : 1;
+         const fechaEventoInput = document.getElementById('justif-fecha-evento');
+         const fechaEvento = fechaEventoInput ? fechaEventoInput.value : "";
          
          if (!fecha || !hora) {
-            return showWarning("Debe ingresar fecha y hora.");
-         }
-         if (isNaN(maxVal) || maxVal < 1 || maxVal > 10) {
-            return showWarning("El límite de justificaciones debe ser entre 1 y 10.");
+            return showWarning("Debe ingresar fecha y hora límite del módulo.");
          }
          
          const fechaLimite = new Date(`${fecha}T${hora}`);
+         const fechaEventoEnviar = fechaEvento ? fechaEvento : null;
          
          google.script.run.withSuccessHandler(res => {
             if (res.success) {
                document.getElementById('justif-deadline-modal').classList.add('hidden');
-               showSuccess(`Módulo habilitado hasta ${fechaLimite.toLocaleString('es-CL')} · Límite: ${maxVal} justificación(es) por mes`);
+               const textoEvento = fechaEventoEnviar 
+                 ? ` · Evento: ${fechaEventoEnviar}` 
+                 : " · Sin evento específico (modo mes)";
+               showSuccess(`Módulo habilitado hasta ${fechaLimite.toLocaleString('es-CL')}${textoEvento}`);
             } else {
                showWarning(res.message);
             }
-         }).actualizarSwitchJustificaciones(true, fechaLimite.toISOString(), maxVal);
+         }).actualizarSwitchJustificaciones(true, fechaLimite.toISOString(), fechaEventoEnviar);
       }
       
       function showOutOfDeadlineWarning() {
@@ -3145,13 +3145,18 @@
           let titulo = '';
           let colorIcono = '';
           
+          // Usar código de evento si está disponible, si no usar el mes
+          const referenciaTexto = response.codigoEvento 
+            ? `el evento <strong>${response.codigoEvento}</strong>` 
+            : `${mesCapitalizado}`;
+          
           if (tipoBloqueo === 'enviada') {
               icono = 'schedule';
-              titulo = `Ya tienes una justificación pendiente para ${mesCapitalizado}`;
+              titulo = `Ya tienes una justificación pendiente para ${referenciaTexto}`;
               colorIcono = 'text-orange-500';
           } else if (tipoBloqueo === 'aceptada') {
               icono = 'check_circle';
-              titulo = `Ya tienes una justificación aceptada para ${mesCapitalizado}`;
+              titulo = `Ya tienes una justificación aceptada para ${referenciaTexto}`;
               colorIcono = 'text-green-500';
           } else {
               icono = 'info';
@@ -3169,7 +3174,7 @@
                           <h3 class="text-lg font-bold text-gray-800 mb-3">
                               Justificación Existente
                           </h3>
-                          <p class="text-sm text-gray-600 mb-5 leading-relaxed">
+                          <p class="text-sm text-gray-600 mb-5 leading-relaxed" id="alerta-restriccion-texto">
                               ${titulo}
                           </p>
                           <button onclick="cerrarAlertaRestriccion()" 
