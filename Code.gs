@@ -415,45 +415,65 @@ function subirArchivoConPermisos(archivoData, carpetaId, nombreArchivo, correosP
     var fileId = file.getId(); // Obtenemos el ID para usar la API avanzada
 
     todosLosCorreos.forEach(function(item) {
+      
+      // ── INTENTO 1: API Avanzada (sin email de notificación) ──
       try {
-        // CAMBIO PRINCIPAL: Usamos Drive.Permissions en lugar de file.addViewer
         var recursoPermiso = {
           'role': 'reader',
           'type': 'user',
           'value': item.correo
         };
-        
-        // El segundo parámetro (fileId) es obligatorio.
-        // El tercer parámetro desactiva el correo automático de Google.
         Drive.Permissions.insert(recursoPermiso, fileId, {
           sendNotificationEmails: false
         });
-
         resultado.permisosOtorgados.push({
           correo: item.correo,
           tipo: item.tipo,
           nombre: item.nombre
         });
         Logger.log("✅ Permiso silencioso otorgado a " + item.tipo + ": " + item.correo);
-        
+
       } catch (permError) {
-        // Fallback: Si falla la API avanzada, intentamos con el método tradicional (aunque envíe correo)
+        Logger.log("⚠️ Fallo API Avanzada para " + item.correo + " - " + permError + " - Intentando método alternativo...");
+        
+        // Esperar antes del primer fallback para reducir conflictos de cuota
+        Utilities.sleep(1000);
+        
+        // ── INTENTO 2: Método tradicional (addViewer) ──
         try {
-           console.warn("Fallo API Avanzada, usando método tradicional para: " + item.correo);
-           file.addViewer(item.correo);
-           resultado.permisosOtorgados.push({
+          file.addViewer(item.correo);
+          resultado.permisosOtorgados.push({
+            correo: item.correo,
+            tipo: item.tipo,
+            nombre: item.nombre
+          });
+          Logger.log("✅ Permiso otorgado via addViewer a " + item.tipo + ": " + item.correo);
+
+        } catch (fallbackError) {
+          Logger.log("⚠️ Fallo addViewer para " + item.correo + " - " + fallbackError + " - Reintentando en 2s...");
+          
+          // Esperar más tiempo antes del último reintento
+          Utilities.sleep(2000);
+          
+          // ── INTENTO 3 (ÚLTIMO): Reintento final con addViewer ──
+          try {
+            file.addViewer(item.correo);
+            resultado.permisosOtorgados.push({
               correo: item.correo,
               tipo: item.tipo,
               nombre: item.nombre
-           });
-        } catch (finalError) {
-           resultado.permisosError.push({
-             correo: item.correo,
-             tipo: item.tipo,
-             nombre: item.nombre,
-             error: finalError.toString()
-           });
-           Logger.log("⚠️ Error fatal al otorgar permiso a " + item.tipo + " (" + item.correo + "): " + finalError);
+            });
+            Logger.log("✅ Permiso otorgado en reintento final para: " + item.correo);
+
+          } catch (finalError) {
+            resultado.permisosError.push({
+              correo: item.correo,
+              tipo: item.tipo,
+              nombre: item.nombre,
+              error: finalError.toString()
+            });
+            Logger.log("❌ Error fatal al otorgar permiso a " + item.tipo + " (" + item.correo + "): " + finalError);
+          }
         }
       }
     });
@@ -586,6 +606,37 @@ function generarCodigoAsamblea(fecha) {
   const month = String(fecha.getMonth() + 1).padStart(2, '0'); // Mes con 2 dígitos
   
   return `${year}_${month}`;
+}
+
+/**
+ * Genera el código de asamblea desde la fecha del evento configurado
+ * Formato: YYYY_MM_DD (ej: "2026_02_27")
+ * @param {string|Date} fechaEvento - Fecha del evento en formato "YYYY-MM-DD" o Date
+ * @returns {string} Código de asamblea con día (ejemplo: "2026_02_27")
+ */
+function generarCodigoAsambleaEvento(fechaEvento) {
+  try {
+    var fecha;
+    if (typeof fechaEvento === 'string') {
+      var soloFecha = fechaEvento.split('T')[0];
+      var partes = soloFecha.split('-');
+      // Anclar a mediodía para evitar desfase de zona horaria
+      fecha = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]), 12, 0, 0);
+    } else if (fechaEvento instanceof Date) {
+      fecha = fechaEvento;
+    } else {
+      return generarCodigoAsamblea(new Date());
+    }
+    
+    const year = fecha.getFullYear();
+    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+    const day = String(fecha.getDate()).padStart(2, '0');
+    
+    return `${year}_${month}_${day}`;
+  } catch(e) {
+    Logger.log('Error en generarCodigoAsambleaEvento: ' + e.toString());
+    return generarCodigoAsamblea(new Date());
+  }
 }
 
 /**
@@ -1467,7 +1518,12 @@ function obtenerEstadoSwitchJustificaciones() {
     const data = sheetConfig.getRange(2, 1, 1, 3).getValues();
     const habilitado = data[0][0] === true || data[0][0] === "TRUE" || data[0][0] === "true";
     const fechaLimiteValue = data[0][1];
-    const maxJustifMes = (data[0][2] && !isNaN(parseInt(data[0][2]))) ? parseInt(data[0][2]) : 1;
+    const fechaEventoRaw = data[0][2];
+    const fechaEvento = (fechaEventoRaw && String(fechaEventoRaw).trim() !== "") 
+      ? (fechaEventoRaw instanceof Date 
+          ? Utilities.formatDate(fechaEventoRaw, Session.getScriptTimeZone(), "yyyy-MM-dd")
+          : String(fechaEventoRaw).trim())
+      : null;
     
     if (habilitado && fechaLimiteValue) {
       // Convertir ambas fechas a UTC para comparación justa
@@ -1485,7 +1541,7 @@ function obtenerEstadoSwitchJustificaciones() {
         var resultado = { 
         habilitado: habilitado, 
         fechaLimite: fechaLimiteValue,
-        maxJustifMes: maxJustifMes
+        fechaEvento: fechaEvento
       };
       
       // ✅ Guardar en caché por 5 minutos
@@ -1502,7 +1558,7 @@ function obtenerEstadoSwitchJustificaciones() {
     return { 
       habilitado: habilitado, 
       fechaLimite: fechaLimiteValue,
-      maxJustifMes: maxJustifMes
+      fechaEvento: fechaEvento
     };
     
   } catch (e) {
@@ -1518,7 +1574,7 @@ function obtenerEstadoSwitchJustificaciones() {
 /**
  * Actualizar estado del switch de justificaciones
  */
-function actualizarSwitchJustificaciones(nuevoEstado, fechaLimite, maxJustifMes) {
+function actualizarSwitchJustificaciones(nuevoEstado, fechaLimite, fechaEvento) {
   var lock = LockService.getScriptLock();
   if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
     try {
@@ -1527,16 +1583,16 @@ function actualizarSwitchJustificaciones(nuevoEstado, fechaLimite, maxJustifMes)
       
       if (!sheetConfig) {
         sheetConfig = ss.insertSheet(CONFIG.HOJAS.CONFIG_JUSTIFICACIONES);
-        sheetConfig.appendRow(["Habilitado", "Fecha Límite", "Max_Justif_Mes"]);
-        sheetConfig.appendRow([false, "", 1]);
+        sheetConfig.appendRow(["Habilitado", "Fecha Límite", "Fecha_Evento"]);
+        sheetConfig.appendRow([false, "", ""]);
       }
       
       sheetConfig.getRange(2, 1).setValue(nuevoEstado);
       if (fechaLimite) {
         sheetConfig.getRange(2, 2).setValue(fechaLimite);
       }
-      const maxValor = (maxJustifMes && !isNaN(parseInt(maxJustifMes))) ? parseInt(maxJustifMes) : 1;
-      sheetConfig.getRange(2, 3).setValue(maxValor);
+      const valorEvento = (fechaEvento && String(fechaEvento).trim() !== "") ? String(fechaEvento).trim() : "";
+      sheetConfig.getRange(2, 3).setValue(valorEvento);
       
       return { success: true, message: "Estado actualizado correctamente." };
       
@@ -1564,7 +1620,9 @@ function verificarDisponibilidadJustificaciones() {
 }
 
 /**
- * Valida si el usuario puede enviar una justificación para el mes actual
+ * Valida si el usuario puede enviar una justificación
+ * Si hay evento configurado: valida por código de evento (ASAMBLEA)
+ * Si no hay evento: valida por mes calendario (comportamiento anterior)
  * @param {string} rut - RUT del usuario
  * @returns {Object} {permitido: boolean, mensaje: string, justificacionExistente: Object|null}
  */
@@ -1573,26 +1631,96 @@ function validarJustificacionMesActual(rut) {
     const sheet = getSheet('JUSTIFICACIONES', 'JUSTIFICACIONES');
     const data = sheet.getDataRange().getValues();
     const COL = CONFIG.COLUMNAS.JUSTIFICACIONES;
-    
-    // Obtener mes y año actual
     const hoy = new Date();
-    const mesActual = hoy.getMonth(); // 0-11
-    const yearActual = hoy.getFullYear();
     
-    // Buscar justificaciones del mismo RUT en el mes actual
+    // Obtener configuración del evento activo
+    const configSwitch = obtenerEstadoSwitchJustificaciones();
+    const fechaEvento = configSwitch.fechaEvento || null;
+    const codigoEventoActivo = fechaEvento ? generarCodigoAsambleaEvento(fechaEvento) : null;
+    
+    Logger.log(`✅ Validando justificación | Evento: ${codigoEventoActivo || 'Sin evento (modo mes)'}`);
+    
+    // ========================
+    // MODO A: Validación por evento específico
+    // ========================
+    if (codigoEventoActivo) {
+      const justificacionesDelEvento = [];
+      
+      for (let i = 1; i < data.length; i++) {
+        const filaRut = data[i][COL.RUT];
+        const filaAsamblea = String(data[i][COL.ASAMBLEA] || "").trim();
+        const filaEstado = data[i][COL.ESTADO];
+        const filaFecha = data[i][COL.FECHA];
+        
+        if (cleanRut(filaRut) === cleanRut(rut) && filaAsamblea === codigoEventoActivo) {
+          justificacionesDelEvento.push({
+            id: data[i][COL.ID],
+            estado: filaEstado,
+            tipo: data[i][COL.MOTIVO],
+            fecha: filaFecha ? Utilities.formatDate(new Date(filaFecha), Session.getScriptTimeZone(), "dd/MM/yyyy") : "",
+            asamblea: filaAsamblea
+          });
+        }
+      }
+      
+      if (justificacionesDelEvento.length === 0) {
+        return { permitido: true, mensaje: "Puede enviar la justificación", justificacionExistente: null };
+      }
+      
+      const todasRechazadas = justificacionesDelEvento.every(j => j.estado === 'Rechazado');
+      if (todasRechazadas) {
+        return { permitido: true, mensaje: "Puede reintentar (anterior rechazada)", justificacionExistente: justificacionesDelEvento[0] };
+      }
+      
+      const justEnviada = justificacionesDelEvento.find(j => j.estado === 'Enviado');
+      const justAceptada = justificacionesDelEvento.find(j => j.estado === 'Aceptado' || j.estado === 'Aceptado/Obs');
+      
+      if (justEnviada) {
+        return {
+          permitido: false,
+          mensaje: `Ya tienes una justificación pendiente para el evento ${codigoEventoActivo}`,
+          justificacionExistente: justEnviada,
+          tipoBloqueo: 'enviada',
+          codigoEvento: codigoEventoActivo
+        };
+      }
+      
+      if (justAceptada) {
+        return {
+          permitido: false,
+          mensaje: `Ya tienes una justificación aceptada para el evento ${codigoEventoActivo}`,
+          justificacionExistente: justAceptada,
+          tipoBloqueo: 'aceptada',
+          codigoEvento: codigoEventoActivo
+        };
+      }
+      
+      // Caso por defecto
+      return {
+        permitido: false,
+        mensaje: `Ya existe una justificación para el evento ${codigoEventoActivo}`,
+        justificacionExistente: justificacionesDelEvento[0],
+        tipoBloqueo: 'enviada',
+        codigoEvento: codigoEventoActivo
+      };
+    }
+    
+    // ========================
+    // MODO B: Fallback — validación por mes calendario (comportamiento anterior)
+    // ========================
+    const mesActual = hoy.getMonth();
+    const yearActual = hoy.getFullYear();
     const justificacionesDelMes = [];
     
     for (let i = 1; i < data.length; i++) {
       const filaRut = data[i][COL.RUT];
       const filaFecha = new Date(data[i][COL.FECHA]);
-      const filaMes = filaFecha.getMonth();
-      const filaYear = filaFecha.getFullYear();
       const filaEstado = data[i][COL.ESTADO];
       const filaAsamblea = data[i][COL.ASAMBLEA];
       
       if (cleanRut(filaRut) === cleanRut(rut) && 
-          filaMes === mesActual && 
-          filaYear === yearActual) {
+          filaFecha.getMonth() === mesActual && 
+          filaFecha.getFullYear() === yearActual) {
         justificacionesDelMes.push({
           id: data[i][COL.ID],
           estado: filaEstado,
@@ -1603,82 +1731,44 @@ function validarJustificacionMesActual(rut) {
       }
     }
     
-    // Obtener límite configurado dinámicamente
-    const configSwitch = obtenerEstadoSwitchJustificaciones();
-    const maxPermitido = configSwitch.maxJustifMes || 1;
-
-    // Si no hay justificaciones para este mes, permitir
     if (justificacionesDelMes.length === 0) {
-      return {
-        permitido: true,
-        mensaje: "Puede enviar la justificación",
-        justificacionExistente: null
-      };
+      return { permitido: true, mensaje: "Puede enviar la justificación", justificacionExistente: null };
     }
     
-    // Obtener nombre del mes actual
     const nombreMes = hoy.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
-
-    // Verificar el estado de las justificaciones existentes
+    const todasRechazadas = justificacionesDelMes.every(j => j.estado === 'Rechazado');
+    
+    if (todasRechazadas) {
+      return { permitido: true, mensaje: "Puede reintentar (anterior rechazada)", justificacionExistente: justificacionesDelMes[0] };
+    }
+    
     const hayEnviada = justificacionesDelMes.some(j => j.estado === 'Enviado');
     const hayAceptada = justificacionesDelMes.some(j => j.estado === 'Aceptado' || j.estado === 'Aceptado/Obs');
-    const todasRechazadas = justificacionesDelMes.every(j => j.estado === 'Rechazado');
-
-    // Si todas están rechazadas, permitir nuevo intento sin contar el límite
-    if (todasRechazadas) {
-      return {
-        permitido: true,
-        mensaje: "Puede reintentar (anterior rechazada)",
-        justificacionExistente: justificacionesDelMes[0]
-      };
-    }
-
-    // Contar solo las activas (Enviado + Aceptado)
-    const activasDelMes = justificacionesDelMes.filter(j => 
-      j.estado === 'Enviado' || j.estado === 'Aceptado' || j.estado === 'Aceptado/Obs'
-    );
-
-    // Si el número de activas NO alcanza el límite, permitir
-    if (activasDelMes.length < maxPermitido) {
-      return {
-        permitido: true,
-        mensaje: "Puede enviar la justificación",
-        justificacionExistente: null
-      };
-    }
-
-    // Superó el límite — bloquear
-    const justificacionRef = activasDelMes[0];
     
     if (hayEnviada) {
-      const justificacion = activasDelMes.find(j => j.estado === 'Enviado');
+      const justificacion = justificacionesDelMes.find(j => j.estado === 'Enviado');
       return {
         permitido: false,
-        mensaje: maxPermitido > 1 
-          ? `Ya tienes ${activasDelMes.length} justificación(es) activas para ${nombreMes} (límite: ${maxPermitido})`
-          : `Ya tienes una justificación pendiente para ${nombreMes}`,
-        justificacionExistente: justificacion || justificacionRef,
+        mensaje: `Ya tienes una justificación pendiente para ${nombreMes}`,
+        justificacionExistente: justificacion,
         tipoBloqueo: 'enviada'
       };
     }
-
+    
     if (hayAceptada) {
-      const justificacion = activasDelMes.find(j => j.estado === 'Aceptado' || j.estado === 'Aceptado/Obs');
+      const justificacion = justificacionesDelMes.find(j => j.estado === 'Aceptado' || j.estado === 'Aceptado/Obs');
       return {
         permitido: false,
-        mensaje: maxPermitido > 1
-          ? `Ya tienes ${activasDelMes.length} justificación(es) aceptadas para ${nombreMes} (límite: ${maxPermitido})`
-          : `Ya tienes una justificación aceptada para ${nombreMes}`,
-        justificacionExistente: justificacion || justificacionRef,
+        mensaje: `Ya tienes una justificación aceptada para ${nombreMes}`,
+        justificacionExistente: justificacion,
         tipoBloqueo: 'aceptada'
       };
     }
-
-    // Caso por defecto
+    
     return {
       permitido: false,
       mensaje: `Límite de justificaciones alcanzado para ${nombreMes}`,
-      justificacionExistente: justificacionRef,
+      justificacionExistente: justificacionesDelMes[0],
       tipoBloqueo: 'enviada'
     };
     
@@ -1734,7 +1824,8 @@ function enviarJustificacion(rutGestor, tipo, motivo, archivoData, rutBeneficiar
           message: validacion.mensaje,
           tipoError: 'restriccion_mes',
           justificacionExistente: validacion.justificacionExistente,
-          tipoBloqueo: validacion.tipoBloqueo
+          tipoBloqueo: validacion.tipoBloqueo,
+          codigoEvento: validacion.codigoEvento || null
         };
       }
       
@@ -1777,7 +1868,10 @@ function enviarJustificacion(rutGestor, tipo, motivo, archivoData, rutBeneficiar
       // ========== CREAR REGISTRO EN LA BASE DE DATOS ==========
       var fechaHoy = new Date();
       var estado = "Enviado";
-      var codigoAsamblea = generarCodigoAsamblea(fechaHoy);
+      var configActiva = obtenerEstadoSwitchJustificaciones();
+      var codigoAsamblea = configActiva.fechaEvento 
+        ? generarCodigoAsambleaEvento(configActiva.fechaEvento) 
+        : generarCodigoAsamblea(fechaHoy);
       
       var gestion = "Socio";
       var nomDirigente = "";
@@ -2626,8 +2720,45 @@ function procesarPermisosComprobantesDevolucion() {
             const hasAccess = viewers.some(viewer => viewer.getEmail() === correoUsuario);
             
             if (!hasAccess) {
-              file.addViewer(correoUsuario);
-              console.log(`✅ Permiso otorgado a ${correoUsuario} para archivo ${fileId}`);
+
+              // ── INTENTO 1: API Avanzada (sin email de notificación) ──
+              let permisoOtorgado = false;
+              try {
+                const recursoPermiso = {
+                  'role': 'reader',
+                  'type': 'user',
+                  'value': correoUsuario
+                };
+                Drive.Permissions.insert(recursoPermiso, fileId, {
+                  sendNotificationEmails: false
+                });
+                permisoOtorgado = true;
+                console.log(`✅ Permiso silencioso otorgado (API Avanzada) a ${correoUsuario} para archivo ${fileId}`);
+
+              } catch (apiError) {
+                console.warn(`⚠️ Fallo API Avanzada para ${correoUsuario} - ${apiError} - Intentando addViewer...`);
+                Utilities.sleep(1000);
+
+                // ── INTENTO 2: addViewer ──
+                try {
+                  file.addViewer(correoUsuario);
+                  permisoOtorgado = true;
+                  console.log(`✅ Permiso otorgado via addViewer a ${correoUsuario} para archivo ${fileId}`);
+
+                } catch (fallbackError) {
+                  console.warn(`⚠️ Fallo addViewer para ${correoUsuario} - ${fallbackError} - Reintentando en 2s...`);
+                  Utilities.sleep(2000);
+
+                  // ── INTENTO 3 (ÚLTIMO): Reintento final ──
+                  try {
+                    file.addViewer(correoUsuario);
+                    permisoOtorgado = true;
+                    console.log(`✅ Permiso otorgado en reintento final a ${correoUsuario} para archivo ${fileId}`);
+                  } catch (finalError) {
+                    console.error(`❌ Error fatal al otorgar permiso a ${correoUsuario} para archivo ${fileId}: ${finalError}`);
+                  }
+                }
+              }
             }
           }
         } catch (fileErr) {
