@@ -4065,33 +4065,39 @@ function configurarTriggers() {
   const triggers = ScriptApp.getProjectTriggers();
   triggers.forEach(trigger => ScriptApp.deleteTrigger(trigger));
   
-  // Trigger para verificar cambios en justificaciones cada 30 minutos
-  // Escalonar las ejecuciones
+  // Verificar cambios en justificaciones — cada 8 horas
   ScriptApp.newTrigger('verificarCambiosJustificaciones')
-    .timeBased().everyMinutes(30).create();
+    .timeBased()
+    .everyHours(8)
+    .create();
   
+  // Verificar cambios en apelaciones — cada 8 horas
   ScriptApp.newTrigger('verificarCambiosApelaciones')
-    .timeBased().everyMinutes(30)
-    .atHour(1).nearMinute(15).create(); // ← Desplazado 15 min
+    .timeBased()
+    .everyHours(8)
+    .create();
   
-  // ✅ AGREGAR ESTE (FALTABA)
+  // Procesar validación de préstamos — diario a las 8 AM
   ScriptApp.newTrigger('procesarValidacionPrestamos')
-    .timeBased().everyHours(1).create();
+    .timeBased()
+    .everyDays(1)
+    .atHour(8)
+    .create();
   
-  // Trigger para procesar permisos de comprobantes de devolución cada hora
+  // Procesar permisos de comprobantes de devolución — cada 1 hora
   ScriptApp.newTrigger('procesarPermisosComprobantesDevolucion')
     .timeBased()
     .everyHours(1)
     .create();
   
-  // ⭐ NUEVO: Trigger para verificar préstamos diariamente a las 8 AM
+  // Verificar cambios en préstamos — diario a las 8 AM
   ScriptApp.newTrigger('verificarCambiosPrestamos')
     .timeBased()
     .everyDays(1)
     .atHour(8)
     .create();
   
-  // ⭐ NUEVO: Trigger semanal para notificaciones de credencial (domingos a las 8am)
+  // Verificar cambios en credenciales — cada domingo a las 8 AM
   ScriptApp.newTrigger('verificarCambiosCredenciales')
     .timeBased()
     .onWeekDay(ScriptApp.WeekDay.SUNDAY)
@@ -4105,9 +4111,12 @@ function configurarTriggers() {
     success: true,
     message: "Triggers configurados correctamente",
     triggers: [
-      "verificarCambiosJustificaciones (cada 30 min)",
-      "verificarCambiosApelaciones (cada 30 min)",
-      "procesarPermisosComprobantesDevolucion (cada hora)"
+      "verificarCambiosJustificaciones (cada 8 horas)",
+      "verificarCambiosApelaciones (cada 8 horas)",
+      "procesarValidacionPrestamos (diario 8 AM)",
+      "procesarPermisosComprobantesDevolucion (cada 1 hora)",
+      "verificarCambiosPrestamos (diario 8 AM)",
+      "verificarCambiosCredenciales (domingos 8 AM)"
     ]
   };
 }
