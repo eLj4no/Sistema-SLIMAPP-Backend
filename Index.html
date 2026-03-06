@@ -4777,14 +4777,14 @@ divForm.classList.add('flex');
               <p class="text-slate-600 leading-relaxed text-center">
                 Actualmente no tienes una credencial registrada en el sistema.<br><br>
                 Si crees que esto es un error, comunícate con un dirigente de la organización.
-              </p>
-            `;
+              </p>`;
           }
-          
-          nota.classList.add('hidden');
-        
-        modal.classList.remove('hidden');
 
+          nota.classList.add('hidden');
+
+        }
+
+        modal.classList.remove('hidden');
         // Esperar un frame para que el navegador procese el display
         requestAnimationFrame(() => {
           const modalCard = modal.querySelector('.modal-card');
