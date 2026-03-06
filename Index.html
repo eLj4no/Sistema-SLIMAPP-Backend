@@ -410,6 +410,15 @@
                   S/D
                 </div>
               </button>
+
+              <!-- ESTADO CREDENCIAL SINDICAL -->
+              <button onclick="mostrarInfoEstado('credencial')" class="bg-white rounded-lg p-3 border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all text-left group sm:col-span-2">
+                <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 group-hover:text-indigo-600 transition-colors">Estado de Credencial</label>
+                <div id="p-estado-credencial" class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-slate-100 text-slate-500">
+                  <span class="material-icons-round text-xs">info</span>
+                  Cargando...
+                </div>
+              </button>
             </div>
           </div>
 
@@ -2658,6 +2667,36 @@
                   badgeNeg.classList.add('bg-slate-500', 'text-white');
                   badgeNeg.innerHTML = '<span class="material-icons-round text-xs">info</span> ' + estadoNeg;
               }
+
+              // ========== BADGE ESTADO CREDENCIAL SINDICAL ==========
+              const badgeCred = document.getElementById('p-estado-credencial');
+              const estadoCred = String(d.estadoCredencial || "S/D").trim().toUpperCase();
+              estadoActualCredencial = estadoCred;
+              
+              badgeCred.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide";
+              
+              if (estadoCred === "ENTREGADO") {
+                badgeCred.classList.add('bg-emerald-600', 'text-white');
+                badgeCred.innerHTML = '<span class="material-icons-round text-xs">badge</span> ENTREGADO';
+              } else if (estadoCred === "DISPONIBLE") {
+                badgeCred.classList.add('bg-teal-500', 'text-white');
+                badgeCred.innerHTML = '<span class="material-icons-round text-xs">inbox</span> DISPONIBLE';
+              } else if (estadoCred === "SOLICITADO") {
+                badgeCred.classList.add('bg-amber-500', 'text-white');
+                badgeCred.innerHTML = '<span class="material-icons-round text-xs">schedule</span> SOLICITADO';
+              } else if (estadoCred === "NO VIGENTE") {
+                badgeCred.classList.add('bg-red-500', 'text-white');
+                badgeCred.innerHTML = '<span class="material-icons-round text-xs">cancel</span> NO VIGENTE';
+              } else if (estadoCred === "DATOS INCORRECTOS") {
+                badgeCred.classList.add('bg-orange-500', 'text-white');
+                badgeCred.innerHTML = '<span class="material-icons-round text-xs">error</span> DATOS INCORRECTOS';
+              } else if (estadoCred === "REIMPRIMIR") {
+                badgeCred.classList.add('bg-purple-500', 'text-white');
+                badgeCred.innerHTML = '<span class="material-icons-round text-xs">print</span> REIMPRIMIR';
+              } else {
+                badgeCred.classList.add('bg-slate-400', 'text-white');
+                badgeCred.innerHTML = '<span class="material-icons-round text-xs">help_outline</span> S/D';
+              }
               
             } else { 
               showWarning("Error: " + response.message); 
@@ -4383,6 +4422,7 @@ divForm.classList.add('flex');
 
       let estadoActualOrganizacion = "";
       let estadoActualNegociacion = "";
+      let estadoActualCredencial = "";
 
       /**
        * Muestra información detallada del estado seleccionado
@@ -4635,6 +4675,114 @@ divForm.classList.add('flex');
             nota.classList.add('hidden');
           }
         }
+
+        } else if (tipoEstado === 'credencial') {
+          // ESTADO CREDENCIAL SINDICAL
+          titulo.innerText = "Credencial Sindical";
+          icono.innerText = "badge";
+          
+          const estado = estadoActualCredencial.toUpperCase();
+          
+          // Configurar badge según estado
+          const configBadge = {
+            "ENTREGADO":        { cls: "bg-emerald-600 text-white", icon: "badge",       label: "ENTREGADO" },
+            "DISPONIBLE":       { cls: "bg-teal-500 text-white",    icon: "inbox",       label: "DISPONIBLE" },
+            "SOLICITADO":       { cls: "bg-amber-500 text-white",   icon: "schedule",    label: "SOLICITADO" },
+            "NO VIGENTE":       { cls: "bg-red-500 text-white",     icon: "cancel",      label: "NO VIGENTE" },
+            "DATOS INCORRECTOS":{ cls: "bg-orange-500 text-white",  icon: "error",       label: "DATOS INCORRECTOS" },
+            "REIMPRIMIR":       { cls: "bg-purple-500 text-white",  icon: "print",       label: "REIMPRIMIR" }
+          };
+          
+          const bc = configBadge[estado] || { cls: "bg-slate-400 text-white", icon: "help_outline", label: "SIN DATOS" };
+          badge.className = `inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide shadow-lg ${bc.cls}`;
+          badge.innerHTML = `<span class="material-icons-round text-base">${bc.icon}</span> ${bc.label}`;
+          
+          // Mensajes por estado
+          const mensajes = {
+            "ENTREGADO": {
+              iconoModal: "verified", colorIcono: "emerald",
+              tituloMsg: "Credencial Entregada",
+              cuerpo: `Tu tarjeta ha sido entregada y se encuentra disponible para su uso. Recuerda que la credencial sindical se utiliza para las asambleas presenciales, donde debes mostrarla para la correcta marcación de tu asistencia.`,
+              alertaTipo: "emerald",
+              alertaIcono: "info",
+              alertaTexto: "Si la credencial está desgastada o la extraviaste, debes solicitar una nueva a un dirigente de la organización."
+            },
+            "DISPONIBLE": {
+              iconoModal: "inbox", colorIcono: "teal",
+              tituloMsg: "Lista para Retiro",
+              cuerpo: `Tu credencial sindical ya está impresa y disponible para su retiro. Debes acercarte a la oficina sindical o retirarla en la próxima asamblea presencial.`,
+              alertaTipo: "teal",
+              alertaIcono: "store",
+              alertaTexto: "Recuerda llevar tu RUT al momento de retirarla."
+            },
+            "SOLICITADO": {
+              iconoModal: "schedule", colorIcono: "amber",
+              tituloMsg: "Solicitud en Proceso",
+              cuerpo: `Tus datos han sido ingresados al sistema y se ha solicitado al departamento de comunicaciones la gestión para la impresión de tu credencial sindical.`,
+              alertaTipo: "amber",
+              alertaIcono: "mail",
+              alertaTexto: "Cuando esté disponible, recibirás un correo electrónico notificando su disponibilidad de retiro."
+            },
+            "NO VIGENTE": {
+              iconoModal: "block", colorIcono: "red",
+              tituloMsg: "Credencial No Vigente",
+              cuerpo: `Tu credencial sindical ha sido deshabilitada de nuestros sistemas. Esto indica que podrías no pertenecer actualmente a la empresa o a la organización sindical.`,
+              alertaTipo: "red",
+              alertaIcono: "contact_support",
+              alertaTexto: "Si consideras que existe un error, comunícate con algún dirigente de la organización para regularizar tu situación."
+            },
+            "DATOS INCORRECTOS": {
+              iconoModal: "error_outline", colorIcono: "orange",
+              tituloMsg: "Datos Incorrectos",
+              cuerpo: `No se ha podido crear tu credencial sindical porque existen datos incorrectos para su fabricación.`,
+              alertaTipo: "orange",
+              alertaIcono: "edit",
+              alertaTexto: "Debes actualizar tus datos en el módulo 'Mis Datos' o comunicarte con un dirigente sindical para tu orientación."
+            },
+            "REIMPRIMIR": {
+              iconoModal: "print", colorIcono: "purple",
+              tituloMsg: "Reimpresión Solicitada",
+              cuerpo: `Se ha registrado una solicitud de reimpresión de tu credencial sindical. Nuestro equipo está procesando esta solicitud.`,
+              alertaTipo: "purple",
+              alertaIcono: "notifications",
+              alertaTexto: "Serás notificado por correo electrónico una vez que esté disponible. También puedes revisar el estado en esta misma sección."
+            }
+          };
+          
+          const msg = mensajes[estado];
+          
+          if (msg) {
+            descripcion.innerHTML = `
+              <div class="text-center mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-${msg.colorIcono}-100 mb-3">
+                  <span class="material-icons-round text-${msg.colorIcono}-600 text-4xl">${msg.iconoModal}</span>
+                </div>
+                <h4 class="text-lg font-bold text-${msg.colorIcono}-700 mb-2">${msg.tituloMsg}</h4>
+              </div>
+              <p class="text-slate-700 leading-relaxed mb-4">${msg.cuerpo}</p>
+              <div class="p-3 bg-${msg.alertaTipo}-50 rounded-lg border-l-4 border-${msg.alertaTipo}-400">
+                <div class="flex items-start gap-2">
+                  <span class="material-icons-round text-${msg.alertaTipo}-600 text-sm flex-shrink-0 mt-0.5">${msg.alertaIcono}</span>
+                  <p class="text-xs text-${msg.alertaTipo}-800 leading-relaxed">${msg.alertaTexto}</p>
+                </div>
+              </div>
+            `;
+          } else {
+            descripcion.innerHTML = `
+              <div class="text-center mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-3">
+                  <span class="material-icons-round text-slate-400 text-4xl">badge</span>
+                </div>
+                <h4 class="text-lg font-bold text-slate-600 mb-2">Sin Información</h4>
+              </div>
+              <p class="text-slate-600 leading-relaxed text-center">
+                Actualmente no tienes una credencial registrada en el sistema.<br><br>
+                Si crees que esto es un error, comunícate con un dirigente de la organización.
+              </p>
+            `;
+          }
+          
+          nota.classList.add('hidden');
         
         modal.classList.remove('hidden');
 
