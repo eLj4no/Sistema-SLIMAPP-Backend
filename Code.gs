@@ -29,7 +29,8 @@ const CONFIG = {
     JUSTIFICACIONES: "1Hwbly__MXjl9uwJb-spXdah-R3v9SAMOCFHem92uOUg",
     APELACIONES: "11nrvVsf84THWQ7j6NfAr_unyIcBV7aykxACS8R27PwE",
     PRESTAMOS: "1h-_sJD4rOCuMjlfSouP7a6gfoodHyzI4MOBRUyOW5XU",
-    PERMISOS_MEDICOS: "1VYfm7cOgL3mVfVoI8DubIm8WG2srzQw9a6DtIEs3UMM"
+    PERMISOS_MEDICOS: "1VYfm7cOgL3mVfVoI8DubIm8WG2srzQw9a6DtIEs3UMM",
+    CREDENCIALES: "1HVyPxdYKuvIybeOCAPwAJaVHwlxEuOik4YW0XOXBE5o"
   },
   HOJAS: {
     USUARIOS: "BD_SLIMAPP",
@@ -38,7 +39,9 @@ const CONFIG = {
     APELACIONES: "BD_APELACIONES",
     PRESTAMOS: "BD_PRESTAMOS",
     VALIDACION_PRESTAMOS: "Validación-Prestamos",
-    PERMISOS_MEDICOS: "BD_Permisos medicos"
+    PERMISOS_MEDICOS: "BD_Permisos medicos",
+    CREDENCIALES: "IMPRESION",
+    HISTORIAL_CREDENCIALES: "HISTORIAL_CREDENCIALES"
   },
   CARPETAS: {
     JUSTIFICACIONES: "1UD9hQz1FuacSb3QYrahRl7IfvlpKn8v6",
@@ -754,7 +757,8 @@ function obtenerDatosUsuario(rutInput) {
             estadoNegColect: row[COL.ESTADO_NEG_COLECT] || "",
             banco: row[COL.BANCO] || "",
             tipoCuenta: row[COL.TIPO_CUENTA] || "",
-            numeroCuenta: row[COL.NUMERO_CUENTA] || ""
+            numeroCuenta: row[COL.NUMERO_CUENTA] || "",
+            estadoCredencial: obtenerEstadoCredencialPorRut(row[COL.RUT])
           }
         };
       }
@@ -4087,6 +4091,13 @@ function configurarTriggers() {
     .atHour(8)
     .create();
   
+  // ⭐ NUEVO: Trigger semanal para notificaciones de credencial (domingos a las 8am)
+  ScriptApp.newTrigger('verificarCambiosCredenciales')
+    .timeBased()
+    .onWeekDay(ScriptApp.WeekDay.SUNDAY)
+    .atHour(8)
+    .create();
+  
   Logger.log("✅ Triggers configurados exitosamente");
   Logger.log("Total de triggers activos: " + ScriptApp.getProjectTriggers().length);
   
@@ -4594,3 +4605,308 @@ function corregirPermisosJustificacionesExistentes() {
         throw e;
       }
     }
+
+    // ==========================================
+// MÓDULO: CREDENCIAL SINDICAL
+// ==========================================
+
+/**
+ * Obtiene el estado de credencial de un usuario desde BD_CREDENCIALES
+ * @param {string} rutInput - RUT del usuario
+ * @returns {string} Estado de credencial o "S/D" si no se encuentra
+ */
+function obtenerEstadoCredencialPorRut(rutInput) {
+  try {
+    const rutLimpio = cleanRut(String(rutInput));
+    const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEETS.CREDENCIALES);
+    const sheet = ss.getSheetByName(CONFIG.HOJAS.CREDENCIALES);
+    
+    if (!sheet) {
+      Logger.log('⚠️ Hoja CREDENCIALES no encontrada');
+      return "S/D";
+    }
+    
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return "S/D";
+    
+    // Leer columnas A (RUT=0) y G (ESTADO CREDENCIAL=6)
+    const data = sheet.getRange(2, 1, lastRow - 1, 7).getDisplayValues();
+    
+    for (let i = 0; i < data.length; i++) {
+      const rutFila = cleanRut(String(data[i][0]));
+      if (rutFila === rutLimpio) {
+        const estado = String(data[i][6] || "").trim().toUpperCase();
+        return estado || "S/D";
+      }
+    }
+    
+    return "S/D";
+    
+  } catch (e) {
+    Logger.log('❌ Error obteniendo estado credencial: ' + e.toString());
+    return "S/D";
+  }
+}
+
+/**
+ * Trigger semanal: detecta cambios de estado en credenciales y envía notificaciones
+ * Se ejecuta automáticamente cada domingo a las 8am (configurar en configurarTriggers)
+ */
+function verificarCambiosCredenciales() {
+  const ESTADOS_CON_NOTIFICACION = ["ENTREGADO", "DISPONIBLE", "SOLICITADO", "NO VIGENTE", "DATOS INCORRECTOS", "REIMPRIMIR"];
+  
+  try {
+    Logger.log('🔄 Iniciando verificación de cambios en credenciales...');
+    
+    const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEETS.CREDENCIALES);
+    const sheetImpresion = ss.getSheetByName(CONFIG.HOJAS.CREDENCIALES);
+    
+    if (!sheetImpresion) {
+      Logger.log('❌ No se encontró la hoja IMPRESION en BD_CREDENCIALES');
+      return;
+    }
+    
+    // Obtener o crear hoja historial
+    let sheetHistorial = ss.getSheetByName(CONFIG.HOJAS.HISTORIAL_CREDENCIALES);
+    if (!sheetHistorial) {
+      sheetHistorial = ss.insertSheet(CONFIG.HOJAS.HISTORIAL_CREDENCIALES);
+      sheetHistorial.appendRow([
+        'FECHA', 'RUT', 'NOMBRE', 'CORREO',
+        'ESTADO ANTERIOR', 'ESTADO NUEVO', 'EMAIL ENVIADO'
+      ]);
+      sheetHistorial.getRange(1, 1, 1, 7).setFontWeight('bold')
+        .setBackground('#1e293b')
+        .setFontColor('#ffffff');
+      Logger.log('✅ Hoja HISTORIAL_CREDENCIALES creada');
+    }
+    
+    const lastRow = sheetImpresion.getLastRow();
+    if (lastRow < 2) {
+      Logger.log('ℹ️ No hay datos en la hoja IMPRESION');
+      return;
+    }
+    
+    // Leer columnas A-K (11 columnas)
+    // A=RUT(0), B=ID(1), C=ESTADO(2), D=NOMBRE_BD(3), E=NOMBRE_FORM(4),
+    // F=CORREO(5), G=ESTADO_CRED(6), H=REGION(7), I=OBS(8), J=ESTADO_ANT(9), K=EMAIL_EST(10)
+    const data = sheetImpresion.getRange(2, 1, lastRow - 1, 11).getDisplayValues();
+    
+    let enviados = 0;
+    let errores = 0;
+    let inicializados = 0;
+    let sinCambios = 0;
+    
+    for (let i = 0; i < data.length; i++) {
+      const fila = i + 2; // Fila real en la hoja (fila 1 es header)
+      const rut = String(data[i][0] || "").trim();
+      const nombre = String(data[i][3] || data[i][4] || "Socio").trim();
+      const correo = String(data[i][5] || "").trim();
+      const estadoActual = String(data[i][6] || "").trim().toUpperCase();
+      const estadoAnterior = String(data[i][9] || "").trim().toUpperCase();
+      
+      // Saltar filas sin RUT o sin estado actual
+      if (!rut || !estadoActual) continue;
+      
+      // CASO 1: Primera vez (columna J vacía) → inicializar sin enviar email
+      if (!estadoAnterior) {
+        sheetImpresion.getRange(fila, 10).setValue(estadoActual); // Columna J
+        inicializados++;
+        Logger.log(`ℹ️ Fila ${fila} (${rut}): Inicializado con estado "${estadoActual}"`);
+        continue;
+      }
+      
+      // CASO 2: Sin cambio → no hacer nada
+      if (estadoActual === estadoAnterior) {
+        sinCambios++;
+        continue;
+      }
+      
+      // CASO 3: Cambio detectado → procesar
+      Logger.log(`🔔 Fila ${fila} (${rut}): Cambio detectado "${estadoAnterior}" → "${estadoActual}"`);
+      
+      let emailEstado = "SIN CORREO";
+      
+      // Enviar email solo para estados con notificación definida Y si el correo es válido
+      if (ESTADOS_CON_NOTIFICACION.indexOf(estadoActual) !== -1 && correo.includes('@')) {
+        try {
+          enviarNotificacionCredencial(correo, nombre, estadoActual, rut);
+          emailEstado = "ENVIADO";
+          enviados++;
+          Logger.log(`✅ Email enviado a ${correo} (${nombre}) por cambio a "${estadoActual}"`);
+        } catch (emailErr) {
+          emailEstado = "ERROR: " + emailErr.toString().substring(0, 80);
+          errores++;
+          Logger.log(`❌ Error enviando email a ${correo}: ${emailErr.toString()}`);
+        }
+      } else if (!correo.includes('@')) {
+        emailEstado = "SIN CORREO VÁLIDO";
+        Logger.log(`⚠️ Fila ${fila}: Correo inválido "${correo}"`);
+      } else {
+        emailEstado = "ESTADO SIN NOTIF.";
+      }
+      
+      const fechaAhora = Utilities.formatDate(new Date(), 'America/Santiago', 'dd/MM/yyyy HH:mm:ss');
+      
+      // Registrar en historial
+      sheetHistorial.appendRow([
+        fechaAhora, rut, nombre, correo,
+        estadoAnterior, estadoActual, emailEstado
+      ]);
+      
+      // Actualizar col J (estado anterior = estado actual) y col K (estado email)
+      sheetImpresion.getRange(fila, 10).setValue(estadoActual);   // Col J
+      sheetImpresion.getRange(fila, 11).setValue(emailEstado);    // Col K
+    }
+    
+    Logger.log(`✅ Verificación completada:`);
+    Logger.log(`   - Inicializados: ${inicializados}`);
+    Logger.log(`   - Sin cambios: ${sinCambios}`);
+    Logger.log(`   - Emails enviados: ${enviados}`);
+    Logger.log(`   - Errores de envío: ${errores}`);
+    
+  } catch (e) {
+    Logger.log('❌ Error crítico en verificarCambiosCredenciales: ' + e.toString());
+  }
+}
+
+/**
+ * Envía una notificación HTML por correo al usuario sobre el nuevo estado de su credencial
+ */
+function enviarNotificacionCredencial(correo, nombre, estadoNuevo, rut) {
+  const MENSAJES = {
+    "ENTREGADO": {
+      titulo: "¡Tu credencial sindical ha sido entregada!",
+      icono: "🎉",
+      color: "#059669",
+      colorClaro: "#d1fae5",
+      colorBorde: "#6ee7b7",
+      mensaje: `Tu tarjeta ha sido entregada y se encuentra disponible para su uso. Te recordamos que la credencial sindical se utiliza para las asambleas presenciales, la cual debes mostrar para la correcta marcación de tu asistencia.`,
+      nota: `Si la credencial está desgastada o la extraviaste, debes solicitar una nueva a un dirigente de la organización.`
+    },
+    "DISPONIBLE": {
+      titulo: "¡Tu credencial sindical está lista para retiro!",
+      icono: "📦",
+      color: "#0d9488",
+      colorClaro: "#ccfbf1",
+      colorBorde: "#5eead4",
+      mensaje: `Tu credencial sindical ya está impresa y disponible para su retiro. Debes acercarte a la oficina sindical o retirarla en la próxima asamblea presencial.`,
+      nota: `Recuerda llevar tu RUT al momento de retirarla.`
+    },
+    "SOLICITADO": {
+      titulo: "Solicitud de credencial recibida",
+      icono: "⏳",
+      color: "#d97706",
+      colorClaro: "#fef3c7",
+      colorBorde: "#fcd34d",
+      mensaje: `Tus datos han sido ingresados al sistema de nuestra organización y se ha solicitado al departamento de comunicaciones la gestión para la impresión de tu credencial sindical.`,
+      nota: `Cuando esté disponible, recibirás un correo electrónico notificándote su disponibilidad de retiro.`
+    },
+    "NO VIGENTE": {
+      titulo: "Credencial sindical deshabilitada",
+      icono: "⚠️",
+      color: "#dc2626",
+      colorClaro: "#fee2e2",
+      colorBorde: "#fca5a5",
+      mensaje: `De acuerdo a nuestros registros, tu credencial sindical ha sido deshabilitada de nuestros sistemas, lo que indica que podrías ya no pertenecer a la empresa o a la organización sindical.`,
+      nota: `Si consideras que existe un error, comunícate con algún dirigente de la organización para regularizar tu situación.`
+    },
+    "DATOS INCORRECTOS": {
+      titulo: "Atención: datos incorrectos para tu credencial",
+      icono: "❗",
+      color: "#ea580c",
+      colorClaro: "#ffedd5",
+      colorBorde: "#fdba74",
+      mensaje: `No se ha podido crear tu credencial sindical debido a que existen datos incorrectos para su fabricación.`,
+      nota: `Debes actualizar tus datos en el módulo "Mis Datos" de la aplicación sindical, o comunicarte con un dirigente sindical para que te oriente en el proceso.`
+    },
+    "REIMPRIMIR": {
+      titulo: "Solicitud de reimpresión recibida",
+      icono: "🖨️",
+      color: "#7c3aed",
+      colorClaro: "#ede9fe",
+      colorBorde: "#c4b5fd",
+      mensaje: `Hemos recibido una solicitud de reimpresión de tu credencial sindical. Nuestro equipo está procesando esta solicitud.`,
+      nota: `Una vez que esté disponible, se te notificará a través del correo electrónico registrado o puedes revisar tu estado directamente en la aplicación sindical.`
+    }
+  };
+  
+  const info = MENSAJES[estadoNuevo] || {
+    titulo: "Actualización de credencial sindical",
+    icono: "📋",
+    color: "#64748b",
+    colorClaro: "#f1f5f9",
+    colorBorde: "#cbd5e1",
+    mensaje: "El estado de tu credencial sindical ha sido actualizado.",
+    nota: "Puedes revisar el estado actual en el módulo 'Mis Datos' de la aplicación sindical."
+  };
+  
+  const fechaActual = Utilities.formatDate(new Date(), 'America/Santiago', "dd 'de' MMMM 'de' yyyy");
+  
+  const htmlBody = `
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#0f172a;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;padding:20px;">
+    
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,${info.color},${info.color}dd);border-radius:16px 16px 0 0;padding:32px 24px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;">${info.icono}</div>
+      <h1 style="color:#ffffff;font-size:20px;font-weight:700;margin:0 0 8px 0;line-height:1.3;">${info.titulo}</h1>
+      <p style="color:rgba(255,255,255,0.85);font-size:13px;margin:0;">Sindicato SLIM N°3 · Credencial Sindical</p>
+    </div>
+    
+    <!-- Body -->
+    <div style="background:#ffffff;padding:28px 24px;">
+      
+      <p style="color:#374151;font-size:15px;margin:0 0 20px 0;">Estimado(a) <strong>${nombre}</strong>,</p>
+      
+      <!-- Estado badge -->
+      <div style="background:${info.colorClaro};border:1px solid ${info.colorBorde};border-radius:12px;padding:16px;text-align:center;margin-bottom:20px;">
+        <p style="color:#6b7280;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px 0;">NUEVO ESTADO DE CREDENCIAL</p>
+        <span style="display:inline-block;background:${info.color};color:#ffffff;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:8px 20px;border-radius:50px;">${estadoNuevo}</span>
+      </div>
+      
+      <!-- Mensaje principal -->
+      <div style="background:#f8fafc;border-left:4px solid ${info.color};border-radius:0 8px 8px 0;padding:16px;margin-bottom:16px;">
+        <p style="color:#374151;font-size:14px;line-height:1.6;margin:0;">${info.mensaje}</p>
+      </div>
+      
+      <!-- Nota adicional -->
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:14px;margin-bottom:20px;">
+        <p style="color:#92400e;font-size:12px;line-height:1.6;margin:0;">
+          <strong>📌 Nota:</strong> ${info.nota}
+        </p>
+      </div>
+      
+      <!-- Datos del socio -->
+      <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px;">
+        <tr style="background:#f1f5f9;">
+          <td style="padding:10px 12px;font-weight:700;color:#475569;border-bottom:1px solid #e2e8f0;width:40%;">Nombre</td>
+          <td style="padding:10px 12px;color:#1e293b;border-bottom:1px solid #e2e8f0;">${nombre}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 12px;font-weight:700;color:#475569;border-bottom:1px solid #e2e8f0;">Fecha</td>
+          <td style="padding:10px 12px;color:#1e293b;border-bottom:1px solid #e2e8f0;">${fechaActual}</td>
+        </tr>
+      </table>
+      
+    </div>
+    
+    <!-- Footer -->
+    <div style="background:#1e293b;border-radius:0 0 16px 16px;padding:20px 24px;text-align:center;">
+      <p style="color:#94a3b8;font-size:12px;margin:0 0 4px 0;">Este es un mensaje automático del sistema de gestión</p>
+      <p style="color:#64748b;font-size:11px;margin:0;">Sindicato SLIM N°3 · No responder a este correo</p>
+    </div>
+    
+  </div>
+</body>
+</html>`;
+  
+  MailApp.sendEmail({
+    to: correo,
+    subject: `${info.icono} Credencial Sindical: ${estadoNuevo} - Sindicato SLIM N°3`,
+    htmlBody: htmlBody,
+    name: "Sindicato SLIM N°3"
+  });
+}
