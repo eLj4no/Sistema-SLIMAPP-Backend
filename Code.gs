@@ -2460,8 +2460,8 @@ function enviarApelacion(rutGestor, mesApelacion, tipoMotivo, detalleMotivo, arc
 
       // ========== ENVIAR CORREOS ==========
       
-      // 1. Correo al Beneficiario
-      if (esCorreoValido(beneficiario.correo)) {
+      // 1. Correo al Beneficiario (solo cuando gestiona por sí mismo)
+      if (!esGestionDirigente && esCorreoValido(beneficiario.correo)) {
         
         // Construir enlaces HTML con color del tema apelaciones (Rojo #dc2626)
         var linkComprobanteSocio = (urlComprobante && urlComprobante.includes("http")) 
@@ -2531,6 +2531,41 @@ function enviarApelacion(rutGestor, mesApelacion, tipoMotivo, detalleMotivo, arc
           "#475569" // Color gris/azul
         );
       }
+
+      // ✅ NUEVO: Copia al socio cuando el dirigente gestiona en su nombre
+      if (esGestionDirigente && esCorreoValido(beneficiario.correo)) {
+        var linkComprobanteCopiaSocio = (urlComprobante && urlComprobante.includes("http"))
+            ? "<a href=\"" + urlComprobante + "\" style=\"color: #dc2626; text-decoration: none; font-weight: bold;\">Ver Comprobante</a>"
+            : "";
+        var linkLiquidacionCopiaSocio = (urlLiquidacion && urlLiquidacion.includes("http"))
+            ? "<a href=\"" + urlLiquidacion + "\" style=\"color: #dc2626; text-decoration: none; font-weight: bold;\">Ver Liquidación</a>"
+            : "";
+
+        var datosCorreoSocioCopia = {
+            "FECHA SOLICITUD": Utilities.formatDate(fechaHoy, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm"),
+            "RUT": formatRutServer(beneficiario.rut),
+            "NOMBRE": beneficiario.nombre,
+            "MES APELACION": nombreMes,
+            "TIPO MOTIVO": tipoMotivo,
+            "DETALLE MOTIVO": detalleMotivo || "",
+            "URL COMPROBANTE": linkComprobanteCopiaSocio,
+            "URL LIQUIDACIÓN": linkLiquidacionCopiaSocio,
+            "OBSERVACIÓN": "",
+            "GESTIÓN": gestion,
+            "NOMBRE DIRIGENTE": nomDirigente
+        };
+
+        enviarCorreoEstilizado(
+          beneficiario.correo,
+          "Apelaci\u00f3n Ingresada - Sindicato SLIM n\u00b03",
+          "Comprobante de Apelaci\u00f3n",
+          "Hola <strong>" + beneficiario.nombre + "</strong>, un dirigente ha ingresado una apelaci\u00f3n de multa a tu nombre. A continuaci\u00f3n los detalles registrados:",
+          datosCorreoSocioCopia,
+          "#1d4ed8"
+        );
+      }
+
+      // ========== PREPARAR RESPUESTA ==========
       
       // ========== PREPARAR RESPUESTA ==========
       var respuesta = {
@@ -3079,9 +3114,8 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
       // ========================================
       // ENVIAR NOTIFICACIONES
       // ========================================
-      if (beneficiario.correo && beneficiario.correo.includes("@")) {
-        let mensajeExtra = gestion === "Dirigente" ? `<br><em>(Ingresado por: ${nomDirigente})</em>` : "";
-        
+      // Correo al socio (solo cuando gestiona por sí mismo)
+      if (gestion !== "Dirigente" && beneficiario.correo && beneficiario.correo.includes("@")) {
         const fechaInicioObjEmail = new Date(fechaInicioNormalizada);
         const fechaInicioEmailStr = fechaInicioObjEmail.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' });
         
@@ -3128,6 +3162,27 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
           `Has ingresado exitosamente un permiso médico para el socio <strong>${beneficiario.nombre}</strong>.`,
           { "ID": idUnico, "Socio": beneficiario.nombre, "Tipo": tipoPermiso },
           "#475569"
+        );
+      }
+
+      // ✅ NUEVO: Copia al socio cuando el dirigente gestiona en su nombre
+      if (gestion === "Dirigente" && beneficiario.correo && beneficiario.correo.includes("@")) {
+        enviarCorreoEstilizado(
+          beneficiario.correo,
+          "Permiso Médico Solicitado - Sindicato SLIM n°3",
+          "Permiso Médico Ingresado",
+          `Hola <strong>${beneficiario.nombre}</strong>, un dirigente ha solicitado un permiso médico a tu nombre. <strong>IMPORTANTE:</strong> Debes adjuntar el documento de respaldo en el historial del módulo una vez realizada la atención médica.`,
+          {
+            "ID": idUnico,
+            "Trabajador": beneficiario.nombre,
+            "RUT": beneficiario.rut,
+            "Tipo": tipoPermiso,
+            "Fecha Inicio": new Date(fechaInicio + 'T12:00:00').toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' }),
+            "Motivo": motivo,
+            "Dirigente": nomDirigente,
+            "Fecha Solicitud": fechaHoy.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' })
+          },
+          "#10b981"
         );
       }
       
