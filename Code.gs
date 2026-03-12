@@ -1916,7 +1916,8 @@ function enviarJustificacion(rutGestor, tipo, motivo, archivoData, rutBeneficiar
       cellEstado.setDataValidation(rule);
       
       // ========== ENVIAR CORREOS ==========
-      if (esCorreoValido(beneficiario.correo)) {
+      // Correo al socio (solo cuando gestiona por sí mismo)
+      if (!esGestionDirigente && esCorreoValido(beneficiario.correo)) {
         
         // Construimos el link del archivo o S/D si no hay URL válida
         let respaldoDisplay = "";
@@ -1984,6 +1985,37 @@ function enviarJustificacion(rutGestor, tipo, motivo, archivoData, rutBeneficiar
           `Has ingresado exitosamente una justificación para el socio <strong>${beneficiario.nombre}</strong>.`,
           datosCorreoDirigente,
           "#475569" // Color gris/azul para administración
+        );
+      }
+
+      // Copia al socio cuando el dirigente gestiona en su nombre
+      if (esGestionDirigente && esCorreoValido(beneficiario.correo)) {
+        var respaldoDisplaySocio = "";
+        if (fileUrl && fileUrl.includes("http")) {
+          respaldoDisplaySocio = "<a href=\"" + fileUrl + "\" style=\"color: #ea580c; text-decoration: none; font-weight: bold;\">Ver Documento Adjunto</a>";
+        }
+
+        var datosCorreoSocio = {
+          "FECHA": Utilities.formatDate(fechaHoy, Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm"),
+          "RUT": formatRutServer(beneficiario.rut),
+          "NOMBRE": beneficiario.nombre,
+          "REGION": beneficiario.region,
+          "MOTIVO": tipo,
+          "ARGUMENTO": motivo,
+          "RESPALDO": respaldoDisplaySocio,
+          "OBSERVACION": "",
+          "ASAMBLEA": codigoAsamblea,
+          "GESTION": gestion,
+          "DIRIGENTE": nomDirigente
+        };
+
+        enviarCorreoEstilizado(
+          beneficiario.correo,
+          "Justificaci\u00f3n Ingresada - Sindicato SLIM n\u00b03",
+          "Comprobante de Justificaci\u00f3n",
+          "Hola <strong>" + beneficiario.nombre + "</strong>, un dirigente ha ingresado una justificaci\u00f3n a tu nombre. A continuaci\u00f3n los detalles registrados:",
+          datosCorreoSocio,
+          "#ea580c"
         );
       }
       
@@ -4394,7 +4426,8 @@ function corregirPermisosJustificacionesExistentes() {
               estado: data[i][COL.ESTADO],
               rol: rolUsuarioBuscado,
               idCredencial: data[i][COL.ID_CREDENCIAL] || 'S/D',
-              qrRegistro: urlQR
+              qrRegistro: urlQR,
+              estadoCredencial: obtenerEstadoCredencialPorRut(data[i][COL.RUT])
             };
             
             Logger.log('✅ Usuario encontrado y acceso autorizado:');
