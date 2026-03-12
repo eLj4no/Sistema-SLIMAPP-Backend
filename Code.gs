@@ -3550,6 +3550,8 @@ function registrarAsistencia(rutInput, nombreControl) {
       // 4. Registrar asistencia con columnas correctas
       const fechaHora = new Date();
       const fechaStr = Utilities.formatDate(fechaHora, 'America/Santiago', 'dd/MM/yyyy HH:mm:ss');
+      // REEMPLAZAR CON ESTO:
+      const filaNueva = sheetAsistencia.getLastRow() + 1;
       sheetAsistencia.appendRow([
         fechaStr,           // A: FECHA_HORA
         usuario.rut,        // B: RUT
@@ -3557,7 +3559,8 @@ function registrarAsistencia(rutInput, nombreControl) {
         nombreControl,      // D: ASAMBLEA
         "Asistencia QR",   // E: TIPO_ASISTENCIA
         "Sistema",          // F: GESTION
-        ""                  // G: CODIGO_TEMP
+        "",                 // G: CODIGO_TEMP
+        ""                  // H: NOTIF_CORREO (se completa abajo)
       ]);
 
       // 5. Enviar notificación por correo si tiene correo registrado
@@ -3589,6 +3592,9 @@ function registrarAsistencia(rutInput, nombreControl) {
       } else {
         mensajeCorreo = "No tienes correo registrado. Puedes ver tu historial en el módulo 'Registro Asistencia' de la app.";
       }
+
+      // 6. Marcar columna H (NOTIF_CORREO)
+      sheetAsistencia.getRange(filaNueva, 8).setValue(correoEnviado ? "ENVIADO" : "SIN CORREO");
 
       return {
         success: true,
@@ -3648,6 +3654,97 @@ function obtenerHistorialAsistencia(rutInput) {
   } catch (e) {
     Logger.log("❌ Error en obtenerHistorialAsistencia: " + e.toString());
     return { success: false, message: "Error: " + e.toString() };
+  }
+}
+
+/**
+ * Trigger diario a las 20:00 hrs.
+ * Verifica registros en BD_ASISTENCIA sin notificación enviada (columna H vacía),
+ * busca el correo del socio en BD_SLIMAPP y envía la notificación correspondiente.
+ */
+function verificarNotificacionesAsistencia() {
+  try {
+    Logger.log('🔔 Iniciando verificación de notificaciones pendientes de asistencia...');
+
+    const ssAsistencia = getSpreadsheet('ASISTENCIA');
+    const sheet = ssAsistencia.getSheetByName(CONFIG.HOJAS.ASISTENCIA);
+
+    if (!sheet) {
+      Logger.log('⚠️ Hoja BD_ASISTENCIA no encontrada.');
+      return;
+    }
+
+    const data = sheet.getDataRange().getDisplayValues();
+    if (data.length < 2) {
+      Logger.log('ℹ️ No hay registros en BD_ASISTENCIA.');
+      return;
+    }
+
+    // Construir mapa RUT → correo desde BD_SLIMAPP
+    const sheetUsuarios = getSheet('USUARIOS', 'USUARIOS');
+    const dataUsuarios = sheetUsuarios.getDataRange().getDisplayValues();
+    const COL_U = CONFIG.COLUMNAS.USUARIOS;
+    const mapaCorreos = {};
+    for (let i = 1; i < dataUsuarios.length; i++) {
+      const rutU = cleanRut(dataUsuarios[i][COL_U.RUT]);
+      if (rutU) mapaCorreos[rutU] = dataUsuarios[i][COL_U.CORREO] || "";
+    }
+
+    let enviados = 0;
+    let sinCorreo = 0;
+    let omitidos = 0;
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const notifEstado = String(row[7] || "").trim(); // H: NOTIF_CORREO
+
+      // Si la columna H ya tiene valor, esta fila ya fue procesada
+      if (notifEstado !== "") {
+        omitidos++;
+        continue;
+      }
+
+      const rutFila     = cleanRut(row[1]);        // B: RUT
+      const nombreFila  = row[2] || "Socio";        // C: NOMBRE
+      const fechaFila   = row[0] || "";             // A: FECHA_HORA
+      const asambleaFila = row[3] || "";            // D: ASAMBLEA
+      const tipoFila    = row[4] || "Asistencia";   // E: TIPO_ASISTENCIA
+
+      const correoUsuario = mapaCorreos[rutFila] || "";
+
+      if (correoUsuario && correoUsuario.includes("@")) {
+        try {
+          enviarCorreoEstilizado(
+            correoUsuario,
+            "Registro de Asistencia - Sindicato SLIM n°3",
+            "Asistencia Registrada",
+            "Tu asistencia ha sido registrada en el sistema del sindicato.",
+            {
+              "Nombre":     nombreFila,
+              "Asamblea":   asambleaFila,
+              "Tipo":       tipoFila,
+              "Fecha/Hora": fechaFila
+            },
+            "#10b981"
+          );
+          sheet.getRange(i + 1, 8).setValue("ENVIADO");
+          enviados++;
+          Logger.log("✅ Notificación enviada a " + correoUsuario + " (RUT: " + rutFila + ")");
+        } catch (emailErr) {
+          Logger.log("⚠️ Error enviando correo a " + correoUsuario + ": " + emailErr.toString());
+          // No se marca para reintento en la próxima ejecución del trigger
+        }
+      } else {
+        sheet.getRange(i + 1, 8).setValue("SIN CORREO");
+        sinCorreo++;
+        Logger.log("ℹ️ Sin correo registrado para RUT: " + rutFila);
+      }
+    }
+
+    Logger.log("📊 Resultado: " + enviados + " enviados, " + sinCorreo + " sin correo, " + omitidos + " ya procesados.");
+
+  } catch (e) {
+    Logger.log("❌ Error en verificarNotificacionesAsistencia: " + e.toString());
   }
 }
 
@@ -4322,13 +4419,21 @@ function configurarTriggers() {
     .atHour(8)
     .create();
   
+  // REEMPLAZAR CON ESTO:
   // Verificar cambios en credenciales — cada domingo a las 8 AM
   ScriptApp.newTrigger('verificarCambiosCredenciales')
     .timeBased()
     .onWeekDay(ScriptApp.WeekDay.SUNDAY)
     .atHour(8)
     .create();
-  
+
+  // Verificar notificaciones pendientes de asistencia — diario a las 20 hrs
+  ScriptApp.newTrigger('verificarNotificacionesAsistencia')
+    .timeBased()
+    .everyDays(1)
+    .atHour(20)
+    .create();
+
   Logger.log("✅ Triggers configurados exitosamente");
   Logger.log("Total de triggers activos: " + ScriptApp.getProjectTriggers().length);
   
