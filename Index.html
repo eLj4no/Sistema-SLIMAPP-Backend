@@ -1390,7 +1390,7 @@
          <div class="bg-white w-full max-w-xs rounded-2xl shadow-2xl p-6 flex flex-col items-center justify-center animate-bounce-short text-center border border-white/50">
             <div class="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-4 text-indigo-500 shadow-inner"><span class="material-icons-round text-3xl">handyman</span></div>
             <h3 class="text-xl font-bold text-slate-800 mb-2">Próximamente</h3><p class="text-sm text-slate-500 mb-6 leading-relaxed">El módulo <span id="construction-module-name" class="font-bold text-indigo-600"></span> está en desarrollo.</p>
-            <button onclick="document.getElementById('construction-modal').classList.add('hidden')" class="w-full py-3 rounded-xl bg-slate-800 text-white font-bold text-sm hover:bg-slate-700 transition shadow-lg shadow-slate-500/30 flex items-center justify-center gap-2"><span>Entendido</span></button>
+            <button onclick="document.getElementById('construction-modal').classList.add('hidden')" class="w-full py-3 rounded-xl bg-slate-800 text-white font-bold text-sm hover:bg-slate-700 transition shadow-lg shadow-slate-500/30 flex items-center justify-center gap-2"><span class="material-icons-round text-sm">arrow_back</span><span>Volver</span></button>
          </div>
       </div>
       
@@ -2262,7 +2262,7 @@
         if (module === 'Mis Datos') { 
            cargarMisDatos(); 
         } else if (module === 'RegistroAsistencia') { 
-            loadAttendanceRecords(); 
+            showConstruction('Registro Asistencia'); 
         } else if (module === 'Prestamos') {
            document.getElementById('loans-menu').classList.remove('hidden');
            document.getElementById('loans-form').classList.add('hidden');
@@ -4020,28 +4020,44 @@ divForm.classList.add('flex');
                   empty.classList.remove('hidden');
                } else {
                   res.registros.forEach(reg => {
-                     const tipoIcon = reg.tipo.toLowerCase().includes('presencial') ? 'check_circle' : 
-                                     reg.tipo.toLowerCase().includes('online') ? 'video_call' : 'cancel';
-                     const tipoColor = reg.tipo.toLowerCase().includes('presencial') ? 'text-green-600' :
-                                      reg.tipo.toLowerCase().includes('online') ? 'text-blue-600' : 'text-red-600';
-                     
+                     const tipoLower = (reg.tipo || "").toLowerCase();
+                     let tipoIcon, tipoColor, tipoBg;
+                     if (tipoLower.includes('qr')) {
+                        tipoIcon = 'qr_code_scanner'; tipoColor = 'text-green-600'; tipoBg = 'bg-green-50 border-green-200';
+                     } else if (tipoLower.includes('presencial')) {
+                        tipoIcon = 'check_circle'; tipoColor = 'text-green-600'; tipoBg = 'bg-green-50 border-green-200';
+                     } else if (tipoLower.includes('online')) {
+                        tipoIcon = 'video_call'; tipoColor = 'text-blue-600'; tipoBg = 'bg-blue-50 border-blue-200';
+                     } else {
+                        tipoIcon = 'how_to_reg'; tipoColor = 'text-teal-600'; tipoBg = 'bg-teal-50 border-teal-200';
+                     }
+
                      let gestionHtml = "";
                      if (reg.gestion && reg.gestion !== "Socio" && reg.gestion !== "Sistema") {
-                        gestionHtml = `<div class="text-[10px] text-indigo-500 bg-indigo-50 px-2 py-1 rounded inline-block"><strong>Por:</strong> ${reg.dirigente || "Dirigente"}</div>`;
+                        gestionHtml = `<div class="text-[10px] text-indigo-500 bg-indigo-50 px-2 py-1 rounded inline-block mt-1"><strong>Por:</strong> ${reg.dirigente || "Dirigente"}</div>`;
                      }
-                     
+
+                     let fechaHtml = "";
+                     if (reg.fecha && reg.fecha !== "") {
+                        fechaHtml = `<span class="text-[10px] text-slate-400">${reg.fecha}</span>`;
+                     }
+
                      const item = document.createElement('div');
                      item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
                      item.innerHTML = `
-                        <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-start justify-between mb-2">
                            <div class="flex items-center gap-2">
-                              <span class="material-icons-round ${tipoColor}">${tipoIcon}</span>
-                              <span class="font-bold text-slate-800 text-sm">${reg.asamblea}</span>
+                              <div class="w-9 h-9 rounded-full ${tipoBg} border flex items-center justify-center flex-shrink-0">
+                                 <span class="material-icons-round ${tipoColor} text-lg">${tipoIcon}</span>
+                              </div>
+                              <div>
+                                 <span class="font-bold text-slate-800 text-sm block leading-tight">${reg.asamblea}</span>
+                                 <span class="text-[10px] text-slate-500">${reg.tipo}</span>
+                              </div>
                            </div>
+                           <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 flex-shrink-0 ml-2">Asistió</span>
                         </div>
-                        <div class="text-xs text-slate-600">
-                           <span class="font-semibold">Tipo:</span> ${reg.tipo}
-                        </div>
+                        ${reg.fecha ? `<div class="flex items-center gap-1 border-t border-slate-100 pt-2 mt-1">${fechaHtml}</div>` : ''}
                         ${gestionHtml}
                      `;
                      list.appendChild(item);
@@ -4874,6 +4890,28 @@ divForm.classList.add('flex');
                         ID CREDENCIAL
                       </label>
                       <div class="font-mono text-2xl font-bold text-teal-900 tracking-wide">${response.idCredencial || 'S/D'}</div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border-2 border-indigo-200 p-4 mt-3">
+                      <label class="block text-[10px] font-bold text-indigo-700 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <span class="material-icons-round text-sm">verified_user</span>
+                        ESTADO CREDENCIAL
+                      </label>
+                      ${(function() {
+                        const ec = String(response.estadoCredencial || 'S/D').trim().toUpperCase();
+                        const mapCred = {
+                          'ENTREGADO':         { bg: 'bg-emerald-600', icon: 'badge',        label: 'ENTREGADO' },
+                          'DISPONIBLE':        { bg: 'bg-teal-500',    icon: 'inbox',        label: 'DISPONIBLE' },
+                          'SOLICITADO':        { bg: 'bg-amber-500',   icon: 'schedule',     label: 'SOLICITADO' },
+                          'NO VIGENTE':        { bg: 'bg-red-500',     icon: 'cancel',       label: 'NO VIGENTE' },
+                          'DATOS INCORRECTOS': { bg: 'bg-orange-500',  icon: 'error',        label: 'DATOS INCORRECTOS' },
+                          'REIMPRIMIR':        { bg: 'bg-purple-500',  icon: 'print',        label: 'REIMPRIMIR' }
+                        };
+                        const cfg = mapCred[ec] || { bg: 'bg-slate-400', icon: 'help_outline', label: 'S/D' };
+                        return '<span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold text-white ' + cfg.bg + '">'
+                          + '<span class="material-icons-round text-sm">' + cfg.icon + '</span>'
+                          + cfg.label + '</span>';
+                      })()}
                     </div>
                     
                     ${response.qrRegistro && response.qrRegistro.trim().length > 0 ? `
