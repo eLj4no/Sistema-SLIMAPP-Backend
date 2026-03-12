@@ -1,19 +1,30 @@
 /**
  * Servir HTML
  */
+// REEMPLAZAR CON ESTO:
 function doGet(e) {
-  // Verificar si viene de un QR (con parámetros action, rut o asamblea)
+  // CASO 1: Checkin de punto de control (QR de asamblea)
+  // Detecta parámetro 'control' o acción 'checkin'
+  if (e.parameter.control || e.parameter.action === 'checkin') {
+    const template = HtmlService.createTemplateFromFile('QR_Asistencia');
+    template.params = e.parameter;
+    return template.evaluate()
+        .setTitle('Registro Asistencia - Sindicato SLIM n°3')
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+        .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
+  }
+  
+  // CASO 2: Vinculación QR personal (action=register, rut=...)
   if (e.parameter.action || e.parameter.rut || e.parameter.asamblea) {
-    // Servir página QR con los parámetros
     const template = HtmlService.createTemplateFromFile('QR_Access');
-    template.data = e.parameter; // Pasar parámetros a la página
+    template.data = e.parameter;
     return template.evaluate()
         .setTitle('Control QR - Sindicato SLIM n°3')
         .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
         .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
   }
   
-  // Si no hay parámetros QR, servir página principal
+  // CASO 3: Aplicación principal
   return HtmlService.createHtmlOutputFromFile('Index')
       .setTitle('Sindicato SLIM n°3 - App Socios')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
@@ -30,7 +41,8 @@ const CONFIG = {
     APELACIONES: "11nrvVsf84THWQ7j6NfAr_unyIcBV7aykxACS8R27PwE",
     PRESTAMOS: "1h-_sJD4rOCuMjlfSouP7a6gfoodHyzI4MOBRUyOW5XU",
     PERMISOS_MEDICOS: "1VYfm7cOgL3mVfVoI8DubIm8WG2srzQw9a6DtIEs3UMM",
-    CREDENCIALES: "1HVyPxdYKuvIybeOCAPwAJaVHwlxEuOik4YW0XOXBE5o"
+    CREDENCIALES: "1HVyPxdYKuvIybeOCAPwAJaVHwlxEuOik4YW0XOXBE5o",
+    ASISTENCIA: "1SRQ8Mlc6bBdb0mitAfn4I-EUAS4BOrZRbqS9YAmg3Sk"
   },
   HOJAS: {
     USUARIOS: "BD_SLIMAPP",
@@ -41,7 +53,9 @@ const CONFIG = {
     VALIDACION_PRESTAMOS: "Validación-Prestamos",
     PERMISOS_MEDICOS: "BD_Permisos medicos",
     CREDENCIALES: "IMPRESION",
-    HISTORIAL_CREDENCIALES: "HISTORIAL_CREDENCIALES"
+    HISTORIAL_CREDENCIALES: "HISTORIAL_CREDENCIALES",
+    ASISTENCIA: "BD_ASISTENCIA",
+    PUNTOS_CONTROL: "PUNTOS_CONTROL"
   },
   CARPETAS: {
     JUSTIFICACIONES: "1UD9hQz1FuacSb3QYrahRl7IfvlpKn8v6",
@@ -3473,39 +3487,166 @@ function eliminarPermisoMedico(idPermiso) {
   }
 }
 
+// REEMPLAZAR CON ESTO:
 // ==========================================
 // MÓDULO: REGISTRO ASISTENCIA
 // ==========================================
 
+/**
+ * Registra la asistencia de un socio vía QR de punto de control.
+ * Llamada desde QR_Asistencia.html
+ * BD_ASISTENCIA columnas: FECHA_HORA(A), RUT(B), NOMBRE(C), ASAMBLEA(D), TIPO_ASISTENCIA(E), GESTION(F), CODIGO_TEMP(G)
+ */
+function registrarAsistencia(rutInput, nombreControl) {
+  var lock = LockService.getScriptLock();
+  if (lock.tryLock(30000)) {
+    try {
+      const rutLimpio = cleanRut(rutInput);
+      if (!rutLimpio) throw new Error("RUT inválido.");
+
+      // 1. Buscar usuario en USUARIOS
+      const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
+      const dataUsers = sheetUsers.getDataRange().getDisplayValues();
+      const COL = CONFIG.COLUMNAS.USUARIOS;
+
+      let usuario = null;
+      for (let i = 1; i < dataUsers.length; i++) {
+        if (cleanRut(dataUsers[i][COL.RUT]) === rutLimpio) {
+          usuario = {
+            rut: dataUsers[i][COL.RUT],
+            nombre: dataUsers[i][COL.NOMBRE],
+            correo: dataUsers[i][COL.CORREO] || ""
+          };
+          break;
+        }
+      }
+
+      if (!usuario) {
+        return { success: false, message: "RUT no encontrado en el sistema." };
+      }
+
+      // 2. Acceder a BD_ASISTENCIA
+      const ssAsistencia = getSpreadsheet('ASISTENCIA');
+      let sheetAsistencia = ssAsistencia.getSheetByName(CONFIG.HOJAS.ASISTENCIA);
+
+      if (!sheetAsistencia) {
+        sheetAsistencia = ssAsistencia.insertSheet(CONFIG.HOJAS.ASISTENCIA);
+        sheetAsistencia.appendRow(["FECHA_HORA", "RUT", "NOMBRE", "ASAMBLEA", "TIPO_ASISTENCIA", "GESTION", "CODIGO_TEMP"]);
+      }
+
+      // 3. Verificar duplicado en esta asamblea
+      const dataAsistencia = sheetAsistencia.getDataRange().getDisplayValues();
+      for (let i = 1; i < dataAsistencia.length; i++) {
+        const row = dataAsistencia[i];
+        if (cleanRut(row[1]) === rutLimpio && row[3] === nombreControl) {
+          return {
+            success: false,
+            yaRegistrado: true,
+            message: "Ya registraste tu asistencia en este punto de control."
+          };
+        }
+      }
+
+      // 4. Registrar asistencia con columnas correctas
+      const fechaHora = new Date();
+      const fechaStr = Utilities.formatDate(fechaHora, 'America/Santiago', 'dd/MM/yyyy HH:mm:ss');
+      sheetAsistencia.appendRow([
+        fechaStr,           // A: FECHA_HORA
+        usuario.rut,        // B: RUT
+        usuario.nombre,     // C: NOMBRE
+        nombreControl,      // D: ASAMBLEA
+        "Asistencia QR",   // E: TIPO_ASISTENCIA
+        "Sistema",          // F: GESTION
+        ""                  // G: CODIGO_TEMP
+      ]);
+
+      // 5. Enviar notificación por correo si tiene correo registrado
+      let correoEnviado = false;
+      let mensajeCorreo = "";
+
+      if (usuario.correo && usuario.correo.includes("@")) {
+        try {
+          enviarCorreoEstilizado(
+            usuario.correo,
+            "Registro de Asistencia - Sindicato SLIM n°3",
+            "Asistencia Registrada",
+            "Tu asistencia ha sido registrada exitosamente en el sistema del sindicato.",
+            {
+              "Nombre": usuario.nombre,
+              "RUT": usuario.rut,
+              "Punto de Control": nombreControl,
+              "Fecha y Hora": fechaStr,
+              "Tipo": "Asistencia QR"
+            },
+            "#10b981"
+          );
+          correoEnviado = true;
+          mensajeCorreo = "Se ha enviado una confirmación a tu correo: " + usuario.correo;
+        } catch (emailErr) {
+          Logger.log("⚠️ Error enviando correo de asistencia: " + emailErr.toString());
+          mensajeCorreo = "Asistencia registrada, pero no se pudo enviar el correo de confirmación.";
+        }
+      } else {
+        mensajeCorreo = "No tienes correo registrado. Puedes ver tu historial en el módulo 'Registro Asistencia' de la app.";
+      }
+
+      return {
+        success: true,
+        nombre: usuario.nombre,
+        rut: usuario.rut,
+        fecha: fechaStr,
+        asamblea: nombreControl,
+        correoEnviado: correoEnviado,
+        mensajeCorreo: mensajeCorreo
+      };
+
+    } catch (e) {
+      Logger.log("❌ Error en registrarAsistencia: " + e.toString());
+      return { success: false, message: "Error del servidor: " + e.toString() };
+    } finally {
+      lock.releaseLock();
+    }
+  } else {
+    return { success: false, message: "Sistema ocupado, intenta nuevamente." };
+  }
+}
+
+/**
+ * Obtiene el historial de asistencias del usuario.
+ * Llamada desde Index.html (módulo Registro Asistencia)
+ * BD_ASISTENCIA columnas: FECHA_HORA(0), RUT(1), NOMBRE(2), ASAMBLEA(3), TIPO_ASISTENCIA(4), GESTION(5), CODIGO_TEMP(6)
+ */
 function obtenerHistorialAsistencia(rutInput) {
   try {
-    // NOTA: El módulo de asistencia todavía está en el spreadsheet principal
-    // hasta que se cree su propio archivo
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName("ASISTENCIA");
-    
-    if (!sheet) return { success: true, registros: [] };
-    
-    const data = sheet.getDataRange().getDisplayValues();
     const rutLimpio = cleanRut(rutInput);
+    if (!rutLimpio) return { success: false, message: "RUT inválido." };
+
+    const ssAsistencia = getSpreadsheet('ASISTENCIA');
+    const sheet = ssAsistencia.getSheetByName(CONFIG.HOJAS.ASISTENCIA);
+
+    if (!sheet) return { success: true, registros: [] };
+
+    const data = sheet.getDataRange().getDisplayValues();
     const registros = [];
-    
+
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      if (cleanRut(row[0]) === rutLimpio) {
+      if (cleanRut(row[1]) === rutLimpio) {  // Columna B = RUT (índice 1)
         registros.push({
-          asamblea: row[1] || "Asamblea",
-          tipo: row[2] || "Tipo no especificado",
-          gestion: row[3] || "Sistema",
-          dirigente: row[4] || ""
+          fecha: row[0] || "",               // A: FECHA_HORA
+          asamblea: row[3] || "Asamblea",    // D: ASAMBLEA
+          tipo: row[4] || "Asistencia QR",   // E: TIPO_ASISTENCIA
+          gestion: row[5] || "Sistema",      // F: GESTION
+          dirigente: ""
         });
       }
     }
-    
+
     registros.reverse();
     return { success: true, registros: registros };
-    
+
   } catch (e) {
+    Logger.log("❌ Error en obtenerHistorialAsistencia: " + e.toString());
     return { success: false, message: "Error: " + e.toString() };
   }
 }
@@ -4072,26 +4213,16 @@ function validarUsuarioQR(rutInput) {
   }
 }
 
+// REEMPLAZAR CON ESTO:
 function checkinQR(rutInput, nombreAsamblea) {
   var lock = LockService.getScriptLock();
-  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
+  if (lock.tryLock(30000)) {
     try {
-      const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
-      
-      // NOTA: El módulo de ASISTENCIA aún no está en la nueva estructura
-      // Por ahora usamos el spreadsheet principal
-      const ss = SpreadsheetApp.getActiveSpreadsheet();
-      let sheetAsistencia = ss.getSheetByName("ASISTENCIA");
-      
-      if (!sheetAsistencia) {
-        sheetAsistencia = ss.insertSheet("ASISTENCIA");
-        sheetAsistencia.appendRow(["RUT", "ASAMBLEA", "TIPO ASISTENCIA", "GESTION", "DIRIGENTE"]);
-      }
-      
-      const dataUsers = sheetUsers.getDataRange().getDisplayValues();
       const rutLimpio = cleanRut(rutInput);
+      const sheetUsers = getSheet('USUARIOS', 'USUARIOS');
+      const dataUsers = sheetUsers.getDataRange().getDisplayValues();
       const COL = CONFIG.COLUMNAS.USUARIOS;
-      
+
       let usuario = null;
       for (let i = 1; i < dataUsers.length; i++) {
         if (cleanRut(dataUsers[i][COL.RUT]) === rutLimpio) {
@@ -4102,37 +4233,44 @@ function checkinQR(rutInput, nombreAsamblea) {
           break;
         }
       }
-      
-      if (!usuario) {
-        throw new Error("Usuario no encontrado");
+
+      if (!usuario) throw new Error("Usuario no encontrado");
+
+      const ssAsistencia = getSpreadsheet('ASISTENCIA');
+      let sheetAsistencia = ssAsistencia.getSheetByName(CONFIG.HOJAS.ASISTENCIA);
+
+      if (!sheetAsistencia) {
+        sheetAsistencia = ssAsistencia.insertSheet(CONFIG.HOJAS.ASISTENCIA);
+        sheetAsistencia.appendRow(["FECHA_HORA", "RUT", "NOMBRE", "ASAMBLEA", "TIPO_ASISTENCIA", "GESTION", "CODIGO_TEMP"]);
       }
-      
-      // Verificar si ya registró asistencia en esta asamblea
+
       const dataAsistencia = sheetAsistencia.getDataRange().getDisplayValues();
       for (let i = 1; i < dataAsistencia.length; i++) {
         const row = dataAsistencia[i];
-        if (cleanRut(row[0]) === rutLimpio && row[1] === nombreAsamblea) {
+        if (cleanRut(row[1]) === rutLimpio && row[3] === nombreAsamblea) {
           throw new Error("Ya registraste tu asistencia en esta asamblea.");
         }
       }
-      
-      // Registrar asistencia
+
       const fechaHora = new Date();
+      const fechaStr = Utilities.formatDate(fechaHora, 'America/Santiago', 'dd/MM/yyyy HH:mm:ss');
       sheetAsistencia.appendRow([
+        fechaStr,
         usuario.rut,
+        usuario.nombre,
         nombreAsamblea,
         "Asistencia QR",
         "Sistema",
         ""
       ]);
-      
+
       return {
         success: true,
         nombre: usuario.nombre,
         rut: usuario.rut,
-        fecha: fechaHora.toLocaleString('es-CL')
+        fecha: fechaStr
       };
-      
+
     } catch (e) {
       throw new Error(e.message || e.toString());
     } finally {
