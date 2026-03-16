@@ -540,7 +540,16 @@
         <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden flex-shrink-0">
            <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
            <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><span class="material-icons-round">arrow_back</span></button>
-           <h2 class="text-lg font-bold z-10">Módulo de Préstamos</h2>
+           <h2 class="text-lg font-bold z-10 flex-grow">Módulo de Préstamos</h2>
+
+           <!-- SWITCH ADMIN (solo visible para ADMIN) -->
+           <div id="loans-switch-container" class="hidden z-10 flex flex-col items-center gap-1">
+              <label class="toggle-switch">
+                 <input type="checkbox" id="loans-switch" onchange="handleLoansSwitch()">
+                 <span class="toggle-slider"></span>
+              </label>
+              <span class="text-[9px] text-white/60 font-semibold">Módulo</span>
+           </div>
         </div>
 
         <div class="flex-grow flex flex-col bg-slate-50/50 overflow-hidden">
@@ -1260,6 +1269,24 @@
              </p>
              <button onclick="handleOutOfDeadlineConfirm()" class="w-full py-2 rounded-lg bg-red-600 text-white font-bold text-sm hover:bg-red-700 shadow-lg shadow-red-500/30">
                 Ver Historial
+             </button>
+         </div>
+      </div>
+
+      <!-- Modal Mantenimiento Préstamos -->
+      <div id="loans-maintenance-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center fade-in-up">
+             <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span class="material-icons-round text-2xl">build</span>
+             </div>
+             <h3 class="text-lg font-bold text-slate-800 mb-2">Módulo en Pausa</h3>
+             <p class="text-xs text-slate-600 mb-5">
+                Este módulo está en pausa por mantenimiento.<br><br>
+                Vuelva a intentar más tarde.
+             </p>
+             <button onclick="document.getElementById('loans-maintenance-modal').classList.add('hidden')" class="w-full py-3 rounded-xl bg-slate-800 text-white font-bold text-sm hover:bg-slate-700 transition shadow-lg shadow-slate-500/30 flex items-center justify-center gap-2">
+                <span class="material-icons-round text-sm">arrow_back</span>
+                <span>Volver</span>
              </button>
          </div>
       </div>
@@ -2202,10 +2229,22 @@
         switchContainer.classList.remove('hidden');
         switchContainer.classList.add('flex');
         
+        var loansSwitchContainer = document.getElementById('loans-switch-container');
+        if (loansSwitchContainer) {
+          loansSwitchContainer.classList.remove('hidden');
+          loansSwitchContainer.classList.add('flex');
+        }
+        
         loadJustifSwitchState();
+        loadLoansSwitchState();
       } else {
         btnAdmin.classList.add('hidden');
         switchContainer.classList.add('hidden');
+        
+        var loansSwitchContainerHide = document.getElementById('loans-switch-container');
+        if (loansSwitchContainerHide) {
+          loansSwitchContainerHide.classList.add('hidden');
+        }
       }
 
       // ========== BOTÓN CONSULTA ID ==========
@@ -2293,10 +2332,23 @@
         } else if (module === 'RegistroAsistencia') { 
             loadAttendanceRecords(); 
         } else if (module === 'Prestamos') {
-           document.getElementById('loans-menu').classList.remove('hidden');
-           document.getElementById('loans-form').classList.add('hidden');
-           document.getElementById('loans-records').classList.add('hidden');
-           switchView('loans-view');
+           if (esAdmin) {
+              document.getElementById('loans-menu').classList.remove('hidden');
+              document.getElementById('loans-form').classList.add('hidden');
+              document.getElementById('loans-records').classList.add('hidden');
+              switchView('loans-view');
+           } else {
+              google.script.run.withSuccessHandler(function(res) {
+                 if (res.habilitado) {
+                    document.getElementById('loans-menu').classList.remove('hidden');
+                    document.getElementById('loans-form').classList.add('hidden');
+                    document.getElementById('loans-records').classList.add('hidden');
+                    switchView('loans-view');
+                 } else {
+                    document.getElementById('loans-maintenance-modal').classList.remove('hidden');
+                 }
+              }).obtenerEstadoSwitchPrestamos();
+           }
         } else if (module === 'Justificaciones') {
            google.script.run.withSuccessHandler(res => {
                 if (res.habilitado) { 
@@ -2999,8 +3051,29 @@
          toggleJustifTab('list');
          switchView('justifications-view');
       }
-      
-      function toggleJustifTab(tab) { 
+
+      // === FUNCIONES PRÉSTAMOS (CON SWITCH) ===
+      function loadLoansSwitchState() {
+         google.script.run.withSuccessHandler(function(res) {
+            var switchEl = document.getElementById('loans-switch');
+            if (switchEl) switchEl.checked = res.habilitado;
+         }).obtenerEstadoSwitchPrestamos();
+      }
+
+      function handleLoansSwitch() {
+         var switchEl = document.getElementById('loans-switch');
+         var estado = switchEl.checked;
+         google.script.run.withSuccessHandler(function(res) {
+            if (res.success) {
+               showSuccess(estado ? "Módulo de préstamos habilitado." : "Módulo de préstamos pausado por mantenimiento.");
+            } else {
+               showWarning("Error al actualizar el módulo de préstamos.");
+               switchEl.checked = !estado;
+            }
+         }).toggleSwitchPrestamos(estado);
+      }
+
+      function toggleJustifTab(tab) {
          const btnForm = document.getElementById('tab-justif-form'); 
          const btnList = document.getElementById('tab-justif-list'); 
          const divForm = document.getElementById('justif-form-content'); 
