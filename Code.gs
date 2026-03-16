@@ -1506,6 +1506,39 @@ function verificarCambiosPrestamos() {
 }
 
 // ==========================================
+// SWITCH MÓDULO PRÉSTAMOS
+// ==========================================
+
+/**
+ * Obtener estado del switch de préstamos.
+ * Por defecto habilitado (null = primera ejecución).
+ */
+function obtenerEstadoSwitchPrestamos() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var estado = props.getProperty('prestamos_habilitado');
+    var habilitado = (estado === null || estado === 'true');
+    return { success: true, habilitado: habilitado };
+  } catch (e) {
+    Logger.log('Error en obtenerEstadoSwitchPrestamos: ' + e.toString());
+    return { success: true, habilitado: true };
+  }
+}
+
+/**
+ * Actualizar estado del switch de préstamos (solo ADMIN).
+ */
+function toggleSwitchPrestamos(estado) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    props.setProperty('prestamos_habilitado', estado ? 'true' : 'false');
+    return { success: true };
+  } catch (e) {
+    return { success: false, message: 'Error: ' + e.toString() };
+  }
+}
+
+// ==========================================
 // LÓGICA DE JUSTIFICACIONES (CON SWITCH)
 // ==========================================
 
