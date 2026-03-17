@@ -182,29 +182,7 @@
       background: #94a3b8;
     }
 
-    /* Animación de fade-in para el modal */
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    /* Animación de fade-out para el modal */
-    @keyframes fadeOut {
-      from { opacity: 1; }
-      to { opacity: 0; }
-    }
-
     /* Animación de escala para el contenido del modal */
-    @keyframes scaleIn {
-      from {
-        transform: scale(0.9);
-        opacity: 0;
-      }
-      to {
-        transform: scale(1);
-        opacity: 1;
-      }
-    }
 
     /* Clases de animación */
     .animate-fade-in {
@@ -213,10 +191,6 @@
 
     .animate-fade-out {
       animation: fadeOut 0.2s ease-out;
-    }
-
-    .animate-scale-in {
-      animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     /* Asegurar que el botón de ojo no interfiera con el input */
@@ -2173,14 +2147,6 @@
      */
     function cerrarAlertaInicioSesion() {
       const modal = document.getElementById('alerta-inicio-sesion');
-      if (modal) {
-        modal.classList.add('fade-out');
-        setTimeout(() => modal.remove(), 300);
-      }
-    }
-
-    function cerrarAlertaNegociacion() {
-      const modal = document.getElementById('alerta-negociacion-colectiva');
       if (modal) {
         modal.classList.add('fade-out');
         setTimeout(() => modal.remove(), 300);
