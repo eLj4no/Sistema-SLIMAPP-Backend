@@ -4716,6 +4716,102 @@ Logger.log("Total de triggers activos: " + ScriptApp.getProjectTriggers().length
       }
     }
 
+    // ==========================================
+    // REINTENTO NOTIFICACION REPRESENTANTE LEGAL - PERMISOS MEDICOS
+    // Trigger: cada 30 minutos
+    // ==========================================
+    function reintentarNotificacionRepLegal() {
+      var CORREO_REPRESENTANTE_LEGAL = CONFIG.CORREOS.REPRESENTANTE_LEGAL;
+      var COL = CONFIG.COLUMNAS.PERMISOS_MEDICOS;
+
+      try {
+        var sheetPermisos = getSheet('PERMISOS_MEDICOS', 'PERMISOS_MEDICOS');
+        var data = sheetPermisos.getDataRange().getValues();
+        var pendientes = 0;
+        var exitosos = 0;
+
+        for (var i = 1; i < data.length; i++) {
+          var fila = data[i];
+          var notificado = fila[COL.NOTIFICADO_REP_LEGAL];
+          var estado = String(fila[COL.ESTADO]);
+
+          if (estado === '' || estado === 'Anulado') continue;
+          if (notificado === true || String(notificado).toUpperCase() === 'TRUE') continue;
+
+          pendientes++;
+
+          var idPermiso   = String(fila[COL.ID]);
+          var nombre      = String(fila[COL.NOMBRE]);
+          var rut         = String(fila[COL.RUT]);
+          var tipoPermiso = String(fila[COL.TIPO_PERMISO]);
+          var urlDoc      = String(fila[COL.URL_DOCUMENTO]);
+          var motivo      = String(fila[COL.MOTIVO_DETALLE]);
+
+          var fechaVal = fila[COL.FECHA_INICIO];
+          var fechaInicioStr = (fechaVal instanceof Date)
+            ? fechaVal.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' })
+            : String(fechaVal);
+
+          var tieneDoc = urlDoc && urlDoc !== '' && urlDoc !== 'Sin documento';
+
+          try {
+            if (estado === 'Documento Adjuntado') {
+              enviarCorreoEstilizado(
+                CORREO_REPRESENTANTE_LEGAL,
+                "Documento Permiso Medico Adjuntado - Sindicato SLIM n3",
+                "Documento de Permiso Medico Disponible",
+                "El trabajador <strong>" + nombre + "</strong> ha adjuntado el documento de respaldo para su permiso medico.",
+                {
+                  "ID": idPermiso,
+                  "Trabajador": nombre,
+                  "RUT": rut,
+                  "Tipo": tipoPermiso,
+                  "Fecha Inicio": fechaInicioStr,
+                  "Estado": estado,
+                  "Documento": tieneDoc
+                    ? '<a href="' + urlDoc + '" style="color:#10b981;font-weight:bold;">Ver Documento Adjunto</a>'
+                    : "Sin documento"
+                },
+                "#475569"
+              );
+            } else {
+              enviarCorreoEstilizado(
+                CORREO_REPRESENTANTE_LEGAL,
+                "Notificacion Permiso Medico - Sindicato SLIM n3",
+                "Solicitud de Permiso Medico",
+                "Se ha registrado una solicitud de permiso medico para el trabajador <strong>" + nombre + "</strong>.",
+                {
+                  "ID": idPermiso,
+                  "Trabajador": nombre,
+                  "RUT": rut,
+                  "Tipo": tipoPermiso,
+                  "Fecha Inicio": fechaInicioStr,
+                  "Motivo": motivo,
+                  "Estado": estado,
+                  "Documento": tieneDoc
+                    ? '<a href="' + urlDoc + '" style="color:#10b981;font-weight:bold;">Ver Documento</a>'
+                    : "Pendiente"
+                },
+                "#10b981"
+              );
+            }
+
+            sheetPermisos.getRange(i + 1, COL.NOTIFICADO_REP_LEGAL + 1).setValue(true);
+            exitosos++;
+            Utilities.sleep(600);
+
+          } catch (eEmail) {
+            Logger.log("reintentarNotificacionRepLegal - Fila " + (i + 1) + " (" + idPermiso + "): " + eEmail.toString());
+          }
+        }
+
+        Logger.log("reintentarNotificacionRepLegal: " + pendientes + " pendientes, " + exitosos + " enviados.");
+
+      } catch (e) {
+        Logger.log("Error general en reintentarNotificacionRepLegal: " + e.toString());
+      }
+    }
+
 /**
  * Función para obtener el correo de un usuario por RUT
  */
