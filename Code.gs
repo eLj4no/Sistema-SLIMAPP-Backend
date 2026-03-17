@@ -1679,6 +1679,7 @@ function verificarDisponibilidadJustificaciones() {
  */
 function validarJustificacionMesActual(rut) {
   try {
+    SpreadsheetApp.flush(); // Fuerza sincronización antes de leer
     const sheet = getSheet('JUSTIFICACIONES', 'JUSTIFICACIONES');
     const data = sheet.getDataRange().getValues();
     const COL = CONFIG.COLUMNAS.JUSTIFICACIONES;
@@ -3184,6 +3185,7 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
       // ESCRIBIR REGISTRO (PROTEGIDO POR LOCK)
       // ========================================
       sheetPermisos.appendRow(newRow);
+      var filaRepLegal = sheetPermisos.getLastRow();
       Logger.log(`✅ Permiso creado exitosamente. ID: ${idUnico}`);
       
       // ========================================
@@ -3221,26 +3223,32 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
         );
       }
       
-      enviarCorreoEstilizado(
-        CORREO_REPRESENTANTE_LEGAL,
-        "Notificación Permiso Médico - Sindicato SLIM n°3",
-        "Nueva Solicitud de Permiso Médico",
-        `Se ha registrado una solicitud de permiso médico para el trabajador <strong>${beneficiario.nombre}</strong>.`,
-        { 
-          "ID": idUnico,
-          "Trabajador": beneficiario.nombre,
-          "RUT": beneficiario.rut,
-          "Tipo": tipoPermiso,
-          "Fecha Inicio": fechaInicioNormalizada,
-          "Motivo": motivo,
-          "Estado": estadoFinal,
-          "Fecha Solicitud": fechaHoyCompleta.toLocaleDateString(),
-          "Documento": urlDocFinal !== "Sin documento"
-            ? '<a href="' + urlDocFinal + '" style="color:#10b981;text-decoration:none;font-weight:600;">📎 Ver Documento Adjunto</a>'
-            : "Pendiente"
-        },
-        "#10b981"
-      );
+      try {
+        enviarCorreoEstilizado(
+          CORREO_REPRESENTANTE_LEGAL,
+          "Notificacion Permiso Medico - Sindicato SLIM n3",
+          "Nueva Solicitud de Permiso Medico",
+          "Se ha registrado una solicitud de permiso medico para el trabajador <strong>" + beneficiario.nombre + "</strong>.",
+          { 
+            "ID": idUnico,
+            "Trabajador": beneficiario.nombre,
+            "RUT": beneficiario.rut,
+            "Tipo": tipoPermiso,
+            "Fecha Inicio": fechaInicioNormalizada,
+            "Motivo": motivo,
+            "Estado": estadoFinal,
+            "Fecha Solicitud": fechaHoyCompleta.toLocaleDateString(),
+            "Documento": urlDocFinal !== "Sin documento"
+              ? '<a href="' + urlDocFinal + '" style="color:#10b981;text-decoration:none;font-weight:600;">Ver Documento Adjunto</a>'
+              : "Pendiente"
+          },
+          "#10b981"
+        );
+        sheetPermisos.getRange(filaRepLegal, COL_PERM.NOTIFICADO_REP_LEGAL + 1).setValue(true);
+      } catch (eRepLegal) {
+        Logger.log("Advertencia solicitarPermisoMedico: Fallo envio Rep. Legal fila " + filaRepLegal + " - " + eRepLegal.toString());
+        // Queda en false para ser reintentado por el trigger
+      }
       
       if (gestion === "Dirigente" && correoDirigente && correoDirigente.includes("@") && correoDirigente !== beneficiario.correo) {
         enviarCorreoEstilizado(
@@ -3414,23 +3422,27 @@ function adjuntarDocumentoPermiso(idPermiso, archivoData) {
         );
       }
       
-      enviarCorreoEstilizado(
-        CORREO_REPRESENTANTE_LEGAL,
-        "Documento Permiso Médico Adjuntado - Sindicato SLIM n°3",
-        "Documento de Permiso Médico Disponible",
-        "El trabajador <strong>" + beneficiario.nombre + "</strong> ha adjuntado el documento de respaldo para su permiso médico.",
-        {
-          "ID": idPermiso,
-          "Trabajador": beneficiario.nombre,
-          "RUT": beneficiario.rut,
-          "Tipo Permiso": tipoPermiso,
-          "Documento": '<a href="' + resultadoSubida.url + '" style="color: #10b981; font-weight: bold;">Disponible para revisión</a>',
-          "Fecha Adjunto": fechaSubida.toLocaleDateString()
-        },
-        "#475569"
-      );
-      
-      sheetPermisos.getRange(rowIndex, COL.NOTIFICADO_REP_LEGAL + 1).setValue(true);
+      try {
+        enviarCorreoEstilizado(
+          CORREO_REPRESENTANTE_LEGAL,
+          "Documento Permiso Medico Adjuntado - Sindicato SLIM n3",
+          "Documento de Permiso Medico Disponible",
+          "El trabajador <strong>" + beneficiario.nombre + "</strong> ha adjuntado el documento de respaldo para su permiso medico.",
+          {
+            "ID": idPermiso,
+            "Trabajador": beneficiario.nombre,
+            "RUT": beneficiario.rut,
+            "Tipo Permiso": tipoPermiso,
+            "Documento": '<a href="' + resultadoSubida.url + '" style="color: #10b981; font-weight: bold;">Disponible para revision</a>',
+            "Fecha Adjunto": fechaSubida.toLocaleDateString()
+          },
+          "#475569"
+        );
+        sheetPermisos.getRange(rowIndex, COL.NOTIFICADO_REP_LEGAL + 1).setValue(true);
+      } catch (eRepLegal) {
+        Logger.log("Advertencia adjuntarDocumentoPermiso: Fallo envio Rep. Legal fila " + rowIndex + " - " + eRepLegal.toString());
+        // Queda en false para ser reintentado por el trigger
+      }
       
       // ========== PREPARAR RESPUESTA ==========
       var respuesta = {
@@ -4489,7 +4501,7 @@ function configurarTriggers() {
     .atHour(20)
     .create();
 
-  Logger.log("✅ Triggers configurados exitosamente");
+    Logger.log("✅ Triggers configurados exitosamente");
   Logger.log("Total de triggers activos: " + ScriptApp.getProjectTriggers().length);
   
   return {
@@ -4505,6 +4517,102 @@ function configurarTriggers() {
     ]
   };
 }
+
+    // ==========================================
+    // REINTENTO NOTIFICACION REPRESENTANTE LEGAL - PERMISOS MEDICOS
+    // Trigger: cada 30 minutos
+    // ==========================================
+    function reintentarNotificacionRepLegal() {
+      var CORREO_REPRESENTANTE_LEGAL = CONFIG.CORREOS.REPRESENTANTE_LEGAL;
+      var COL = CONFIG.COLUMNAS.PERMISOS_MEDICOS;
+
+      try {
+        var sheetPermisos = getSheet('PERMISOS_MEDICOS', 'PERMISOS_MEDICOS');
+        var data = sheetPermisos.getDataRange().getValues();
+        var pendientes = 0;
+        var exitosos = 0;
+
+        for (var i = 1; i < data.length; i++) {
+          var fila = data[i];
+          var notificado = fila[COL.NOTIFICADO_REP_LEGAL];
+          var estado = String(fila[COL.ESTADO]);
+
+          if (estado === '' || estado === 'Anulado') continue;
+          if (notificado === true || String(notificado).toUpperCase() === 'TRUE') continue;
+
+          pendientes++;
+
+          var idPermiso   = String(fila[COL.ID]);
+          var nombre      = String(fila[COL.NOMBRE]);
+          var rut         = String(fila[COL.RUT]);
+          var tipoPermiso = String(fila[COL.TIPO_PERMISO]);
+          var urlDoc      = String(fila[COL.URL_DOCUMENTO]);
+          var motivo      = String(fila[COL.MOTIVO_DETALLE] !== undefined ? fila[COL.MOTIVO_DETALLE] : fila[COL.MOTIVO]);
+
+          var fechaVal = fila[COL.FECHA_INICIO];
+          var fechaInicioStr = (fechaVal instanceof Date)
+            ? fechaVal.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' })
+            : String(fechaVal);
+
+          var tieneDoc = urlDoc && urlDoc !== '' && urlDoc !== 'Sin documento';
+
+          try {
+            if (estado === 'Documento Adjuntado') {
+              enviarCorreoEstilizado(
+                CORREO_REPRESENTANTE_LEGAL,
+                "Documento Permiso Medico Adjuntado - Sindicato SLIM n3",
+                "Documento de Permiso Medico Disponible",
+                "El trabajador <strong>" + nombre + "</strong> ha adjuntado el documento de respaldo para su permiso medico.",
+                {
+                  "ID": idPermiso,
+                  "Trabajador": nombre,
+                  "RUT": rut,
+                  "Tipo": tipoPermiso,
+                  "Fecha Inicio": fechaInicioStr,
+                  "Estado": estado,
+                  "Documento": tieneDoc
+                    ? '<a href="' + urlDoc + '" style="color:#10b981;font-weight:bold;">Ver Documento Adjunto</a>'
+                    : "Sin documento"
+                },
+                "#475569"
+              );
+            } else {
+              enviarCorreoEstilizado(
+                CORREO_REPRESENTANTE_LEGAL,
+                "Notificacion Permiso Medico - Sindicato SLIM n3",
+                "Solicitud de Permiso Medico",
+                "Se ha registrado una solicitud de permiso medico para el trabajador <strong>" + nombre + "</strong>.",
+                {
+                  "ID": idPermiso,
+                  "Trabajador": nombre,
+                  "RUT": rut,
+                  "Tipo": tipoPermiso,
+                  "Fecha Inicio": fechaInicioStr,
+                  "Motivo": motivo,
+                  "Estado": estado,
+                  "Documento": tieneDoc
+                    ? '<a href="' + urlDoc + '" style="color:#10b981;font-weight:bold;">Ver Documento</a>'
+                    : "Pendiente"
+                },
+                "#10b981"
+              );
+            }
+
+            sheetPermisos.getRange(i + 1, COL.NOTIFICADO_REP_LEGAL + 1).setValue(true);
+            exitosos++;
+            Utilities.sleep(600);
+
+          } catch (eEmail) {
+            Logger.log("reintentarNotificacionRepLegal - Fila " + (i + 1) + " (" + idPermiso + "): " + eEmail.toString());
+          }
+        }
+
+        Logger.log("reintentarNotificacionRepLegal: " + pendientes + " pendientes, " + exitosos + " enviados.");
+
+      } catch (e) {
+        Logger.log("Error general en reintentarNotificacionRepLegal: " + e.toString());
+      }
+    }
 
 /**
  * Función para obtener el correo de un usuario por RUT
