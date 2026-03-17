@@ -669,7 +669,7 @@ function getSheet(spreadsheetKey, sheetKey, createIfNotExists = false) {
     const sheetName = CONFIG.HOJAS[sheetKey];
     
     if (!sheetName) {
-      console.error(`❌ Clave de hoja "${sheetKey}" no encontrada en CONFIG.HOJAS`);
+      console.error("❌ Clave de hoja \"" + sheetKey + "\" no encontrada en CONFIG.HOJAS");
       return null;
     }
     
@@ -677,7 +677,7 @@ function getSheet(spreadsheetKey, sheetKey, createIfNotExists = false) {
     
     // Si no existe y se solicita creación automática
     if (!sheet && createIfNotExists) {
-      console.warn(`⚠️ Hoja "${sheetName}" no existe. Creándola...`);
+      console.warn("⚠️ Hoja \"" + sheetName + "\" no existe. Creándola...");
       sheet = ss.insertSheet(sheetName);
       console.log(`✅ Hoja "${sheetName}" creada exitosamente`);
     }
@@ -690,7 +690,7 @@ function getSheet(spreadsheetKey, sheetKey, createIfNotExists = false) {
     return sheet;
     
   } catch (e) {
-    console.error(`❌ Error obteniendo hoja ${sheetKey} de ${spreadsheetKey}: ${e.toString()}`);
+    console.error("❌ Error obteniendo hoja " + sheetKey + " de " + spreadsheetKey + ": " + e.toString());
     return null;
   }
 }
@@ -4400,7 +4400,6 @@ function validarUsuarioQR(rutInput) {
   }
 }
 
-// REEMPLAZAR CON ESTO:
 function checkinQR(rutInput, nombreAsamblea) {
   var lock = LockService.getScriptLock();
   if (lock.tryLock(30000)) {
@@ -4509,7 +4508,6 @@ function configurarTriggers() {
     .atHour(8)
     .create();
   
-  // REEMPLAZAR CON ESTO:
   // Verificar cambios en credenciales — cada domingo a las 8 AM
   ScriptApp.newTrigger('verificarCambiosCredenciales')
     .timeBased()
