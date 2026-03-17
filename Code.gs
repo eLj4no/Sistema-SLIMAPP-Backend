@@ -124,7 +124,8 @@ const CONFIG = {
       GESTION: 13,
       NOMBRE_DIRIGENTE: 14,
       CORREO_DIRIGENTE: 15,
-      URL_COMPROBANTE_DEVOLUCION: 16
+      URL_COMPROBANTE_DEVOLUCION: 16,
+      PERMISO_DEVOLUCION: 17
     },
     PRESTAMOS: {
       ID: 0,
@@ -679,11 +680,11 @@ function getSheet(spreadsheetKey, sheetKey, createIfNotExists = false) {
     if (!sheet && createIfNotExists) {
       console.warn("⚠️ Hoja \"" + sheetName + "\" no existe. Creándola...");
       sheet = ss.insertSheet(sheetName);
-      console.log(`✅ Hoja "${sheetName}" creada exitosamente`);
+      console.log("✅ Hoja \"" + sheetName + "\" creada exitosamente");
     }
     
     if (!sheet) {
-      console.error(`❌ Hoja "${sheetName}" no encontrada en spreadsheet ${spreadsheetKey}`);
+      console.error("❌ Hoja \"" + sheetName + "\" no encontrada en spreadsheet " + spreadsheetKey);
       return null;
     }
     
@@ -2804,87 +2805,158 @@ function verificarCambiosApelaciones() {
 }
 
 function procesarPermisosComprobantesDevolucion() {
+  var tiempoInicio = new Date().getTime();
+  var LIMITE_MS = 25 * 60 * 1000; // 25 minutos de guarda (límite Apps Script = 30 min)
+
   try {
-    // ⭐ VALIDACIÓN
-    const sheet = getSheet('APELACIONES', 'APELACIONES');
+    var sheet = getSheet('APELACIONES', 'APELACIONES');
     if (!sheet) {
       console.error("❌ No se pudo acceder a la hoja de apelaciones");
       return;
     }
-    
-    const data = sheet.getDataRange().getValues();
-    const COL = CONFIG.COLUMNAS.APELACIONES;
-    
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const urlComprobanteDevolucion = String(row[COL.URL_COMPROBANTE_DEVOLUCION]);
-      const correoUsuario = row[COL.CORREO];
-      
-      if (urlComprobanteDevolucion && 
-          urlComprobanteDevolucion.includes("drive.google.com") && 
-          correoUsuario && 
-          correoUsuario.includes("@")) {
-        
+
+    var data = sheet.getDataRange().getValues();
+    var COL = CONFIG.COLUMNAS.APELACIONES;
+    var procesados = 0;
+    var omitidos = 0;
+    var erroresTransitorios = 0;
+
+    for (var i = 1; i < data.length; i++) {
+
+      // ── GUARDIA DE TIEMPO ──
+      if (new Date().getTime() - tiempoInicio > LIMITE_MS) {
+        console.warn("⏱️ Límite de tiempo alcanzado. Procesados: " + procesados + ". Pendientes en próxima ejecución.");
+        break;
+      }
+
+      var row = data[i];
+      var urlComprobanteDevolucion = String(row[COL.URL_COMPROBANTE_DEVOLUCION] || "");
+      var correoUsuario            = String(row[COL.CORREO] || "");
+      var permisoDevolucion        = row.length > COL.PERMISO_DEVOLUCION ? String(row[COL.PERMISO_DEVOLUCION] || "") : "";
+
+      // ── SKIP: ya procesado (OK o error permanente) ──
+      if (permisoDevolucion === "OK" || permisoDevolucion === "ERROR_PERMANENTE") {
+        omitidos++;
+        continue;
+      }
+
+      // ── SKIP: sin URL de devolución válida ──
+      if (!urlComprobanteDevolucion || !urlComprobanteDevolucion.includes("drive.google.com")) {
+        continue;
+      }
+
+      // ── SKIP: sin correo válido ──
+      if (!correoUsuario || !correoUsuario.includes("@")) {
+        continue;
+      }
+
+      try {
+        var fileId = "";
+        if (urlComprobanteDevolucion.includes("/d/")) {
+          fileId = urlComprobanteDevolucion.split("/d/")[1].split("/")[0];
+        } else if (urlComprobanteDevolucion.includes("id=")) {
+          fileId = urlComprobanteDevolucion.split("id=")[1].split("&")[0];
+        }
+
+        if (!fileId) continue;
+
+        var file = DriveApp.getFileById(fileId);
+        var viewers = file.getViewers();
+        var hasAccess = viewers.some(function(viewer) { return viewer.getEmail() === correoUsuario; });
+
+        if (hasAccess) {
+          sheet.getRange(i + 1, COL.PERMISO_DEVOLUCION + 1).setValue("OK");
+          console.log("✅ Fila " + (i + 1) + ": " + correoUsuario + " ya tenía acceso. Marcado OK.");
+          procesados++;
+          continue;
+        }
+
+        // ── INTENTO 1: API Avanzada (sin email de notificación) ──
+        var permisoOtorgado = false;
+        var errorPermanente = false;
+
         try {
-          let fileId = "";
-          if (urlComprobanteDevolucion.includes("/d/")) {
-            fileId = urlComprobanteDevolucion.split("/d/")[1].split("/")[0];
-          } else if (urlComprobanteDevolucion.includes("id=")) {
-            fileId = urlComprobanteDevolucion.split("id=")[1].split("&")[0];
-          }
-          
-          if (fileId) {
-            const file = DriveApp.getFileById(fileId);
-            const viewers = file.getViewers();
-            const hasAccess = viewers.some(viewer => viewer.getEmail() === correoUsuario);
-            
-            if (!hasAccess) {
+          var recursoPermiso = {
+            'role': 'reader',
+            'type': 'user',
+            'value': correoUsuario
+          };
+          Drive.Permissions.insert(recursoPermiso, fileId, {
+            sendNotificationEmails: false
+          });
+          permisoOtorgado = true;
+          console.log("✅ Permiso silencioso otorgado (API Avanzada) a " + correoUsuario + " para archivo " + fileId);
 
-              // ── INTENTO 1: API Avanzada (sin email de notificación) ──
-              let permisoOtorgado = false;
-              try {
-                const recursoPermiso = {
-                  'role': 'reader',
-                  'type': 'user',
-                  'value': correoUsuario
-                };
-                Drive.Permissions.insert(recursoPermiso, fileId, {
-                  sendNotificationEmails: false
-                });
-                permisoOtorgado = true;
-                console.log(`✅ Permiso silencioso otorgado (API Avanzada) a ${correoUsuario} para archivo ${fileId}`);
+        } catch (apiError) {
+          var apiErrorStr = apiError.toString();
+          console.warn("⚠️ Fallo API Avanzada para " + correoUsuario + " - " + apiErrorStr);
 
-              } catch (apiError) {
-                console.warn(`⚠️ Fallo API Avanzada para ${correoUsuario} - ${apiError} - Intentando addViewer...`);
-                Utilities.sleep(1000);
+          // Error permanente: Drive rechaza este correo de forma definitiva
+          if (apiErrorStr.includes("Bad Request") || apiErrorStr.includes("No puedes compartir")) {
+            errorPermanente = true;
+            console.error("❌ Error permanente (API Avanzada) para " + correoUsuario + ": " + apiErrorStr);
 
-                // ── INTENTO 2: addViewer ──
+          } else {
+            Utilities.sleep(1000);
+
+            // ── INTENTO 2: addViewer ──
+            try {
+              file.addViewer(correoUsuario);
+              permisoOtorgado = true;
+              console.log("✅ Permiso otorgado via addViewer a " + correoUsuario);
+
+            } catch (fallbackError) {
+              var fallbackStr = fallbackError.toString();
+              console.warn("⚠️ Fallo addViewer para " + correoUsuario + " - " + fallbackStr);
+
+              if (fallbackStr.includes("Invalid argument") || fallbackStr.includes("Bad Request")) {
+                errorPermanente = true;
+                console.error("❌ Error permanente (addViewer) para " + correoUsuario + ": " + fallbackStr);
+
+              } else {
+                Utilities.sleep(2000);
+
+                // ── INTENTO 3 (ÚLTIMO): Reintento final ──
                 try {
                   file.addViewer(correoUsuario);
                   permisoOtorgado = true;
-                  console.log(`✅ Permiso otorgado via addViewer a ${correoUsuario} para archivo ${fileId}`);
+                  console.log("✅ Permiso otorgado en reintento final a " + correoUsuario);
 
-                } catch (fallbackError) {
-                  console.warn(`⚠️ Fallo addViewer para ${correoUsuario} - ${fallbackError} - Reintentando en 2s...`);
-                  Utilities.sleep(2000);
-
-                  // ── INTENTO 3 (ÚLTIMO): Reintento final ──
-                  try {
-                    file.addViewer(correoUsuario);
-                    permisoOtorgado = true;
-                    console.log(`✅ Permiso otorgado en reintento final a ${correoUsuario} para archivo ${fileId}`);
-                  } catch (finalError) {
-                    console.error(`❌ Error fatal al otorgar permiso a ${correoUsuario} para archivo ${fileId}: ${finalError}`);
+                } catch (finalError) {
+                  var finalStr = finalError.toString();
+                  console.error("❌ Error fatal al otorgar permiso a " + correoUsuario + ": " + finalStr);
+                  if (finalStr.includes("Invalid argument") || finalStr.includes("Bad Request")) {
+                    errorPermanente = true;
+                  } else {
+                    erroresTransitorios++;
                   }
                 }
               }
             }
           }
-        } catch (fileErr) {
-          console.error(`⚠️ Error procesando archivo para fila ${i + 1}: ${fileErr}`);
         }
+
+        // ── REGISTRAR RESULTADO EN LA HOJA ──
+        if (permisoOtorgado) {
+          sheet.getRange(i + 1, COL.PERMISO_DEVOLUCION + 1).setValue("OK");
+          console.log("✅ Fila " + (i + 1) + " marcada como OK");
+          procesados++;
+        } else if (errorPermanente) {
+          sheet.getRange(i + 1, COL.PERMISO_DEVOLUCION + 1).setValue("ERROR_PERMANENTE");
+          console.error("❌ Fila " + (i + 1) + " marcada como ERROR_PERMANENTE (" + correoUsuario + ")");
+          procesados++;
+        }
+        // Error transitorio (Service error: Drive, etc.) → se deja vacío para reintentar en próxima ejecución
+
+      } catch (fileErr) {
+        var fileErrStr = fileErr.toString();
+        console.error("⚠️ Error procesando archivo para fila " + (i + 1) + ": " + fileErrStr);
+        erroresTransitorios++;
       }
     }
+
+    console.log("📊 Resumen procesarPermisosComprobantesDevolucion: Procesados=" + procesados + " | Omitidos (ya resueltos)=" + omitidos + " | Errores transitorios=" + erroresTransitorios + " | Total filas=" + (data.length - 1));
+
   } catch (e) {
     console.error("❌ Error en procesarPermisosComprobantesDevolucion: " + e.toString());
   }
@@ -4522,8 +4594,8 @@ function configurarTriggers() {
     .atHour(20)
     .create();
 
-    Logger.log("✅ Triggers configurados exitosamente");
-  Logger.log("Total de triggers activos: " + ScriptApp.getProjectTriggers().length);
+Logger.log("✅ Triggers configurados exitosamente");
+Logger.log("Total de triggers activos: " + ScriptApp.getProjectTriggers().length);
   
   return {
     success: true,
@@ -4534,7 +4606,8 @@ function configurarTriggers() {
       "procesarValidacionPrestamos (diario 8 AM)",
       "procesarPermisosComprobantesDevolucion (cada 1 hora)",
       "verificarCambiosPrestamos (diario 8 AM)",
-      "verificarCambiosCredenciales (domingos 8 AM)"
+      "verificarCambiosCredenciales (domingos 8 AM)",
+      "verificarNotificacionesAsistencia (diario 20:00)"
     ]
   };
 }
