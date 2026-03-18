@@ -1638,6 +1638,39 @@ function toggleSwitchSlimQuest(estado) {
 }
 
 // ==========================================
+// SWITCH MÓDULO CALCULADORA HE
+// ==========================================
+
+/**
+ * Obtener estado del switch de Calculadora HE.
+ * Por defecto habilitado (null = primera ejecución).
+ */
+function obtenerEstadoSwitchCalculadora() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var estado = props.getProperty('calculadora_habilitada');
+    var habilitado = (estado === null || estado === 'true');
+    return { success: true, habilitado: habilitado };
+  } catch (e) {
+    Logger.log('Error en obtenerEstadoSwitchCalculadora: ' + e.toString());
+    return { success: true, habilitado: true };
+  }
+}
+
+/**
+ * Actualizar estado del switch de Calculadora HE (solo ADMIN).
+ */
+function toggleSwitchCalculadora(estado) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    props.setProperty('calculadora_habilitada', estado ? 'true' : 'false');
+    return { success: true };
+  } catch (e) {
+    return { success: false, message: 'Error: ' + e.toString() };
+  }
+}
+
+// ==========================================
 // LÓGICA DE JUSTIFICACIONES (CON SWITCH)
 // ==========================================
 
