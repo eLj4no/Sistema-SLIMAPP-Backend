@@ -3055,7 +3055,15 @@
       // ============================================
       // PANEL ADMIN: SWITCHES DE MÓDULOS
       // ============================================
-      function loadAdminModuleSwitches() {
+      function showModuloDeshabilitado(nombreModulo) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Modulo no disponible',
+          html: 'El modulo <strong>' + nombreModulo + '</strong> se encuentra temporalmente deshabilitado.<br><br>Consulta con la directiva para mas informacion.',
+          confirmButtonColor: '#1e293b',
+          confirmButtonText: 'Entendido'
+        });
+      }
         google.script.run.withSuccessHandler(function(res) {
           var el = document.getElementById('admin-switch-calculadora');
           if (el) el.checked = res.habilitado;
@@ -3155,8 +3163,24 @@
         } else if (module === 'PermisoMedico') {
            togglePermissionTab('form');
            switchView('permission-view');
+        } else if (module === 'ContratoColectivo') {
+           google.script.run.withSuccessHandler(function(res) {
+             if (res.habilitado) { switchView('contrato-colectivo-view'); }
+             else { showModuloDeshabilitado('Mi Contrato Colectivo'); }
+           }).obtenerEstadoSwitchContratoColectivo();
+        } else if (module === 'CalculadoraHE') {
+           google.script.run.withSuccessHandler(function(res) {
+             if (res.habilitado) { switchView('calculator-view'); }
+             else { showModuloDeshabilitado('Calculadora Horas Extra'); }
+           }).obtenerEstadoSwitchCalculadora();
+        } else if (module === 'MiProgreso') {
+           google.script.run.withSuccessHandler(function(res) {
+             if (res.habilitado) { showInfo('El modulo SLIM Quest estara disponible proximamente.'); }
+             else { showModuloDeshabilitado('SLIM Quest'); }
+           }).obtenerEstadoSwitchSlimQuest();
         } else if (module === 'PanelAdmin') {
            switchView('admin-panel-view');
+           loadAdminModuleSwitches();
         } else if (module === 'ConsultaID') {
            switchView('id-credential-view');
            document.getElementById('search-rut-input').value = '';
