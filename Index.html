@@ -710,12 +710,12 @@
                 <span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Mi Contrato</span>
               </button>
 
-              <button onclick="navAction('ContratoColectivo')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-amber-200 relative overflow-hidden">
-                <div class="absolute inset-0 bg-amber-50 opacity-0 group-hover:opacity-100 transition duration-300"></div>
-                <div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10">
-                  <span class="material-icons-round text-xl md:text-2xl">description</span>
+              <button onclick="navAction('MiProgreso')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-purple-200 relative overflow-hidden">
+                <div class="absolute inset-0 bg-purple-50 opacity-0 group-hover:opacity-100 transition duration-300"></div>
+                <div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10">
+                  <span class="material-icons-round text-xl md:text-2xl">sports_esports</span>
                 </div>
-                <span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Mi Contrato</span>
+                <span class="font-bold text-slate-700 text-xs md:text-base relative z-10">SLIM Quest</span>
               </button>
               
               <button onclick="navAction('RegistroAsistencia')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-green-200 relative overflow-hidden"><div class="absolute inset-0 bg-green-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">history_edu</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Registro Asistencia</span></button>
@@ -1477,6 +1477,211 @@
             <!-- Aquí se mostrará el resultado dinámicamente -->
           </div>
 
+        </div>
+      </section>
+
+      <!-- VISTA: SLIM QUEST LEADERBOARD -->
+      <section id="slim-quest-leaderboard-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4">
+        <div class="bg-slate-900 text-white p-4 flex items-center gap-3 relative overflow-hidden flex-shrink-0">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+          <button onclick="switchView('slim-quest-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition">
+            <span class="material-icons-round">arrow_back</span>
+          </button>
+          <div class="z-10 flex-1">
+            <h2 class="text-base font-bold leading-tight">Clasificación</h2>
+            <p class="text-[10px] text-white/60 font-medium">Top socios por XP acumulado</p>
+          </div>
+          <div class="z-10 w-9 h-9 rounded-full bg-amber-500/20 border border-amber-400/30 flex items-center justify-center">
+            <span class="material-icons-round text-amber-400 text-xl">emoji_events</span>
+          </div>
+        </div>
+        <div class="flex-grow overflow-y-auto bg-slate-50/50 p-4 space-y-3">
+          <div id="lb-loader" class="flex flex-col items-center justify-center py-12">
+            <div class="loader mb-3"></div>
+            <p class="text-xs text-slate-400">Cargando clasificación...</p>
+          </div>
+          <div id="lb-content" class="hidden space-y-3">
+            <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200 p-3 flex items-center gap-3">
+              <span class="material-icons-round text-amber-500 text-xl flex-shrink-0">info</span>
+              <p class="text-xs text-amber-800 leading-relaxed">Ranking por <strong>XP total acumulado</strong>. ¡Completa quizzes diarios para subir posiciones!</p>
+            </div>
+            <div id="lb-mi-posicion" class="hidden bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 p-3">
+              <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-2">Tu posición</p>
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-sm flex-shrink-0" id="lb-mi-num">#–</div>
+                <div class="flex-1">
+                  <div class="text-sm font-bold text-slate-800">Tú</div>
+                  <div class="text-xs text-slate-500" id="lb-mi-grado-xp">–</div>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              <div class="px-4 py-2.5 border-b border-slate-100 flex items-center gap-2">
+                <span class="material-icons-round text-amber-500 text-base">military_tech</span>
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Top 10 Socios</span>
+              </div>
+              <div id="lb-lista" class="divide-y divide-slate-100"></div>
+              <div id="lb-empty" class="hidden text-center py-10">
+                <span class="material-icons-round text-4xl text-slate-300 block mb-2">leaderboard</span>
+                <p class="text-sm text-slate-400">Aún no hay socios con XP acumulado.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VISTA: SLIM QUEST — QUIZ EN JUEGO -->
+      <section id="slim-quest-quiz-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4 h-[90vh]">
+        <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden flex-shrink-0">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+          <button onclick="salirDelQuiz()" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition">
+            <span class="material-icons-round">close</span>
+          </button>
+          <div class="z-10 flex-1">
+            <h2 class="text-base font-bold">Quiz Sindical Diario</h2>
+          </div>
+          <div id="quiz-progreso-label" class="z-10 text-xs text-white/70 font-medium">1 / 5</div>
+        </div>
+        <div class="h-1.5 bg-slate-200 flex-shrink-0">
+          <div id="quiz-progreso-bar" class="h-1.5 bg-purple-500 transition-all duration-500" style="width:0%"></div>
+        </div>
+        <div id="quiz-loader" class="flex-grow flex flex-col items-center justify-center bg-slate-50/50">
+          <div class="loader mb-3"></div>
+          <p class="text-xs text-slate-500">Preparando preguntas...</p>
+        </div>
+        <div id="quiz-contenedor" class="hidden flex-grow flex flex-col bg-slate-50/50 overflow-hidden">
+          <div class="flex-grow overflow-y-auto p-4 flex flex-col gap-4">
+            <div id="quiz-meta" class="flex gap-2"></div>
+            <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+              <p id="quiz-pregunta-texto" class="text-sm font-bold text-slate-800 leading-relaxed"></p>
+            </div>
+            <div id="quiz-opciones" class="space-y-2"></div>
+            <div id="quiz-explicacion" class="hidden rounded-xl p-4 border-l-4">
+              <p class="text-xs font-bold mb-1" id="quiz-expl-titulo"></p>
+              <p class="text-xs leading-relaxed text-slate-600" id="quiz-expl-texto"></p>
+              <p class="text-xs text-slate-400 mt-2" id="quiz-expl-fuente"></p>
+            </div>
+          </div>
+          <div class="p-4 bg-white border-t border-slate-200 flex items-center gap-3 flex-shrink-0">
+            <div id="quiz-xp-instant" class="text-sm font-bold text-purple-600 min-w-[64px]"></div>
+            <button id="quiz-btn-siguiente" onclick="siguientePregunta()"
+              class="flex-1 py-3 rounded-xl bg-slate-800 text-white font-bold text-sm hover:bg-slate-700 active:scale-95 transition hidden">
+              Siguiente →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- VISTA: SLIM QUEST -->
+      <section id="slim-quest-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4 h-[90vh]">
+        <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden flex-shrink-0">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+          <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition">
+            <span class="material-icons-round">arrow_back</span>
+          </button>
+          <div class="z-10 flex-1">
+            <h2 class="text-lg font-bold">SLIM Quest</h2>
+            <p class="text-xs text-white/60">Aprende · Participa · Progresa</p>
+          </div>
+          <div id="sq-grado-badge" onclick="mostrarInfoGrado()" class="z-10 text-xs font-bold bg-purple-600/80 px-3 py-1 rounded-full cursor-pointer active:scale-95 transition hover:bg-purple-500/90"></div>
+          <!-- SWITCH ADMIN (solo visible para ADMIN) -->
+          <div id="sq-switch-container" class="hidden z-10 flex flex-col items-center gap-1 ml-2">
+            <label class="toggle-switch">
+              <input type="checkbox" id="sq-switch" onchange="handleSlimQuestSwitch()">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="text-[9px] text-white/60 font-semibold">Módulo</span>
+          </div>
+        </div>
+        <div id="sq-loader" class="flex-grow flex items-center justify-center bg-slate-50/50">
+          <div class="flex flex-col items-center gap-3">
+            <div class="loader"></div>
+            <p class="text-xs text-slate-500">Cargando tu progreso...</p>
+          </div>
+        </div>
+        <div id="sq-content" class="hidden flex-grow flex-col bg-slate-50/50 overflow-y-auto">
+          <div class="p-4 bg-white border-b border-slate-200">
+            <div class="flex items-center gap-4 mb-3">
+              <div id="sq-grado-icon" class="text-4xl"></div>
+              <div class="flex-1">
+                <div class="flex justify-between items-baseline mb-1">
+                  <span id="sq-grado-nombre" class="text-base font-bold text-slate-800"></span>
+                  <span id="sq-xp-label" class="text-xs text-slate-500"></span>
+                </div>
+                <div class="h-3 bg-slate-100 rounded-full overflow-hidden">
+                  <div id="sq-xp-bar" class="h-3 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full transition-all duration-700" style="width:0%"></div>
+                </div>
+                <div id="sq-xp-siguiente" class="text-xs text-slate-400 mt-1"></div>
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 mt-2">
+              <div class="bg-purple-50 rounded-lg p-2 text-center">
+                <div id="sq-stat-xp" class="text-lg font-bold text-purple-700">0</div>
+                <div class="text-[10px] text-purple-500 font-medium">XP Total</div>
+              </div>
+              <div class="bg-orange-50 rounded-lg p-2 text-center">
+                <div id="sq-stat-racha" class="text-lg font-bold text-orange-600">0</div>
+                <div class="text-[10px] text-orange-500 font-medium">Racha 🔥</div>
+              </div>
+              <div class="bg-blue-50 rounded-lg p-2 text-center">
+                <div id="sq-stat-quizzes" class="text-lg font-bold text-blue-600">0</div>
+                <div class="text-[10px] text-blue-500 font-medium">Quizzes</div>
+              </div>
+            </div>
+          </div>
+          <div class="p-4 space-y-3">
+            <div id="sq-quiz-card" class="glass-card rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:shadow-lg hover:border-purple-200 transition" onclick="iniciarQuizDiario()">
+              <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+                <span class="material-icons-round text-2xl">quiz</span>
+              </div>
+              <div class="flex-1">
+                <div class="font-bold text-slate-700 text-sm">Quiz Sindical Diario</div>
+                <div class="text-xs text-slate-500 mt-0.5">5 preguntas · Gana hasta 100 XP</div>
+              </div>
+              <div id="sq-quiz-estado" class="text-xs font-bold px-2 py-1 rounded-full bg-purple-100 text-purple-700">Jugar</div>
+            </div>
+            <div class="glass-card rounded-xl p-4 flex items-center gap-4 opacity-50">
+              <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center flex-shrink-0">
+                <span class="material-icons-round text-2xl">map</span>
+              </div>
+              <div class="flex-1">
+                <div class="font-bold text-slate-600 text-sm">Escenarios</div>
+                <div class="text-xs text-slate-400 mt-0.5">Simulaciones · Próximamente</div>
+              </div>
+              <span class="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-full font-medium">Pronto</span>
+            </div>
+            <div class="glass-card rounded-xl p-4 flex items-center gap-4 cursor-pointer active:scale-[0.98] transition hover:shadow-md hover:border-amber-200" onclick="cargarLeaderboard()">
+              <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+                <span class="material-icons-round text-2xl">leaderboard</span>
+              </div>
+              <div class="flex-1">
+                <div class="font-bold text-slate-800 text-sm">Clasificación</div>
+                <div class="text-xs text-slate-500 mt-0.5">Top socios · XP acumulado</div>
+              </div>
+              <span class="material-icons-round text-slate-400 text-lg">chevron_right</span>
+            </div>
+            <div id="sq-nivel-secreto" class="hidden rounded-xl p-4 flex items-center gap-4 cursor-pointer active:scale-[0.98] transition"
+                style="background:linear-gradient(135deg,#1e1b4b 0%,#312e81 100%);border:1.5px solid #a78bfa;"
+                onclick="iniciarQuizSecreto()">
+              <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                  style="background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.4);">
+                <span class="material-icons-round text-2xl" style="color:#f5d060;">auto_awesome</span>
+              </div>
+              <div class="flex-1">
+                <div class="font-bold text-sm" style="color:#f5d060;">Nivel Secreto</div>
+                <div class="text-xs mt-0.5" style="color:#a78bfa;">Teoría Dirigencial · El Capital y Economía Política</div>
+              </div>
+              <div class="text-xs font-bold px-2 py-1 rounded-full" style="background:rgba(245,208,96,0.15);color:#f5d060;border:1px solid rgba(245,208,96,0.3);">🔐</div>
+            </div>
+          </div>
+          <div class="px-4 pb-4">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Mis logros</h3>
+            <div id="sq-logros-container" class="grid grid-cols-4 gap-2"></div>
+            <div id="sq-logros-empty" class="hidden text-center py-6 text-slate-400 text-xs">
+              <span class="material-icons-round text-3xl block mb-1 opacity-40">emoji_events</span>
+              Aún no tienes logros. ¡Juega para desbloquearlos!
+            </div>
+          </div>
         </div>
       </section>
 
@@ -2656,10 +2861,17 @@
           ccSwitchContainer.classList.remove('hidden');
           ccSwitchContainer.classList.add('flex');
         }
+
+        var sqSwitchContainer = document.getElementById('sq-switch-container');
+        if (sqSwitchContainer) {
+          sqSwitchContainer.classList.remove('hidden');
+          sqSwitchContainer.classList.add('flex');
+        }
         
         loadJustifSwitchState();
         loadLoansSwitchState();
         loadContratoColectivoSwitchState();
+        loadSlimQuestSwitchState();
       } else {
         btnAdmin.classList.add('hidden');
         switchContainer.classList.add('hidden');
@@ -2672,6 +2884,11 @@
         var ccSwitchContainerHide = document.getElementById('cc-switch-container');
         if (ccSwitchContainerHide) {
           ccSwitchContainerHide.classList.add('hidden');
+        }
+
+        var sqSwitchContainerHide = document.getElementById('sq-switch-container');
+        if (sqSwitchContainerHide) {
+          sqSwitchContainerHide.classList.add('hidden');
         }
       }
 
@@ -2699,10 +2916,17 @@
           return;
         }
         
-        ['login-view','dashboard-view','logout-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view','contrato-colectivo-view'].forEach(id => document.getElementById(id).classList.add('hidden'));
+        // Validar si el usuario es TESTING (acceso restringido a Mis Datos y SLIM Quest)
+        if (currentUserRole && currentUserRole.toUpperCase() === 'TESTING' &&
+          !['dashboard-view', 'profile-view', 'slim-quest-view', 'slim-quest-quiz-view', 'slim-quest-leaderboard-view', 'logout-view', 'login-view'].includes(viewId)) {
+          showWarning("Esta sección no está disponible para tu perfil de acceso.");
+          return;
+        }
+
+        ['login-view','dashboard-view','logout-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view','contrato-colectivo-view','slim-quest-view','slim-quest-quiz-view','slim-quest-leaderboard-view'].forEach(id => document.getElementById(id).classList.add('hidden'));
         const view = document.getElementById(viewId);
         view.classList.remove('hidden');
-        if (['dashboard-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view','contrato-colectivo-view'].includes(viewId)) view.classList.add('flex');
+        if (['dashboard-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view','contrato-colectivo-view','slim-quest-view','slim-quest-quiz-view','slim-quest-leaderboard-view'].includes(viewId)) view.classList.add('flex');
       }
 
       function handleLogout() {
@@ -2755,9 +2979,30 @@
           return;
         }
         
+        // ========== VALIDACIÓN ROL TESTING ==========
+        const esTesting = (role === 'TESTING');
+        if (esTesting && module !== 'Mis Datos' && module !== 'MiProgreso') {
+          showWarning("Este módulo no está disponible para tu perfil de acceso. Solo puedes acceder a 'Mis Datos' y 'SLIM Quest'.");
+          return;
+        }
+
         if (module === 'Mis Datos') { 
            cargarMisDatos(); 
-        } else if (module === 'RegistroAsistencia') { 
+        } else if (module === 'MiProgreso') {
+           if (esAdmin) {
+             cargarSlimQuest();
+             switchView('slim-quest-view');
+           } else {
+             google.script.run.withSuccessHandler(function(res) {
+               if (res.habilitado) {
+                 cargarSlimQuest();
+                 switchView('slim-quest-view');
+               } else {
+                 showWarning("El módulo SLIM Quest está temporalmente deshabilitado. Consulta con la directiva.");
+               }
+             }).obtenerEstadoSwitchSlimQuest();
+           }
+        } else if (module === 'RegistroAsistencia') {
             loadAttendanceRecords(); 
         } else if (module === 'Prestamos') {
            if (esAdmin) {
@@ -5572,6 +5817,515 @@ divForm.classList.add('flex');
             console.error('Error:', error);
           })
           .consultarIdCredencialBackend(currentRut, rutBuscar);
+      }
+
+      // ── Estado del quiz en memoria ────────────────────────────────────
+      var _currentGradoNombre = 'Aspirante';
+      var _quizPreguntas   = [];
+      var _quizIndice      = 0;
+      var _quizCorrectas   = 0;
+      var _quizXPAcumulado = 0;
+      var _quizRespondida  = false;
+      var _quizModoSecreto = false;
+
+      function cargarSlimQuest() {
+        document.getElementById('sq-loader').classList.remove('hidden');
+        document.getElementById('sq-content').classList.add('hidden');
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            document.getElementById('sq-loader').classList.add('hidden');
+
+            if (!res.success) {
+              if (res.desvinculado) {
+                document.getElementById('sq-content').classList.remove('hidden');
+                document.getElementById('sq-grado-badge').innerText = res.grado || 'Aspirante';
+                document.getElementById('sq-grado-icon').innerText = '🔒';
+                document.getElementById('sq-grado-nombre').innerText = 'Participación suspendida';
+                document.getElementById('sq-xp-label').innerText = res.xp + ' XP acumulados';
+                document.getElementById('sq-xp-bar').style.width = '0%';
+                document.getElementById('sq-xp-siguiente').innerText = res.message;
+                document.getElementById('sq-stat-xp').innerText = res.xp;
+                document.getElementById('sq-stat-racha').innerText = '—';
+                document.getElementById('sq-stat-quizzes').innerText = '—';
+                document.getElementById('sq-quiz-card').style.pointerEvents = 'none';
+                document.getElementById('sq-quiz-card').style.opacity = '0.4';
+                document.getElementById('sq-logros-empty').classList.remove('hidden');
+              } else {
+                showWarning(res.message || 'Error al cargar SLIM Quest.');
+              }
+              return;
+            }
+
+            var tarjetaSecreta = document.getElementById('sq-nivel-secreto');
+            if (res.grado && res.grado.nombre === 'Dirigente') {
+              tarjetaSecreta.classList.remove('hidden');
+            } else {
+              tarjetaSecreta.classList.add('hidden');
+            }
+
+            const grado = res.grado || {};
+            const sigGrado = res.gradoSiguiente;
+            const xpParaSig = res.xpParaSiguiente || 0;
+            const pct = sigGrado
+              ? Math.min(100, Math.round(((res.xp - grado.minXP) / (sigGrado.minXP - grado.minXP)) * 100))
+              : 100;
+
+            document.getElementById('sq-grado-badge').innerText = (grado.icono || '') + ' ' + (grado.nombre || 'Aspirante');
+            _currentGradoNombre = grado.nombre || 'Aspirante';
+            document.getElementById('sq-grado-icon').innerText = grado.icono || '🌱';
+            document.getElementById('sq-grado-nombre').innerText = grado.nombre || 'Aspirante';
+            document.getElementById('sq-xp-label').innerText = res.xp + ' XP';
+            document.getElementById('sq-xp-bar').style.width = pct + '%';
+            document.getElementById('sq-xp-siguiente').innerText = sigGrado
+              ? 'Faltan ' + xpParaSig + ' XP para ' + sigGrado.icono + ' ' + sigGrado.nombre
+              : '🏆 ¡Grado máximo alcanzado!';
+            document.getElementById('sq-stat-xp').innerText = res.xp;
+            document.getElementById('sq-stat-racha').innerText = res.racha || 0;
+            document.getElementById('sq-stat-quizzes').innerText = res.quizzesCompletados || 0;
+
+            const hoyStr = new Date().toLocaleDateString('es-CL');
+            const quizHoy = res.quizHoy || '';
+            const yaJugoHoy = quizHoy === hoyStr;
+            const estadoQuiz = document.getElementById('sq-quiz-estado');
+            if (yaJugoHoy) {
+              estadoQuiz.innerText = '✓ Completado';
+              estadoQuiz.className = 'text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-700';
+              document.getElementById('sq-quiz-card').style.opacity = '0.6';
+              document.getElementById('sq-quiz-card').style.pointerEvents = 'none';
+            } else {
+              estadoQuiz.innerText = '▶ Jugar';
+              estadoQuiz.className = 'text-xs font-bold px-2 py-1 rounded-full bg-purple-100 text-purple-700';
+            }
+
+            const logros = res.logros || [];
+            const logrosCont = document.getElementById('sq-logros-container');
+            logrosCont.innerHTML = '';
+            if (logros.length === 0) {
+              document.getElementById('sq-logros-empty').classList.remove('hidden');
+            } else {
+              document.getElementById('sq-logros-empty').classList.add('hidden');
+              logros.forEach(function(l) {
+                const div = document.createElement('div');
+                div.className = 'flex flex-col items-center bg-white border border-slate-200 rounded-xl p-2 text-center';
+                div.innerHTML = '<span class="text-2xl mb-1">' + (l.icono || '🏅') + '</span>'
+                  + '<span class="text-[9px] text-slate-600 font-medium leading-tight">' + (l.nombre || '') + '</span>'
+                  + '<span class="text-[8px] text-slate-400 mt-0.5">' + (l.fecha || '') + '</span>';
+                logrosCont.appendChild(div);
+              });
+            }
+
+            document.getElementById('sq-content').classList.remove('hidden');
+          })
+          .withFailureHandler(function(err) {
+            document.getElementById('sq-loader').classList.add('hidden');
+            showWarning('Error al conectar con el servidor: ' + err.message);
+          })
+          .getProgresoSocio(currentRut);
+      }
+
+      function cargarLeaderboard() {
+        switchView('slim-quest-leaderboard-view');
+        document.getElementById('lb-loader').classList.remove('hidden');
+        document.getElementById('lb-content').classList.add('hidden');
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            document.getElementById('lb-loader').classList.add('hidden');
+
+            if (!res.success || !res.top10) {
+              showWarning(res.message || 'No se pudo cargar la clasificación.');
+              switchView('slim-quest-view');
+              return;
+            }
+
+            var lista  = document.getElementById('lb-lista');
+            var empty  = document.getElementById('lb-empty');
+            lista.innerHTML = '';
+
+            if (res.top10.length === 0) {
+              empty.classList.remove('hidden');
+            } else {
+              empty.classList.add('hidden');
+              var medallas = ['🥇','🥈','🥉'];
+              var colores  = {
+                'Aspirante' :'bg-green-100 text-green-700',
+                'Aprendiz'  :'bg-cyan-100 text-cyan-700',
+                'Trabajador':'bg-blue-100 text-blue-700',
+                'Defensor'  :'bg-purple-100 text-purple-700',
+                'Negociador':'bg-orange-100 text-orange-700',
+                'Dirigente' :'bg-amber-100 text-amber-700'
+              };
+
+              res.top10.forEach(function(s) {
+                var medal      = medallas[s.posicion - 1] || '';
+                var xpFmt      = s.xp.toLocaleString('es-CL');
+                var colorGrado = colores[s.grado.nombre] || 'bg-slate-100 text-slate-600';
+                var fila       = document.createElement('div');
+
+                fila.className = 'flex items-center gap-3 px-4 py-3 transition ' +
+                  (s.esMio ? 'bg-indigo-50 border-l-4 border-indigo-400' : 'hover:bg-slate-50');
+
+                fila.innerHTML =
+                  '<div class="w-7 text-center flex-shrink-0">' +
+                    (medal
+                      ? '<span class="text-xl leading-none">' + medal + '</span>'
+                      : '<span class="text-sm font-bold text-slate-400">#' + s.posicion + '</span>') +
+                  '</div>' +
+                  '<div class="flex-1 min-w-0">' +
+                    '<div class="text-sm font-bold text-slate-800 truncate">' +
+                      (s.esMio ? '⭐ Tú' : s.nombre) +
+                    '</div>' +
+                    '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full mt-0.5 ' + colorGrado + '">' +
+                      s.grado.icono + ' ' + s.grado.nombre +
+                    '</span>' +
+                  '</div>' +
+                  '<div class="text-right flex-shrink-0">' +
+                    '<div class="text-sm font-bold text-slate-800">' + xpFmt + '</div>' +
+                    '<div class="text-[10px] text-slate-400 font-medium">XP</div>' +
+                  '</div>';
+
+                lista.appendChild(fila);
+              });
+            }
+
+            var miPos = res.miPosicion;
+            var miDiv = document.getElementById('lb-mi-posicion');
+            if (miPos) {
+              document.getElementById('lb-mi-num').innerText     = '#' + miPos.posicion;
+              document.getElementById('lb-mi-grado-xp').innerText =
+                miPos.grado.icono + ' ' + miPos.grado.nombre +
+                ' · ' + miPos.xp.toLocaleString('es-CL') + ' XP';
+              miDiv.classList.remove('hidden');
+            } else {
+              miDiv.classList.add('hidden');
+            }
+
+            document.getElementById('lb-content').classList.remove('hidden');
+          })
+          .withFailureHandler(function(err) {
+            document.getElementById('lb-loader').classList.add('hidden');
+            showWarning('Error: ' + (err.message || err));
+            switchView('slim-quest-view');
+          })
+          .getLeaderboard(currentRut);
+      }
+
+      function iniciarQuizDiario() {
+        switchView('slim-quest-quiz-view');
+        document.getElementById('quiz-loader').classList.remove('hidden');
+        document.getElementById('quiz-contenedor').classList.add('hidden');
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            document.getElementById('quiz-loader').classList.add('hidden');
+            if (!res.success || !res.preguntas || res.preguntas.length === 0) {
+              showWarning(res.message || 'No hay preguntas disponibles en este momento.');
+              switchView('slim-quest-view');
+              return;
+            }
+            _quizPreguntas   = res.preguntas;
+            _quizIndice      = 0;
+            _quizCorrectas   = 0;
+            _quizXPAcumulado = 0;
+            mostrarPregunta(0);
+          })
+          .withFailureHandler(function(err) {
+            document.getElementById('quiz-loader').classList.add('hidden');
+            showWarning('Error al cargar preguntas: ' + err.message);
+            switchView('slim-quest-view');
+          })
+          .obtenerPreguntasQuiz(currentRut, 5);
+      }
+
+      function iniciarQuizSecreto() {
+        _quizModoSecreto = true;
+        switchView('slim-quest-quiz-view');
+
+        var header = document.querySelector('#slim-quest-quiz-view > div.bg-slate-900');
+        if (header) header.style.background = 'linear-gradient(135deg,#1e1b4b 0%,#312e81 100%)';
+        document.getElementById('quiz-progreso-bar').style.background = 'linear-gradient(90deg,#f5d060,#a78bfa)';
+
+        document.getElementById('quiz-loader').classList.remove('hidden');
+        document.getElementById('quiz-contenedor').classList.add('hidden');
+
+        var titulo = document.querySelector('#slim-quest-quiz-view h2');
+        if (titulo) titulo.innerText = '🔐 Nivel Secreto';
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            document.getElementById('quiz-loader').classList.add('hidden');
+            if (!res.success) {
+              if (res.accesoDenegado) {
+                showWarning(res.message);
+              } else {
+                showWarning(res.message || 'No hay preguntas disponibles.');
+              }
+              _quizModoSecreto = false;
+              var hdr = document.querySelector('#slim-quest-quiz-view > div.bg-slate-900');
+              if (hdr) hdr.style.background = '';
+              switchView('slim-quest-view');
+              return;
+            }
+            _quizPreguntas   = res.preguntas;
+            _quizIndice      = 0;
+            _quizCorrectas   = 0;
+            _quizXPAcumulado = 0;
+            mostrarPregunta(0);
+          })
+          .withFailureHandler(function(err) {
+            document.getElementById('quiz-loader').classList.add('hidden');
+            _quizModoSecreto = false;
+            showWarning('Error al cargar el nivel secreto: ' + err.message);
+            switchView('slim-quest-view');
+          })
+          .obtenerPreguntasSecreto(currentRut, 5);
+      }
+
+      function mostrarPregunta(indice) {
+        var p      = _quizPreguntas[indice];
+        var total  = _quizPreguntas.length;
+        _quizRespondida = false;
+
+        document.getElementById('quiz-progreso-label').innerText = (indice + 1) + ' / ' + total;
+        document.getElementById('quiz-progreso-bar').style.width = Math.round((indice / total) * 100) + '%';
+
+        var coloresCat = {
+          PROTOCOLO:   'bg-purple-100 text-purple-800',
+          NEGOCIACION: 'bg-red-100 text-red-800',
+          CONTRATO:    'bg-green-100 text-green-800',
+          DERECHOS:    'bg-blue-100 text-blue-800',
+          SINDICATO:   'bg-amber-100 text-amber-800'
+        };
+        var coloresNivel = {
+          BASICO:      'bg-slate-100 text-slate-600',
+          INTERMEDIO:  'bg-orange-100 text-orange-700',
+          AVANZADO:    'bg-red-100 text-red-700'
+        };
+        var cat   = (p.categoria || 'PROTOCOLO').toUpperCase();
+        var nivel = (p.nivel || 'BASICO').toUpperCase();
+        document.getElementById('quiz-meta').innerHTML =
+          '<span class="text-xs font-bold px-2 py-1 rounded-full ' + (coloresCat[cat]   || 'bg-slate-100 text-slate-600') + '">' + cat   + '</span>' +
+          '<span class="text-xs font-bold px-2 py-1 rounded-full ' + (coloresNivel[nivel] || 'bg-slate-100 text-slate-600') + '">' + nivel + '</span>' +
+          '<span class="text-xs font-bold px-2 py-1 rounded-full bg-purple-50 text-purple-700">+' + p.xp + ' XP</span>';
+
+        document.getElementById('quiz-pregunta-texto').innerText = p.pregunta;
+
+        var letras  = ['A', 'B', 'C', 'D'];
+        var optsDiv = document.getElementById('quiz-opciones');
+        optsDiv.innerHTML = '';
+        letras.forEach(function(letra) {
+          var texto = p.opciones[letra];
+          if (!texto) return;
+          var btn = document.createElement('button');
+          btn.id        = 'opt-' + letra;
+          btn.className = 'w-full text-left p-3 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 font-medium hover:border-purple-400 hover:bg-purple-50 active:scale-[0.98] transition';
+          btn.innerHTML = '<span class="inline-block w-6 h-6 rounded-full bg-slate-100 text-slate-600 text-xs font-bold text-center leading-6 mr-2">' + letra + '</span>' + texto;
+          btn.onclick   = function() { responderPregunta(letra); };
+          optsDiv.appendChild(btn);
+        });
+
+        document.getElementById('quiz-explicacion').classList.add('hidden');
+        document.getElementById('quiz-btn-siguiente').classList.add('hidden');
+        document.getElementById('quiz-xp-instant').innerText = '';
+
+        document.getElementById('quiz-contenedor').classList.remove('hidden');
+      }
+
+      function responderPregunta(letraElegida) {
+        if (_quizRespondida) return;
+        _quizRespondida = true;
+
+        var p         = _quizPreguntas[_quizIndice];
+        var correcta  = p.respuesta.toUpperCase().trim();
+        var esCorrecta = letraElegida === correcta;
+
+        ['A','B','C','D'].forEach(function(letra) {
+          var btn = document.getElementById('opt-' + letra);
+          if (!btn) return;
+          btn.onclick = null;
+          btn.classList.remove('hover:border-purple-400','hover:bg-purple-50');
+          if (letra === correcta) {
+            btn.classList.add('border-green-500', 'bg-green-50', 'text-green-800');
+            btn.querySelector('span').className = 'inline-block w-6 h-6 rounded-full bg-green-500 text-white text-xs font-bold text-center leading-6 mr-2';
+          } else if (letra === letraElegida && !esCorrecta) {
+            btn.classList.add('border-red-400', 'bg-red-50', 'text-red-700');
+            btn.querySelector('span').className = 'inline-block w-6 h-6 rounded-full bg-red-400 text-white text-xs font-bold text-center leading-6 mr-2';
+          } else {
+            btn.classList.add('opacity-50');
+          }
+        });
+
+        var xpGanado = esCorrecta ? p.xp : 0;
+        if (esCorrecta) {
+          _quizCorrectas++;
+          _quizXPAcumulado += xpGanado;
+          document.getElementById('quiz-xp-instant').innerText = '+' + xpGanado + ' XP ✓';
+        } else {
+          document.getElementById('quiz-xp-instant').innerText = '0 XP ✗';
+        }
+
+        var expl = document.getElementById('quiz-explicacion');
+        expl.className = esCorrecta
+          ? 'rounded-xl p-4 border-l-4 border-green-500 bg-green-50'
+          : 'rounded-xl p-4 border-l-4 border-red-400 bg-red-50';
+        document.getElementById('quiz-expl-titulo').innerText  = esCorrecta ? '✓ ¡Correcto!' : '✗ Respuesta incorrecta';
+        document.getElementById('quiz-expl-titulo').className  = esCorrecta ? 'text-xs font-bold mb-1 text-green-700' : 'text-xs font-bold mb-1 text-red-700';
+        document.getElementById('quiz-expl-texto').innerText   = p.explicacion || '';
+        document.getElementById('quiz-expl-fuente').innerText  = p.fuente ? 'Fuente: ' + p.fuente : '';
+        expl.classList.remove('hidden');
+
+        var btnSig = document.getElementById('quiz-btn-siguiente');
+        btnSig.classList.remove('hidden');
+        var esUltima = (_quizIndice === _quizPreguntas.length - 1);
+        btnSig.innerText = esUltima ? 'Ver resultados →' : 'Siguiente →';
+      }
+
+      function siguientePregunta() {
+        var esUltima = (_quizIndice === _quizPreguntas.length - 1);
+        if (esUltima) {
+          finalizarQuiz();
+        } else {
+          _quizIndice++;
+          mostrarPregunta(_quizIndice);
+        }
+      }
+
+      function finalizarQuiz() {
+        document.getElementById('quiz-progreso-bar').style.width = '100%';
+        document.getElementById('quiz-progreso-label').innerText = '✓ Completado';
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (!res.success) {
+              showWarning(res.message || 'Error al guardar el resultado.');
+              switchView('slim-quest-view');
+              cargarSlimQuest();
+              return;
+            }
+
+            var estrellas = '';
+            if (_quizCorrectas === 5) estrellas = '🏆 ¡Quiz perfecto!';
+            else if (_quizCorrectas >= 4) estrellas = '⭐ ¡Muy bien!';
+            else if (_quizCorrectas >= 3) estrellas = '👍 ¡Bien!';
+            else estrellas = '📚 Sigue practicando';
+
+            var msgLogros = '';
+            if (res.logrosNuevos && res.logrosNuevos.length > 0) {
+              msgLogros = '<br><br>🏅 <b>Logros desbloqueados:</b><br>' +
+                res.logrosNuevos.map(function(l){ return l.icono + ' ' + l.nombre; }).join('<br>');
+            }
+
+            var msgBonus = res.xpBonoRacha > 0
+              ? '<br><br>🔥 <b>Bonus día ' + res.nuevaRacha + ':</b> +' + res.xpBonoRacha + ' XP extra'
+              : '';
+
+            var msgGrado = res.subioGrado
+              ? '<br><br>🎉 <b>¡Subiste de grado!</b><br>' + res.gradoAnterior + ' → ' + res.grado.icono + ' ' + res.grado.nombre
+              : '';
+
+            Swal.fire({
+              icon:  _quizCorrectas >= 3 ? 'success' : 'info',
+              title: estrellas,
+              html:  '<b>' + _quizCorrectas + ' / ' + _quizPreguntas.length + '</b> respuestas correctas<br>' +
+                    '<span style="color:#7c3aed;font-weight:bold;">+' + res.xpGanado + ' XP ganados</span>' +
+                    msgBonus + msgGrado + msgLogros,
+              confirmButtonText: 'Ver mi progreso',
+              confirmButtonColor: '#7c3aed'
+            }).then(function() {
+              switchView('slim-quest-view');
+              cargarSlimQuest();
+            });
+          })
+          .withFailureHandler(function() {
+            showWarning('Error de conexión al guardar el quiz.');
+            switchView('slim-quest-view');
+          })
+          .registrarResultadoQuiz(currentRut, _quizCorrectas, _quizXPAcumulado);
+      }
+
+      function salirDelQuiz() {
+        _quizPreguntas = [];
+        if (_quizModoSecreto) {
+          var hdr = document.querySelector('#slim-quest-quiz-view > div.bg-slate-900');
+          if (hdr) hdr.style.background = '';
+          var titulo = document.querySelector('#slim-quest-quiz-view h2');
+          if (titulo) titulo.innerText = 'Quiz Sindical Diario';
+          document.getElementById('quiz-progreso-bar').style.background = '';
+          _quizModoSecreto = false;
+        }
+        switchView('slim-quest-view');
+      }
+
+      function mostrarInfoGrado() {
+        var GRADOS_INFO = {
+          'Aspirante':  { headerBg:'#15803d', color:'#22c55e', badgeBg:'#dcfce7', badgeText:'#14532d', icono:'🌱', nivel:'1 de 6', xpMin:'0', xpMax:'1.500', quote:'Cada gran viaje comienza con el primer paso. ¡Has dado el tuyo!', nextIcono:'⚙️', nextNombre:'Aprendiz', nextXp:'1.501', msg:'Tu participación en SLIM Quest ha comenzado. Cada quiz diario te acerca más a convertirte en un referente sindical de la organización.' },
+          'Aprendiz':   { headerBg:'#1d4ed8', color:'#3b82f6', badgeBg:'#dbeafe', badgeText:'#1e3a8a', icono:'⚙️', nivel:'2 de 6', xpMin:'1.501', xpMax:'4.500', quote:'El conocimiento es la herramienta más poderosa del movimiento sindical.', nextIcono:'🔩', nextNombre:'Trabajador', nextXp:'4.501', msg:'Tu constancia está dando frutos. Ya dominas los fundamentos sindicales y estás construyendo una base sólida de conocimiento.' },
+          'Trabajador': { headerBg:'#c2410c', color:'#f97316', badgeBg:'#ffedd5', badgeText:'#7c2d12', icono:'🔩', nivel:'3 de 6', xpMin:'4.501', xpMax:'10.000', quote:'El trabajo organizado mueve montañas. Tú eres la fuerza del sindicato.', nextIcono:'🛡️', nextNombre:'Defensor', nextXp:'10.001', msg:'Tu dedicación refleja los valores fundamentales de la organización. Eres un ejemplo de compromiso para tus compañeros.' },
+          'Defensor':   { headerBg:'#6d28d9', color:'#8b5cf6', badgeBg:'#ede9fe', badgeText:'#4c1d95', icono:'🛡️', nivel:'4 de 6', xpMin:'10.001', xpMax:'18.000', quote:'Defender los derechos colectivos es el corazón del sindicalismo.', nextIcono:'⚖️', nextNombre:'Negociador', nextXp:'18.001', msg:'Has demostrado un compromiso profundo con los valores y derechos de la organización. Eres un pilar fundamental del Sindicato SLIM N°3.' },
+          'Negociador': { headerBg:'#b45309', color:'#d97706', badgeBg:'#fef3c7', badgeText:'#78350f', icono:'⚖️', nivel:'5 de 6', xpMin:'18.001', xpMax:'30.000', quote:'La negociación efectiva nace del conocimiento profundo y la preparación incansable.', nextIcono:'🏆', nextNombre:'Dirigente', nextXp:'30.001', msg:'Tu nivel de preparación y conocimiento te posiciona entre los socios más destacados. Tu voz tiene un peso especial en la organización.' },
+          'Dirigente':  { headerBg:'#92400e', color:'#f59e0b', badgeBg:'#fffbeb', badgeText:'#78350f', icono:'🏆', nivel:'6 de 6', xpMin:'30.001', xpMax:'∞',     quote:'El verdadero líder no es quien dirige, sino quien inspira y transforma.', nextIcono: null, nextNombre: null, nextXp: null, msg:'Has alcanzado el nivel máximo de SLIM Quest. Tu trayectoria de aprendizaje y dedicación te convierten en uno de los referentes más importantes del Sindicato SLIM N°3.' }
+        };
+
+        var g = GRADOS_INFO[_currentGradoNombre] || GRADOS_INFO['Aspirante'];
+
+        var nextSection = g.nextNombre
+          ? '<div style="background:' + g.badgeBg + ';border-radius:12px;padding:14px 16px;margin-bottom:16px;border:1px solid ' + g.color + '44;"><p style="font-size:10px;font-weight:700;color:' + g.badgeText + ';text-transform:uppercase;letter-spacing:0.5px;margin:0 0 5px;">Próximo nivel</p><p style="font-size:13px;color:' + g.badgeText + ';margin:0;font-weight:600;">' + g.nextIcono + ' ' + g.nextNombre + ' · desde ' + g.nextXp + ' XP</p></div>'
+          : '<div style="background:#fef3c7;border-radius:12px;padding:14px 16px;margin-bottom:16px;border:1px solid #fbbf2444;"><p style="font-size:10px;font-weight:700;color:#78350f;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 5px;">Nivel máximo</p><p style="font-size:13px;color:#78350f;margin:0;font-weight:600;">🏅 Has completado todos los niveles de SLIM Quest</p></div>';
+
+        var xpLabel = g.nextNombre ? 'Rango XP: ' + g.xpMin + ' – ' + g.xpMax : 'Rango XP: ' + g.xpMin + ' en adelante';
+
+        var modalHTML =
+          '<div id="grado-info-modal" onclick="if(event.target===this)cerrarInfoGrado()" style="position:fixed;inset:0;background:rgba(15,23,42,0.7);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9999;">' +
+            '<div style="background:#fff;width:100%;max-width:360px;border-radius:20px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 25px 50px rgba(0,0,0,0.3);">' +
+              '<div style="background:' + g.headerBg + ';padding:28px 20px 22px;text-align:center;flex-shrink:0;">' +
+                '<div style="font-size:52px;line-height:1;margin-bottom:8px;">' + g.icono + '</div>' +
+                '<div style="display:inline-block;background:rgba(255,255,255,0.2);color:#fff;font-size:10px;padding:3px 10px;border-radius:999px;margin-bottom:6px;">Nivel ' + g.nivel + '</div>' +
+                '<h2 style="margin:0 0 2px;font-size:20px;font-weight:700;color:#fff;">' + _currentGradoNombre + '</h2>' +
+                '<p style="margin:0;font-size:11px;color:rgba(255,255,255,0.7);">' + xpLabel + ' XP</p>' +
+              '</div>' +
+              '<div style="padding:20px;overflow-y:auto;flex-grow:1;">' +
+                '<p style="font-size:13px;color:#475569;line-height:1.7;margin-bottom:16px;">' + g.msg + '</p>' +
+                '<div style="border-left:3px solid ' + g.color + ';background:' + g.badgeBg + ';border-radius:0 10px 10px 0;padding:12px 14px;margin-bottom:16px;">' +
+                  '<p style="font-size:12px;font-style:italic;color:' + g.badgeText + ';line-height:1.6;margin:0;">"' + g.quote + '"</p>' +
+                '</div>' +
+                nextSection +
+                '<button onclick="cerrarInfoGrado()" style="width:100%;padding:13px;border-radius:12px;background:' + g.headerBg + ';color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;">Entendido</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+
+        var existente = document.getElementById('grado-info-modal');
+        if (existente) existente.remove();
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+      }
+
+      function cerrarInfoGrado() {
+        var m = document.getElementById('grado-info-modal');
+        if (m) m.remove();
+      }
+
+      function loadSlimQuestSwitchState() {
+        google.script.run.withSuccessHandler(function(res) {
+          var switchEl = document.getElementById('sq-switch');
+          if (switchEl) switchEl.checked = res.habilitado;
+        }).obtenerEstadoSwitchSlimQuest();
+      }
+
+      function handleSlimQuestSwitch() {
+        var switchEl = document.getElementById('sq-switch');
+        var estado = switchEl.checked;
+        google.script.run.withSuccessHandler(function(res) {
+          if (res.success) {
+            showSuccess(estado ? "SLIM Quest habilitado." : "SLIM Quest deshabilitado.");
+          } else {
+            showWarning("Error al actualizar el módulo.");
+            switchEl.checked = !estado;
+          }
+        }).withFailureHandler(function() {
+          showWarning("Error de conexión al actualizar el módulo.");
+          switchEl.checked = !estado;
+        }).toggleSwitchSlimQuest(estado);
       }
 
       function loadContratoColectivoSwitchState() {
