@@ -727,6 +727,15 @@
               <button onclick="navAction('Apelaciones')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-red-200 relative overflow-hidden"><div class="absolute inset-0 bg-red-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">gavel</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Apelaciones</span></button>
               
               <button onclick="navAction('PermisoMedico')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-emerald-200 relative overflow-hidden"><div class="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">local_hospital</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Permiso Médico</span></button>
+
+              <!-- CALCULADORA HORAS EXTRA -->
+              <button onclick="navAction('CalculadoraHE')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-emerald-200 relative overflow-hidden">
+                <div class="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition duration-300"></div>
+                <div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10">
+                  <span class="material-icons-round text-xl md:text-2xl">calculate</span>
+                </div>
+                <span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Calculadora HE</span>
+              </button>
               
               <!-- BOTONES DE ROLES -->
               <button id="btn-gestion-socios" onclick="navAction('GestionSocios')" class="hidden glass-card group flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-indigo-200 relative overflow-hidden">
@@ -760,6 +769,311 @@
           </div>
         </div>
       </section>
+
+      <!-- ============================================================ -->
+      <!-- VISTA: CALCULADORA HORAS EXTRAORDINARIAS CC 2026             -->
+      <!-- Fórmula oficial DT: (Sueldo÷30 × 28) ÷ (h/sem × 4) × 1.5  -->
+      <!-- ============================================================ -->
+      <section id="calculator-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4 h-[90vh]">
+        <!-- Barra de navegación fija (solo flecha atrás) -->
+        <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white px-4 py-3 flex-shrink-0 flex items-center gap-3 z-10">
+          <button onclick="switchView('dashboard-view')" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 transition flex items-center justify-center flex-shrink-0">
+            <span class="material-icons-round text-xl">arrow_back</span>
+          </button>
+          <p class="text-sm font-bold text-white flex-grow">Calculadora Horas Extra</p>
+          <!-- SWITCH ADMIN (solo visible para ADMIN) -->
+          <div id="calc-switch-container" class="hidden z-10 flex flex-col items-center gap-1">
+            <label class="toggle-switch">
+              <input type="checkbox" id="calc-switch" onchange="handleCalculadoraSwitch()">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="text-[9px] text-white/60 font-semibold">Módulo</span>
+          </div>
+        </div>
+
+        <div class="flex-grow overflow-y-auto bg-slate-50">
+          <div class="p-4 space-y-4 pb-10">
+
+            <!-- HEADER scrolleable -->
+            <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900 text-white p-5 rounded-2xl relative overflow-hidden -mx-4 -mt-4 mb-0">
+              <div class="absolute top-0 right-0 w-40 h-40 bg-emerald-500 rounded-full blur-3xl opacity-10 -mr-10 -mt-10"></div>
+              <div class="absolute bottom-0 left-0 w-28 h-28 bg-teal-500 rounded-full blur-2xl opacity-10 -ml-8 -mb-8"></div>
+              <div class="relative z-10">
+                <p class="text-slate-400 text-[10px] uppercase tracking-widest font-bold">Sindicato SLIM N°3</p>
+                <h1 class="text-lg font-extrabold leading-tight text-white mt-0.5">Calculadora Horas Extra</h1>
+                <p class="text-slate-300 text-xs mt-1 flex items-center gap-1">
+                  <span class="material-icons-round text-emerald-400 text-sm">verified</span>
+                  Según Contrato Colectivo 2026 · Fórmula DT Oficial
+                </p>
+              </div>
+            </div>
+
+            <!-- PASO 1: CARGO -->
+            <div class="glass-card rounded-2xl overflow-hidden">
+              <div class="px-5 py-4 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-black">1</div>
+                  <h2 class="font-bold text-slate-800 text-sm">¿Cuál es tu función?</h2>
+                </div>
+              </div>
+              <div class="p-4 grid grid-cols-2 gap-3">
+                <button id="btn-cargo-limpieza" onclick="calcSeleccionarCargo('limpieza')"
+                  class="calc-cargo-btn flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-emerald-400 transition-all text-center">
+                  <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center calc-cargo-icon">
+                    <span class="material-icons-round text-slate-500 text-2xl calc-cargo-icon-span">cleaning_services</span>
+                  </div>
+                  <div>
+                    <p class="text-xs font-bold text-slate-700 leading-tight">Aseo · Casino</p>
+                    <p class="text-xs font-bold text-slate-700 leading-tight">Mantención · Otros</p>
+                    <p class="text-[10px] text-emerald-600 font-semibold mt-1">Base: Total Imponible</p>
+                  </div>
+                </button>
+                <button id="btn-cargo-guardia" onclick="calcSeleccionarCargo('guardia')"
+                  class="calc-cargo-btn flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-emerald-400 transition-all text-center">
+                  <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center calc-cargo-icon">
+                    <span class="material-icons-round text-slate-500 text-2xl calc-cargo-icon-span">security</span>
+                  </div>
+                  <div>
+                    <p class="text-xs font-bold text-slate-700 leading-tight">Guardia de</p>
+                    <p class="text-xs font-bold text-slate-700 leading-tight">Seguridad</p>
+                    <p class="text-[10px] text-amber-600 font-semibold mt-1">Base: Total Haberes</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- PASO 2A: FORM LIMPIEZA / OTROS -->
+            <div id="calc-form-limpieza" class="hidden glass-card rounded-2xl overflow-hidden">
+              <div class="px-5 py-4 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-black">2</div>
+                  <h2 class="font-bold text-slate-800 text-sm">Tus datos de remuneración</h2>
+                </div>
+              </div>
+              <div class="p-4 space-y-4">
+                <div class="bg-blue-50 border-l-4 border-blue-400 rounded-xl p-3 space-y-2">
+                  <p class="text-blue-800 text-xs font-semibold flex items-center gap-1">
+                    <span class="material-icons-round text-sm">info</span> Aplica para los cargos:
+                  </p>
+                  <div class="flex flex-wrap gap-1">
+                    <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Aseo / Limpieza</span>
+                    <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Casino / Alimentación</span>
+                    <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Mantención</span>
+                    <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Choferes</span>
+                    <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Jardineros</span>
+                    <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Bodega / Logística</span>
+                    <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Administrativos</span>
+                    <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Otros cargos...</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1.5">Total Imponible mensual <span class="text-red-500">*</span></label>
+                  <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">$</span>
+                    <input id="calc-imponible-limpieza" type="text" inputmode="numeric" placeholder="Ej: 178.086"
+                      oninput="calcFormatCLP(this)"
+                      class="w-full pl-7 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"/>
+                  </div>
+                  <p class="text-slate-400 text-[10px] mt-1 ml-1">Suma todos los valores de los "Haberes" de tu liquidación de sueldo, excepto "Horas Extras" ya que es el valor que se va a calcular.</p>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1.5">Jornada semanal</label>
+                  <div class="relative">
+                    <select id="calc-jornada-limpieza" class="w-full appearance-none pl-4 pr-10 py-3 bg-white border-2 border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-emerald-400 cursor-pointer shadow-sm transition-all">
+                      <option value="44">44 hrs/semana · Jornada actual</option>
+                      <option value="42">42 hrs/semana · Legal desde 26 Abr 2026</option>
+                      <option value="30">30 hrs/semana · Jornada parcial</option>
+                      <option value="20">20 hrs/semana · Jornada parcial</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                      <span class="material-icons-round text-emerald-500 text-lg">expand_more</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1.5">¿Cuántas horas extra calcular? <span class="text-red-500">*</span></label>
+                  <input id="calc-horas-limpieza" type="number" inputmode="decimal" min="0.5" step="0.5" placeholder="Ej: 4"
+                    class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-emerald-400"/>
+                  <p class="text-slate-400 text-[10px] mt-1 ml-1">Puedes usar medias horas (ej: 1.5)</p>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <span class="material-icons-round text-slate-400 text-sm">today</span>
+                      ¿Trabajaste menos de 30 días?
+                    </label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" id="calc-check-dias-l" onchange="calcToggleDias('l')" class="sr-only peer">
+                      <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </label>
+                  </div>
+                  <div id="calc-dias-field-l" class="hidden space-y-2">
+                    <p class="text-[10px] text-slate-500 leading-relaxed">Ingresa los días reales trabajados. La app normalizará tu sueldo a 30 días para el cálculo.</p>
+                    <div class="flex items-center gap-2">
+                      <input id="calc-dias-l" type="number" inputmode="numeric" min="1" max="30" placeholder="Ej: 20"
+                        class="w-24 px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-emerald-400 text-center"/>
+                      <span class="text-xs text-slate-500">días trabajados de 30</span>
+                    </div>
+                    <div id="calc-base-normalizada-l" class="hidden bg-emerald-50 border border-emerald-200 rounded-lg p-2 flex items-center justify-between">
+                      <span class="text-[10px] font-bold text-emerald-800">Base normalizada (30 días):</span>
+                      <span id="calc-base-norm-valor-l" class="text-xs font-black text-emerald-700">$0</span>
+                    </div>
+                  </div>
+                </div>
+                <button onclick="calcularHE('limpieza')"
+                  class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-emerald-500/30 transition flex items-center justify-center gap-2 text-sm">
+                  <span class="material-icons-round text-base">calculate</span> Calcular Hora Extra
+                </button>
+              </div>
+            </div>
+
+            <!-- PASO 2B: FORM GUARDIA -->
+            <div id="calc-form-guardia" class="hidden glass-card rounded-2xl overflow-hidden">
+              <div class="px-5 py-4 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-black">2</div>
+                  <h2 class="font-bold text-slate-800 text-sm">Tus datos de remuneración</h2>
+                </div>
+              </div>
+              <div class="p-4 space-y-4">
+                <div class="bg-amber-50 border-l-4 border-amber-400 rounded-xl p-3 space-y-2">
+                  <p class="text-amber-800 text-xs font-semibold flex items-center gap-1">
+                    <span class="material-icons-round text-sm">security</span> Regla exclusiva Guardias de Seguridad
+                  </p>
+                  <p class="text-amber-700 text-xs leading-relaxed">Según la <strong>Cláusula Cuarta del CC 2026</strong>, para guardias la hora extra se calcula sobre el <strong>TOTAL de todos los haberes</strong>.</p>
+                  <div class="bg-amber-100 rounded-lg p-2">
+                    <p class="text-[10px] font-bold text-amber-800 mb-1">✅ Incluye en la base:</p>
+                    <div class="flex flex-wrap gap-1">
+                      <span class="bg-white text-amber-700 font-semibold text-[10px] px-2 py-0.5 rounded-full border border-amber-200">Sueldo Base</span>
+                      <span class="bg-white text-amber-700 font-semibold text-[10px] px-2 py-0.5 rounded-full border border-amber-200">Gratificación</span>
+                      <span class="bg-white text-amber-700 font-semibold text-[10px] px-2 py-0.5 rounded-full border border-amber-200">Colación</span>
+                      <span class="bg-white text-amber-700 font-semibold text-[10px] px-2 py-0.5 rounded-full border border-amber-200">Movilización</span>
+                      <span class="bg-white text-amber-700 font-semibold text-[10px] px-2 py-0.5 rounded-full border border-amber-200">Bonos nocturnos</span>
+                      <span class="bg-white text-amber-700 font-semibold text-[10px] px-2 py-0.5 rounded-full border border-amber-200">Todos los haberes</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1.5">Total de Haberes mensuales <span class="text-red-500">*</span></label>
+                  <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">$</span>
+                    <input id="calc-total-guardia" type="text" inputmode="numeric" placeholder="Ej: 749.958"
+                      oninput="calcFormatCLP(this)"
+                      class="w-full pl-7 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"/>
+                  </div>
+                  <p class="text-slate-400 text-[10px] mt-1 ml-1">Suma TODOS los conceptos en "Haberes y Otros Haberes" de tu liquidación, excepto las "horas extras" ya que es el valor que se va a calcular.</p>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1.5">Jornada semanal</label>
+                  <div class="relative">
+                    <select id="calc-jornada-guardia" class="w-full appearance-none pl-4 pr-10 py-3 bg-white border-2 border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-emerald-400 cursor-pointer shadow-sm transition-all">
+                      <option value="44">44 hrs/semana · Jornada actual</option>
+                      <option value="42">42 hrs/semana · Legal desde 26 Abr 2026</option>
+                      <option value="48">48 hrs/semana · Turno 12h / 4 días</option>
+                      <option value="30">30 hrs/semana · Jornada parcial</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                      <span class="material-icons-round text-emerald-500 text-lg">expand_more</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1.5">¿Cuántas horas extra calcular? <span class="text-red-500">*</span></label>
+                  <input id="calc-horas-guardia" type="number" inputmode="decimal" min="0.5" step="0.5" placeholder="Ej: 4"
+                    class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-emerald-400"/>
+                  <p class="text-slate-400 text-[10px] mt-1 ml-1">Un turno extra de 12h = 12 horas extra</p>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <span class="material-icons-round text-slate-400 text-sm">today</span>
+                      ¿Trabajaste menos de 30 días?
+                    </label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" id="calc-check-dias-g" onchange="calcToggleDias('g')" class="sr-only peer">
+                      <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </label>
+                  </div>
+                  <div id="calc-dias-field-g" class="hidden space-y-2">
+                    <p class="text-[10px] text-slate-500 leading-relaxed">Ingresa los días reales trabajados. La app normalizará tu sueldo a 30 días para el cálculo.</p>
+                    <div class="flex items-center gap-2">
+                      <input id="calc-dias-g" type="number" inputmode="numeric" min="1" max="30" placeholder="Ej: 20"
+                        class="w-24 px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-emerald-400 text-center"/>
+                      <span class="text-xs text-slate-500">días trabajados de 30</span>
+                    </div>
+                    <div id="calc-base-normalizada-g" class="hidden bg-emerald-50 border border-emerald-200 rounded-lg p-2 flex items-center justify-between">
+                      <span class="text-[10px] font-bold text-emerald-800">Base normalizada (30 días):</span>
+                      <span id="calc-base-norm-valor-g" class="text-xs font-black text-emerald-700">$0</span>
+                    </div>
+                  </div>
+                </div>
+                <button onclick="calcularHE('guardia')"
+                  class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-emerald-500/30 transition flex items-center justify-center gap-2 text-sm">
+                  <span class="material-icons-round text-base">calculate</span> Calcular Hora Extra
+                </button>
+              </div>
+            </div>
+
+            <!-- PASO 3: RESULTADO -->
+            <div id="calc-result" class="hidden glass-card rounded-2xl overflow-hidden">
+              <div class="px-5 py-4 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-black">3</div>
+                  <h2 class="font-bold text-slate-800 text-sm">Resultado del cálculo</h2>
+                </div>
+              </div>
+              <div class="p-4 space-y-3">
+                <div class="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-5 text-center text-white shadow-lg">
+                  <p class="text-emerald-100 text-xs font-semibold uppercase tracking-widest mb-1">Total a recibir por</p>
+                  <p id="calc-result-num-horas" class="text-emerald-200 text-sm font-bold mb-2">—</p>
+                  <p id="calc-result-total" class="text-4xl font-black tracking-tight">$0</p>
+                  <p class="text-emerald-200 text-[10px] mt-2">Valor bruto · Sujeto a descuentos legales</p>
+                </div>
+                <div class="bg-slate-50 rounded-xl divide-y divide-slate-100 border border-slate-100">
+                  <div class="flex justify-between items-center px-4 py-2.5">
+                    <span class="text-xs text-slate-500">Cargo</span>
+                    <span id="calc-result-cargo" class="text-xs font-bold text-slate-700">—</span>
+                  </div>
+                  <div class="flex justify-between items-center px-4 py-2.5">
+                    <span class="text-xs text-slate-500">Base de cálculo</span>
+                    <span id="calc-result-base" class="text-xs font-bold text-slate-700">$0</span>
+                  </div>
+                  <div class="flex justify-between items-center px-4 py-2.5">
+                    <span class="text-xs text-slate-500">Divisor DT (h/sem × 4 sem)</span>
+                    <span id="calc-result-divisor" class="text-xs font-bold text-slate-700">—</span>
+                  </div>
+                  <div class="flex justify-between items-center px-4 py-2.5">
+                    <span class="text-xs text-slate-500">Valor hora normal</span>
+                    <span id="calc-result-hora-normal" class="text-xs font-bold text-slate-700">$0</span>
+                  </div>
+                  <div class="flex justify-between items-center px-4 py-2.5 bg-emerald-50/50">
+                    <span class="text-xs text-emerald-700 font-semibold flex items-center gap-1">
+                      <span class="material-icons-round text-sm">add_circle</span>Valor hora extra (+50%)
+                    </span>
+                    <span id="calc-result-hora-extra" class="text-xs font-black text-emerald-700">$0</span>
+                  </div>
+                </div>
+                <div class="bg-slate-100 rounded-xl p-3">
+                  <p id="calc-result-nota" class="text-slate-600 text-[10px] leading-relaxed"></p>
+                </div>
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
+                  <span class="material-icons-round text-amber-500 text-base flex-shrink-0 mt-0.5">warning</span>
+                  <div>
+                    <p class="text-amber-800 text-xs font-bold leading-tight mb-0.5">Recordatorio importante</p>
+                    <p class="text-amber-700 text-[10px] leading-relaxed">Las horas extra deben estar <strong>autorizadas por escrito</strong> por tu superior directo para tener derecho al pago. Este cálculo es referencial.</p>
+                  </div>
+                </div>
+                <button onclick="reiniciarCalculadora()"
+                  class="w-full py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:border-slate-300 hover:bg-slate-50 transition flex items-center justify-center gap-2">
+                  <span class="material-icons-round text-base">refresh</span> Hacer otro cálculo
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+      <!-- FIN CALCULADORA -->
 
       <!-- VISTA: PERFIL -->
       <section id="profile-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4">
@@ -1902,6 +2216,24 @@
          </div>
       </div>
 
+      <!-- Modal Mantenimiento Calculadora HE -->
+      <div id="calculator-maintenance-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center fade-in-up">
+             <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span class="material-icons-round text-2xl">calculate</span>
+             </div>
+             <h3 class="text-lg font-bold text-slate-800 mb-2">Módulo en Pausa</h3>
+             <p class="text-xs text-slate-600 mb-5">
+                La Calculadora de Horas Extra está temporalmente deshabilitada.<br><br>
+                Vuelve a intentar más tarde o contacta con la directiva.
+             </p>
+             <button onclick="document.getElementById('calculator-maintenance-modal').classList.add('hidden')" class="w-full py-3 rounded-xl bg-slate-800 text-white font-bold text-sm hover:bg-slate-700 transition shadow-lg shadow-slate-500/30 flex items-center justify-center gap-2">
+                <span class="material-icons-round text-sm">arrow_back</span>
+                <span>Volver</span>
+             </button>
+         </div>
+      </div>
+
       <!-- Modal Mantenimiento Préstamos -->
       <div id="loans-maintenance-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
          <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center fade-in-up">
@@ -2867,11 +3199,18 @@
           sqSwitchContainer.classList.remove('hidden');
           sqSwitchContainer.classList.add('flex');
         }
+
+        var calcSwitchContainer = document.getElementById('calc-switch-container');
+        if (calcSwitchContainer) {
+          calcSwitchContainer.classList.remove('hidden');
+          calcSwitchContainer.classList.add('flex');
+        }
         
         loadJustifSwitchState();
         loadLoansSwitchState();
         loadContratoColectivoSwitchState();
         loadSlimQuestSwitchState();
+        loadCalculadoraSwitchState();
       } else {
         btnAdmin.classList.add('hidden');
         switchContainer.classList.add('hidden');
@@ -2889,6 +3228,10 @@
         var sqSwitchContainerHide = document.getElementById('sq-switch-container');
         if (sqSwitchContainerHide) {
           sqSwitchContainerHide.classList.add('hidden');
+        }
+        var calcSwitchContainerHide = document.getElementById('calc-switch-container');
+        if (calcSwitchContainerHide) {
+          calcSwitchContainerHide.classList.add('hidden');
         }
       }
 
@@ -2923,7 +3266,7 @@
           return;
         }
 
-        ['login-view','dashboard-view','logout-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view','contrato-colectivo-view','slim-quest-view','slim-quest-quiz-view','slim-quest-leaderboard-view'].forEach(id => document.getElementById(id).classList.add('hidden'));
+        ['login-view','dashboard-view','logout-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view','calculator-view'].forEach(id => document.getElementById(id).classList.add('hidden'));
         const view = document.getElementById(viewId);
         view.classList.remove('hidden');
         if (['dashboard-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view','contrato-colectivo-view','slim-quest-view','slim-quest-quiz-view','slim-quest-leaderboard-view'].includes(viewId)) view.classList.add('flex');
@@ -3738,14 +4081,25 @@
       }
 
       // === FUNCIONES PRÉSTAMOS (CON SWITCH) ===
-      function loadLoansSwitchState() {
+      function loadCalculadoraSwitchState() {
          google.script.run.withSuccessHandler(function(res) {
-            var switchEl = document.getElementById('loans-switch');
+            var switchEl = document.getElementById('calc-switch');
             if (switchEl) switchEl.checked = res.habilitado;
-         }).obtenerEstadoSwitchPrestamos();
+         }).obtenerEstadoSwitchCalculadora();
       }
 
-      function handleLoansSwitch() {
+      function handleCalculadoraSwitch() {
+         var switchEl = document.getElementById('calc-switch');
+         var estado = switchEl.checked;
+         google.script.run.withSuccessHandler(function(res) {
+            if (res.success) {
+               showSuccess(estado ? "Calculadora HE habilitada." : "Calculadora HE pausada.");
+            } else {
+               showWarning("Error al actualizar el módulo.");
+               switchEl.checked = !estado;
+            }
+         }).toggleSwitchCalculadora(estado);
+      }
          var switchEl = document.getElementById('loans-switch');
          var estado = switchEl.checked;
          google.script.run.withSuccessHandler(function(res) {
@@ -6361,6 +6715,155 @@ divForm.classList.add('flex');
           body.classList.add('open');
           chevron.classList.add('open');
         }
+      }
+
+      // =============================================
+      // CALCULADORA DE HORAS EXTRAORDINARIAS CC 2026
+      // Fórmula oficial DT: (Base÷30 × 28) ÷ (h/sem × 4) × 1.5
+      // =============================================
+      let _calcCargo = null;
+
+      function iniciarCalculadora() {
+        _calcCargo = null;
+        ['btn-cargo-limpieza','btn-cargo-guardia'].forEach(id => {
+          const btn = document.getElementById(id);
+          if (!btn) return;
+          btn.classList.remove('border-emerald-500','bg-emerald-50');
+          btn.classList.add('border-slate-200','bg-white');
+          const icon = btn.querySelector('.calc-cargo-icon');
+          if (icon) { icon.classList.remove('bg-emerald-100'); icon.classList.add('bg-slate-100'); }
+          const span = btn.querySelector('.calc-cargo-icon-span');
+          if (span) { span.classList.remove('text-emerald-600'); span.classList.add('text-slate-500'); }
+        });
+        document.getElementById('calc-form-limpieza').classList.add('hidden');
+        document.getElementById('calc-form-guardia').classList.add('hidden');
+        document.getElementById('calc-result').classList.add('hidden');
+        ['calc-imponible-limpieza','calc-horas-limpieza',
+         'calc-total-guardia','calc-horas-guardia',
+         'calc-dias-l','calc-dias-g'].forEach(id => {
+          const el = document.getElementById(id); if (el) el.value = '';
+        });
+        ['calc-check-dias-l','calc-check-dias-g'].forEach(id => {
+          const el = document.getElementById(id); if (el) el.checked = false;
+        });
+        ['calc-dias-field-l','calc-dias-field-g',
+         'calc-base-normalizada-l','calc-base-normalizada-g'].forEach(id => {
+          const el = document.getElementById(id); if (el) el.classList.add('hidden');
+        });
+        const jL = document.getElementById('calc-jornada-limpieza'); if (jL) jL.value = '44';
+        const jG = document.getElementById('calc-jornada-guardia'); if (jG) jG.value = '44';
+      }
+
+      function calcSeleccionarCargo(cargo) {
+        _calcCargo = cargo;
+        ['limpieza','guardia'].forEach(c => {
+          const btn = document.getElementById('btn-cargo-' + c);
+          if (!btn) return;
+          btn.classList.remove('border-emerald-500','bg-emerald-50');
+          btn.classList.add('border-slate-200','bg-white');
+          const icon = btn.querySelector('.calc-cargo-icon');
+          if (icon) { icon.classList.remove('bg-emerald-100'); icon.classList.add('bg-slate-100'); }
+          const span = btn.querySelector('.calc-cargo-icon-span');
+          if (span) { span.classList.remove('text-emerald-600'); span.classList.add('text-slate-500'); }
+        });
+        const active = document.getElementById('btn-cargo-' + cargo);
+        if (active) {
+          active.classList.add('border-emerald-500','bg-emerald-50');
+          active.classList.remove('border-slate-200','bg-white');
+          const icon = active.querySelector('.calc-cargo-icon');
+          if (icon) { icon.classList.add('bg-emerald-100'); icon.classList.remove('bg-slate-100'); }
+          const span = active.querySelector('.calc-cargo-icon-span');
+          if (span) { span.classList.add('text-emerald-600'); span.classList.remove('text-slate-500'); }
+        }
+        document.getElementById('calc-form-limpieza').classList.toggle('hidden', cargo !== 'limpieza');
+        document.getElementById('calc-form-guardia').classList.toggle('hidden', cargo !== 'guardia');
+        document.getElementById('calc-result').classList.add('hidden');
+        setTimeout(() => {
+          const f = document.getElementById('calc-form-' + cargo);
+          if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+
+      function calcFormatCLP(input) {
+        let raw = input.value.replace(/\D/g, '');
+        if (!raw) { input.value = ''; return; }
+        input.value = parseInt(raw, 10).toLocaleString('es-CL');
+      }
+
+      function calcParseCLP(str) {
+        if (!str) return 0;
+        return parseInt(String(str).replace(/\./g,'').replace(/,/g,'').replace(/\s/g,''), 10) || 0;
+      }
+
+      function calcularHE(cargo) {
+        let base = 0, horasSemanales = 0, numHoras = 0;
+        if (cargo === 'limpieza') {
+          base           = calcParseCLP(document.getElementById('calc-imponible-limpieza').value);
+          horasSemanales = parseFloat(document.getElementById('calc-jornada-limpieza').value) || 44;
+          numHoras       = parseFloat(document.getElementById('calc-horas-limpieza').value) || 0;
+          if (!base)     { showWarning('Ingresa tu Total Imponible mensual.'); return; }
+          if (!numHoras) { showWarning('Ingresa el número de horas extra a calcular.'); return; }
+          base = calcNormalizarBase(base, 'l');
+        } else {
+          base           = calcParseCLP(document.getElementById('calc-total-guardia').value);
+          horasSemanales = parseFloat(document.getElementById('calc-jornada-guardia').value) || 44;
+          numHoras       = parseFloat(document.getElementById('calc-horas-guardia').value) || 0;
+          if (!base)     { showWarning('Ingresa el Total de Haberes mensual.'); return; }
+          if (!numHoras) { showWarning('Ingresa el número de horas extra a calcular.'); return; }
+          base = calcNormalizarBase(base, 'g');
+        }
+        const valorDiario     = base / 30;
+        const valorCuatroSem  = valorDiario * 28;
+        const divisorHoras    = horasSemanales * 4;
+        const valorHoraNormal = valorCuatroSem / divisorHoras;
+        const valorHoraExtra  = valorHoraNormal * 1.5;
+        const totalAPagar     = valorHoraExtra * numHoras;
+        const fmt = n => Math.round(n).toLocaleString('es-CL');
+        const cargoLabel = cargo === 'limpieza' ? 'Limpieza / Aseo y otros' : 'Guardia de Seguridad';
+        const nota = cargo === 'limpieza'
+          ? 'Base: Total Imponible. Fórmula DT: (Base÷30 × 28) ÷ (' + horasSemanales + 'h × 4 sem) × 1.5. Cláusula Cuarta CC 2026.'
+          : 'Base: TOTAL Haberes (colación, movilización y todos los bonos). Fórmula DT aplicada. Cláusula Cuarta CC 2026.';
+        document.getElementById('calc-result-cargo').textContent      = cargoLabel;
+        document.getElementById('calc-result-base').textContent       = '$' + fmt(base);
+        document.getElementById('calc-result-divisor').textContent    = divisorHoras + ' hrs (' + horasSemanales + 'h × 4 sem)';
+        document.getElementById('calc-result-hora-normal').textContent = '$' + fmt(valorHoraNormal);
+        document.getElementById('calc-result-hora-extra').textContent  = '$' + fmt(valorHoraExtra);
+        document.getElementById('calc-result-num-horas').textContent   = numHoras + (numHoras === 1 ? ' hora extra' : ' horas extra');
+        document.getElementById('calc-result-total').textContent       = '$' + fmt(totalAPagar);
+        document.getElementById('calc-result-nota').textContent        = nota;
+        const resultEl = document.getElementById('calc-result');
+        resultEl.classList.remove('hidden');
+        setTimeout(() => resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+      }
+
+      function reiniciarCalculadora() {
+        iniciarCalculadora();
+        const body = document.querySelector('#calculator-view .flex-grow');
+        if (body) body.scrollTop = 0;
+      }
+
+      function calcToggleDias(tipo) {
+        const check = document.getElementById('calc-check-dias-' + tipo);
+        const field = document.getElementById('calc-dias-field-' + tipo);
+        if (check.checked) {
+          field.classList.remove('hidden');
+        } else {
+          field.classList.add('hidden');
+          document.getElementById('calc-base-normalizada-' + tipo).classList.add('hidden');
+        }
+      }
+
+      function calcNormalizarBase(base, tipo) {
+        const check = document.getElementById('calc-check-dias-' + tipo);
+        if (!check || !check.checked) return base;
+        const dias = parseInt(document.getElementById('calc-dias-' + tipo).value) || 0;
+        if (dias <= 0 || dias >= 30) return base;
+        const baseNorm = Math.round(base * (30 / dias));
+        const normBox  = document.getElementById('calc-base-normalizada-' + tipo);
+        const normVal  = document.getElementById('calc-base-norm-valor-' + tipo);
+        if (normBox) normBox.classList.remove('hidden');
+        if (normVal) normVal.textContent = '$' + baseNorm.toLocaleString('es-CL');
+        return baseNorm;
       }
 
     </script>
