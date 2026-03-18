@@ -5654,3 +5654,28 @@ function enviarNotificacionCredencial(correo, nombre, estadoNuevo, rut) {
     name: "Sindicato SLIM N°3"
   });
 }
+
+// ==========================================
+// SWITCH MÓDULO SLIM QUEST
+// ==========================================
+
+function obtenerEstadoSwitchSlimQuest() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var estado = props.getProperty('slimquest_habilitado');
+    var habilitado = (estado === null || estado === 'true');
+    return { success: true, habilitado: habilitado };
+  } catch (e) {
+    return { success: true, habilitado: true };
+  }
+}
+
+function toggleSwitchSlimQuest(estado) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    props.setProperty('slimquest_habilitado', estado ? 'true' : 'false');
+    return { success: true };
+  } catch (e) {
+    return { success: false, message: 'Error: ' + e.toString() };
+  }
+}
