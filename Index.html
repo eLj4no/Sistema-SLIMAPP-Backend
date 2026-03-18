@@ -3400,6 +3400,23 @@
               }
             }).obtenerEstadoSwitchContratoColectivo();
           }
+        } else if (module === 'CalculadoraHE') {
+           if (esAdmin) {
+              var calcSwContainer = document.getElementById('calc-switch-container');
+              if (calcSwContainer) { calcSwContainer.classList.remove('hidden'); calcSwContainer.classList.add('flex'); }
+              loadCalculadoraSwitchState();
+              iniciarCalculadora();
+              switchView('calculator-view');
+           } else {
+              google.script.run.withSuccessHandler(function(res) {
+                 if (res.habilitado) {
+                    iniciarCalculadora();
+                    switchView('calculator-view');
+                 } else {
+                    document.getElementById('calculator-maintenance-modal').classList.remove('hidden');
+                 }
+              }).obtenerEstadoSwitchCalculadora();
+           }
         } else {
           showConstruction(module);
         }
@@ -6703,6 +6720,29 @@ divForm.classList.add('flex');
           showWarning("Error de conexión al actualizar el módulo.");
           switchEl.checked = !estado;
         }).toggleSwitchContratoColectivo(estado);
+      }
+
+      function loadCalculadoraSwitchState() {
+         google.script.run.withSuccessHandler(function(res) {
+            var switchEl = document.getElementById('calc-switch');
+            if (switchEl) switchEl.checked = res.habilitado;
+         }).obtenerEstadoSwitchCalculadora();
+      }
+
+      function handleCalculadoraSwitch() {
+         var switchEl = document.getElementById('calc-switch');
+         var estado = switchEl.checked;
+         google.script.run.withSuccessHandler(function(res) {
+            if (res.success) {
+               showSuccess(estado ? "Calculadora HE habilitada." : "Calculadora HE pausada.");
+            } else {
+               showWarning("Error al actualizar el módulo.");
+               switchEl.checked = !estado;
+            }
+         }).withFailureHandler(function() {
+            showWarning("Error de conexión al actualizar el módulo.");
+            switchEl.checked = !estado;
+         }).toggleSwitchCalculadora(estado);
       }
 
       function ccToggle(id) {
