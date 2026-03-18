@@ -41,8 +41,7 @@ const CONFIG = {
     PRESTAMOS: "1h-_sJD4rOCuMjlfSouP7a6gfoodHyzI4MOBRUyOW5XU",
     PERMISOS_MEDICOS: "1VYfm7cOgL3mVfVoI8DubIm8WG2srzQw9a6DtIEs3UMM",
     CREDENCIALES: "1HVyPxdYKuvIybeOCAPwAJaVHwlxEuOik4YW0XOXBE5o",
-    ASISTENCIA: "1SRQ8Mlc6bBdb0mitAfn4I-EUAS4BOrZRbqS9YAmg3Sk",
-    GAMIFICACION: "1SHDIhGv6XOc30Epm4vdusp3QGVD-pWzhIwzeD6iqbXQ"
+    ASISTENCIA: "1SRQ8Mlc6bBdb0mitAfn4I-EUAS4BOrZRbqS9YAmg3Sk"
   },
   HOJAS: {
     USUARIOS: "BD_SLIMAPP",
@@ -55,9 +54,7 @@ const CONFIG = {
     CREDENCIALES: "IMPRESION",
     HISTORIAL_CREDENCIALES: "HISTORIAL_CREDENCIALES",
     ASISTENCIA: "BD_ASISTENCIA",
-    PUNTOS_CONTROL: "PUNTOS_CONTROL",
-    GAMIFICACION: "BD_GAMIFICACION",
-    BANCO_PREGUNTAS: "BANCO_PREGUNTAS"
+    PUNTOS_CONTROL: "PUNTOS_CONTROL"
   },
   CARPETAS: {
     JUSTIFICACIONES: "1UD9hQz1FuacSb3QYrahRl7IfvlpKn8v6",
@@ -165,35 +162,6 @@ const CONFIG = {
       NOMBRE_DIRIGENTE: 13,
       CORREO_DIRIGENTE: 14,
       NOTIFICADO_SOCIO: 15
-    },
-    GAMIFICACION: {
-      RUT: 0,
-      NOMBRE: 1,
-      XP_TOTAL: 2,
-      GRADO: 3,
-      LOGROS: 4,
-      RACHA_ACTUAL: 5,
-      RACHA_MAX: 6,
-      ULTIMA_ACTIVIDAD: 7,
-      QUIZ_ULTIMO_DIA: 8,
-      QUIZZES_COMPLETADOS: 9,
-      ESTADO: 10,
-      QUIZZES_PERFECTOS: 11
-    },
-    BANCO_PREGUNTAS: {
-      ID: 0,
-      CATEGORIA: 1,
-      NIVEL: 2,
-      PREGUNTA: 3,
-      OPCION_A: 4,
-      OPCION_B: 5,
-      OPCION_C: 6,
-      OPCION_D: 7,
-      RESPUESTA: 8,
-      EXPLICACION: 9,
-      XP: 10,
-      ACTIVA: 11,
-      FUENTE: 12
     }
   }
 };
@@ -1565,81 +1533,6 @@ function toggleSwitchPrestamos(estado) {
   try {
     var props = PropertiesService.getScriptProperties();
     props.setProperty('prestamos_habilitado', estado ? 'true' : 'false');
-    return { success: true };
-  } catch (e) {
-    return { success: false, message: 'Error: ' + e.toString() };
-  }
-}
-
-// ==========================================
-// SWITCH MÓDULO CALCULADORA HORAS EXTRA
-// ==========================================
-
-function obtenerEstadoSwitchCalculadora() {
-  try {
-    var props = PropertiesService.getScriptProperties();
-    var estado = props.getProperty('calculadora_habilitada');
-    var habilitado = (estado === null || estado === 'true');
-    return { success: true, habilitado: habilitado };
-  } catch (e) {
-    return { success: true, habilitado: true };
-  }
-}
-
-function toggleSwitchCalculadora(estado) {
-  try {
-    var props = PropertiesService.getScriptProperties();
-    props.setProperty('calculadora_habilitada', estado ? 'true' : 'false');
-    return { success: true };
-  } catch (e) {
-    return { success: false, message: 'Error: ' + e.toString() };
-  }
-}
-
-// ==========================================
-// SWITCH MÓDULO CONTRATO COLECTIVO
-// ==========================================
-
-function obtenerEstadoSwitchContratoColectivo() {
-  try {
-    var props = PropertiesService.getScriptProperties();
-    var estado = props.getProperty('contrato_colectivo_habilitado');
-    var habilitado = (estado === null || estado === 'true');
-    return { success: true, habilitado: habilitado };
-  } catch (e) {
-    return { success: true, habilitado: true };
-  }
-}
-
-function toggleSwitchContratoColectivo(estado) {
-  try {
-    var props = PropertiesService.getScriptProperties();
-    props.setProperty('contrato_colectivo_habilitado', estado ? 'true' : 'false');
-    return { success: true };
-  } catch (e) {
-    return { success: false, message: 'Error: ' + e.toString() };
-  }
-}
-
-// ==========================================
-// SWITCH MÓDULO SLIM QUEST
-// ==========================================
-
-function obtenerEstadoSwitchSlimQuest() {
-  try {
-    var props = PropertiesService.getScriptProperties();
-    var estado = props.getProperty('slimquest_habilitado');
-    var habilitado = (estado === null || estado === 'true');
-    return { success: true, habilitado: habilitado };
-  } catch (e) {
-    return { success: true, habilitado: true };
-  }
-}
-
-function toggleSwitchSlimQuest(estado) {
-  try {
-    var props = PropertiesService.getScriptProperties();
-    props.setProperty('slimquest_habilitado', estado ? 'true' : 'false');
     return { success: true };
   } catch (e) {
     return { success: false, message: 'Error: ' + e.toString() };
@@ -5653,29 +5546,4 @@ function enviarNotificacionCredencial(correo, nombre, estadoNuevo, rut) {
     htmlBody: htmlBody,
     name: "Sindicato SLIM N°3"
   });
-}
-
-// ==========================================
-// SWITCH MÓDULO SLIM QUEST
-// ==========================================
-
-function obtenerEstadoSwitchSlimQuest() {
-  try {
-    var props = PropertiesService.getScriptProperties();
-    var estado = props.getProperty('slimquest_habilitado');
-    var habilitado = (estado === null || estado === 'true');
-    return { success: true, habilitado: habilitado };
-  } catch (e) {
-    return { success: true, habilitado: true };
-  }
-}
-
-function toggleSwitchSlimQuest(estado) {
-  try {
-    var props = PropertiesService.getScriptProperties();
-    props.setProperty('slimquest_habilitado', estado ? 'true' : 'false');
-    return { success: true };
-  } catch (e) {
-    return { success: false, message: 'Error: ' + e.toString() };
-  }
 }
