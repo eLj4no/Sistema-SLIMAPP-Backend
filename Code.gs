@@ -5923,7 +5923,7 @@ function getLeaderboard(rutInput) {
 
     var top10 = lista.slice(0, 10).map(function(s, idx) {
       var partes  = s.nombre.trim().split(" ");
-      var visible = partes[0] + (partes[1] ? " " + partes[1][0] + "." : "");
+      var visible = partes[0] + (partes[1] ? " " + partes[1] : "") + (partes[2] ? " " + partes[2][0] + "." : "");
       return {
         posicion: idx + 1,
         nombre:   visible,
@@ -6028,7 +6028,7 @@ function sincronizarSociosGamificacion() {
 
     if (nuevasFilas.length > 0) {
       const primeraFilaLibre = sheetGame.getLastRow() + 1;
-      sheetGame.getRange(primeraFilaLibre, 1, nuevasFilas.length, 11).setValues(nuevasFilas);
+      sheetGame.getRange(primeraFilaLibre, 1, nuevasFilas.length, 12).setValues(nuevasFilas);
     }
 
     Logger.log("✅ Socios creados: " + creados + " | Actualizados: " + actualizados + " | Sin RUT: " + sinRut);
