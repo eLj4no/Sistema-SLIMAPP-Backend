@@ -182,6 +182,59 @@
       background: #94a3b8;
     }
 
+    /* ── CONTRATO COLECTIVO ── */
+    .cc-accordion-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.38s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease;
+      opacity: 0;
+    }
+    .cc-accordion-body.open {
+      max-height: 4000px;
+      opacity: 1;
+    }
+    .cc-accordion-chevron {
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    .cc-accordion-chevron.open {
+      transform: rotate(180deg);
+    }
+    .cc-benefit-row {
+      border-left: 3px solid transparent;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .cc-benefit-row:hover { border-left-color: #f59e0b; background: #fffbeb; }
+    .cc-pill-navy   { background:#1e3a5f; color:white; }
+    .cc-pill-amber  { background:#b45309; color:white; }
+    .cc-pill-teal   { background:#0f766e; color:white; }
+    .cc-pill-coral  { background:#be3a1d; color:white; }
+    .cc-pill        { display:inline-block; font-size:11px; font-weight:700;
+                      padding:2px 9px; border-radius:999px; white-space:nowrap; }
+    .cc-note-box {
+      background:#fef3c7; border-left:3px solid #f59e0b;
+      border-radius:0 8px 8px 0; padding:10px 14px;
+      font-size:13px; color:#92400e; line-height:1.6;
+    }
+    .cc-example-box {
+      background:#eff6ff; border-left:3px solid #3b82f6;
+      border-radius:0 8px 8px 0; padding:10px 14px;
+      font-size:13px; color:#1e3a8a; line-height:1.6;
+    }
+    .cc-slim-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .cc-slim-table th { background:#1e293b; color:white; padding:8px 12px; text-align:left; font-size:11px; font-weight:700; letter-spacing:.4px; }
+    .cc-slim-table td { padding:8px 12px; border-bottom:1px solid #e2e8f0; color:#475569; }
+    .cc-slim-table tr:last-child td { border-bottom:none; }
+    .cc-slim-table tr:nth-child(even) td { background:#f8fafc; }
+    .cc-monto-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+    .cc-monto-card { background:#1e3a5f; border-radius:12px; padding:14px 16px; color:white; }
+    .cc-monto-card.amber { background: linear-gradient(135deg,#b45309,#d97706); }
+    .cc-monto-card.teal  { background: linear-gradient(135deg,#0f766e,#14b8a6); }
+    .cc-monto-card .label { font-size:10px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+    .cc-monto-card .value { font-size:22px; font-weight:800; color:#fbbf24; line-height:1.1; }
+    .cc-monto-card .sub   { font-size:10px; color:rgba(255,255,255,.5); margin-top:3px; }
+    .cc-directiva-card { background:rgba(255,255,255,.08); border-radius:10px; padding:12px 14px; }
+    @media(max-width:640px) { .cc-monto-grid { grid-template-columns:1fr; } }
+
     /* Asegurar que el botón de ojo no interfiera con el input */
     #toggle-password-btn {
       cursor: pointer;
@@ -196,12 +249,12 @@
   </head>
   <body class="text-slate-800 antialiased selection:bg-blue-200 selection:text-blue-900">
 
-    <main class="min-h-screen w-full flex flex-col items-center justify-center p-4 py-6 sm:p-6 relative">
+    <main class="min-h-screen w-full flex flex-col items-center justify-start p-4 py-6 sm:p-6 relative">
       <div class="fixed top-[-10%] left-[-10%] w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob pointer-events-none"></div>
       <div class="fixed top-[-10%] right-[-10%] w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000 pointer-events-none"></div>
 
       <!-- LOGIN -->
-      <section id="login-view" class="w-full max-w-sm relative z-10 fade-in-up my-auto">
+      <section id="login-view" class="w-full max-w-sm relative z-10 fade-in-up mt-6">
         <div class="glass-panel rounded-2xl shadow-2xl p-5 sm:p-8 border-t border-white/50">
           <div class="text-center mb-4 sm:mb-6">
             <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-lg mb-3 text-white"><span class="material-icons-round text-2xl">groups</span></div>
@@ -245,6 +298,398 @@
         </div>
       </section>
 
+      <!-- VISTA: CONTRATO COLECTIVO -->
+      <section id="contrato-colectivo-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4">
+        <!-- HEADER -->
+        <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 text-white p-5 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-40 h-40 bg-blue-500 rounded-full blur-3xl opacity-10 -mr-10 -mt-10"></div>
+          <div class="absolute bottom-0 left-0 w-28 h-28 bg-amber-500 rounded-full blur-2xl opacity-10 -ml-8 -mb-8"></div>
+          <div class="relative z-10 flex items-center gap-3">
+            <button onclick="switchView('dashboard-view')" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 transition flex items-center justify-center flex-shrink-0">
+              <span class="material-icons-round text-xl">arrow_back</span>
+            </button>
+            <div class="flex-1 min-w-0">
+              <p class="text-slate-400 text-[10px] uppercase tracking-widest font-bold">Sindicato SLIM N°3</p>
+              <h1 class="text-lg font-extrabold leading-tight text-white">Contrato Colectivo</h1>
+              <p class="text-slate-300 text-xs mt-0.5 flex items-center gap-1">
+                <span class="material-icons-round text-amber-400 text-sm">schedule</span>
+                Vigente: 25 Feb 2026 — 24 Dic 2029
+              </p>
+            </div>
+            <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center">
+              <span class="material-icons-round text-amber-300 text-xl">description</span>
+            </div>
+            <!-- SWITCH ADMIN (solo visible para ADMIN) -->
+            <div id="cc-switch-container" class="hidden z-10 flex flex-col items-center gap-1 ml-2">
+              <label class="toggle-switch">
+                <input type="checkbox" id="cc-switch" onchange="handleContratoColectivoSwitch()">
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="text-[9px] text-white/60 font-semibold">Módulo</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CUERPO SCROLLABLE -->
+        <div class="bg-slate-50">
+          <div class="p-4 space-y-3 pb-8">
+
+            <!-- CAP 1: PAGO Y REMUNERACIONES -->
+            <div class="glass-card rounded-2xl overflow-hidden">
+              <button onclick="ccToggle('cc-cap1')" class="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-slate-50/80 transition">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-amber-100 text-amber-700"><span class="material-icons-round text-lg">payments</span></div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-[10px] font-bold uppercase tracking-widest text-amber-600">Capítulo 01</span>
+                  <h2 class="font-bold text-slate-800 text-sm leading-tight">Tu Pago y Remuneraciones</h2>
+                </div>
+                <span class="material-icons-round text-slate-400 cc-accordion-chevron" id="cc-chev-cc-cap1">expand_more</span>
+              </button>
+              <div class="cc-accordion-body" id="cc-cap1">
+                <div class="border-t border-slate-100 divide-y divide-slate-100">
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-amber-600 text-base">event</span><span class="font-semibold text-slate-800 text-sm">¿Cuándo te pagan?</span></div>
+                    <p class="text-slate-600 text-xs leading-relaxed">Sueldo completo a más tardar el <strong>último día hábil del mes</strong> (transferencia, cuenta vista, cheque o SERVIPAG). El <strong>día 15</strong> recibes anticipo de hasta el <strong>50%</strong> de tu monto líquido. Reliquidaciones a más tardar el <strong>día 10 del mes siguiente</strong>.</p>
+                    <div class="cc-example-box mt-2">Si cobras el día 30 y cae domingo, te pagan el viernes anterior.</div>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-amber-600 text-base">percent</span><span class="font-semibold text-slate-800 text-sm">Gratificación Legal</span></div>
+                    <p class="text-slate-600 text-xs leading-relaxed">Según Arts. 47 y 48 Código del Trabajo. Mínimo <span class="cc-pill cc-pill-amber">$10.000/mes</span> desde marzo 2026. Proporcional a días trabajados u horas laborales si eres de jornada parcial.</p>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-amber-600 text-base">more_time</span><span class="font-semibold text-slate-800 text-sm">Horas Extraordinarias</span></div>
+                    <p class="text-slate-600 text-xs leading-relaxed">Cada hora extra <strong>autorizada por escrito</strong> se paga con recargo del <span class="cc-pill cc-pill-amber">50%</span> sobre tu hora normal.</p>
+                    <div class="cc-example-box mt-2">Hora normal $3.000 → hora extra $4.500.</div>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-amber-600 text-base">lunch_dining</span><span class="font-semibold text-slate-800 text-sm">Colación y Movilización</span></div>
+                    <p class="text-slate-600 text-xs mb-2">Si tu contrato individual tiene montos menores, la empresa paga:</p>
+                    <div class="cc-monto-grid">
+                      <div class="cc-monto-card"><div class="label">Colación</div><div class="value">$3.000</div><div class="sub">mensual · jornada completa</div></div>
+                      <div class="cc-monto-card amber"><div class="label">Movilización</div><div class="value">$5.000</div><div class="sub">mensual · jornada completa</div></div>
+                    </div>
+                    <div class="cc-note-box mt-3">Jornada parcial: montos proporcionales a tus horas.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CAP 2: BONOS -->
+            <div class="glass-card rounded-2xl overflow-hidden">
+              <button onclick="ccToggle('cc-cap2')" class="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-slate-50/80 transition">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-teal-100 text-teal-700"><span class="material-icons-round text-lg">workspace_premium</span></div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-[10px] font-bold uppercase tracking-widest text-teal-600">Capítulo 02</span>
+                  <h2 class="font-bold text-slate-800 text-sm leading-tight">Bonos por tu Trabajo</h2>
+                </div>
+                <span class="material-icons-round text-slate-400 cc-accordion-chevron" id="cc-chev-cc-cap2">expand_more</span>
+              </button>
+              <div class="cc-accordion-body" id="cc-cap2">
+                <div class="border-t border-slate-100 divide-y divide-slate-100">
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-teal-600 text-base">fitness_center</span><span class="font-semibold text-slate-800 text-sm">Bono Sobreesfuerzo</span></div>
+                    <div class="cc-monto-grid">
+                      <div class="cc-monto-card teal"><div class="label">Jornada completa (8h)</div><div class="value">$32.000</div><div class="sub">hasta Dic 2026</div></div>
+                      <div class="cc-monto-card teal"><div class="label">Por hora</div><div class="value">$4.000</div><div class="sub">imponibles</div></div>
+                    </div>
+                    <p class="text-slate-600 text-xs mt-2">Desde <strong>enero 2027</strong> sube a <span class="cc-pill cc-pill-teal">$38.000</span> por jornada completa.</p>
+                    <div class="cc-note-box mt-2">Sin documentación de horas, se paga como jornada completa.</div>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-teal-600 text-base">nights_stay</span><span class="font-semibold text-slate-800 text-sm">Bono Trabajo Nocturno</span></div>
+                    <table class="cc-slim-table mt-1 rounded-xl overflow-hidden">
+                      <thead><tr><th>Tipo</th><th>Monto</th></tr></thead>
+                      <tbody>
+                        <tr><td>Turno nocturno permanente</td><td><span class="cc-pill cc-pill-teal">$43.000 brutos/mes</span></td></tr>
+                        <tr><td>Rotativo / ocasional</td><td><span class="cc-pill cc-pill-navy">$400 por hora</span></td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-teal-600 text-base">supervisor_account</span><span class="font-semibold text-slate-800 text-sm">Bono Responsabilidad Superior</span></div>
+                    <p class="text-slate-600 text-xs mb-2">Para capataces, jefes de grupo, líderes o supervisores:</p>
+                    <p><span class="cc-pill cc-pill-teal" style="font-size:13px;padding:4px 12px;">$6.000 brutos por persona a cargo</span></p>
+                    <div class="cc-example-box mt-2">8 trabajadores a cargo → $48.000 brutos/mes.</div>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-teal-600 text-base">star</span><span class="font-semibold text-slate-800 text-sm">Otros Bonos por Función</span></div>
+                    <table class="cc-slim-table mt-1 rounded-xl overflow-hidden">
+                      <thead><tr><th>Bono</th><th>Monto</th></tr></thead>
+                      <tbody>
+                        <tr><td>Máquina hombre a bordo</td><td><span class="cc-pill cc-pill-teal">$89.063/mes</span></td></tr>
+                        <tr><td>Decapado y Reaplicado</td><td><span class="cc-pill cc-pill-navy">$25.000/día</span></td></tr>
+                        <tr><td>Lavado de Loza</td><td><span class="cc-pill cc-pill-navy">$25.000/mes</span></td></tr>
+                        <tr><td>Limpieza en Altura (+2m)</td><td><span class="cc-pill cc-pill-navy">$38.000/mes</span></td></tr>
+                        <tr><td>Lavado de Alfombra</td><td><span class="cc-pill cc-pill-navy">$25.000/evento</span></td></tr>
+                        <tr><td>Fumigación</td><td><span class="cc-pill cc-pill-navy">$25.000/evento</span></td></tr>
+                        <tr><td>Mantención Preventiva</td><td><span class="cc-pill cc-pill-navy">$73.494/mes</span></td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-teal-600 text-base">military_tech</span><span class="font-semibold text-slate-800 text-sm">Reconocimiento por Años de Servicio</span></div>
+                    <p class="text-slate-600 text-xs mb-2">Más de <strong>10 años en el holding ISS</strong>:</p>
+                    <p><span class="cc-pill cc-pill-teal" style="font-size:13px;padding:4px 12px;">$12.000 brutos/mes</span></p>
+                    <div class="cc-note-box mt-2">Se cuentan años de todos los contratos en empresas holding ISS, sin salir más de 1 mes entre contratos.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CAP 3: FAMILIA -->
+            <div class="glass-card rounded-2xl overflow-hidden">
+              <button onclick="ccToggle('cc-cap3')" class="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-slate-50/80 transition">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-rose-100 text-rose-700"><span class="material-icons-round text-lg">favorite</span></div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-[10px] font-bold uppercase tracking-widest text-rose-600">Capítulo 03</span>
+                  <h2 class="font-bold text-slate-800 text-sm leading-tight">Beneficios para Ti y tu Familia</h2>
+                </div>
+                <span class="material-icons-round text-slate-400 cc-accordion-chevron" id="cc-chev-cc-cap3">expand_more</span>
+              </button>
+              <div class="cc-accordion-body" id="cc-cap3">
+                <div class="border-t border-slate-100 divide-y divide-slate-100">
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-rose-600 text-base">celebration</span><span class="font-semibold text-slate-800 text-sm">Matrimonio o AUC</span></div>
+                    <ul class="text-xs text-slate-600 space-y-1">
+                      <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-rose-400 flex-shrink-0"></span>1 semana de permiso pagado (además del legal)</li>
+                      <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-rose-400 flex-shrink-0"></span><span class="cc-pill cc-pill-coral">$120.000 líquidos</span> el mes en que presentas el certificado</li>
+                    </ul>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-rose-600 text-base">child_care</span><span class="font-semibold text-slate-800 text-sm">Nacimiento o Adopción</span></div>
+                    <ul class="text-xs text-slate-600 space-y-1 mb-2">
+                      <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-rose-400 flex-shrink-0"></span>1 semana de permiso pagado (además del legal)</li>
+                      <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-rose-400 flex-shrink-0"></span><span class="cc-pill cc-pill-coral">$125.000 brutos</span> pagados el mes siguiente al nacimiento</li>
+                    </ul>
+                    <div class="cc-example-box">Nace el 3 de junio → recibes los $125.000 en julio.</div>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-rose-600 text-base">baby_changing_station</span><span class="font-semibold text-slate-800 text-sm">Apoyo Sala Cuna</span></div>
+                    <p class="text-slate-600 text-xs leading-relaxed">Si tu hijo/a no puede ir a sala cuna: <span class="cc-pill cc-pill-coral">$280.000/mes</span> hasta que el menor cumpla <strong>2 años</strong>. Aplica también a padres con custodia legal.</p>
+                    <div class="cc-note-box mt-2">Incompatible con el beneficio de sala cuna en especie.</div>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-rose-600 text-base">school</span><span class="font-semibold text-slate-800 text-sm">Asignación Escolar</span></div>
+                    <p class="text-slate-600 text-xs mb-2">Cada <strong>mayo</strong>: <span class="cc-pill cc-pill-coral">$44.000 líquidos</span> por cada hijo/a estudiante, cónyuge que estudia, o tú mismo si estudias.</p>
+                    <div class="cc-note-box">Presenta certificado al sindicato <strong>antes del 30 de abril</strong>.</div>
+                    <div class="cc-example-box mt-2">2 hijos + 1 en universidad → $132.000 en mayo.</div>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-rose-600 text-base">volunteer_activism</span><span class="font-semibold text-slate-800 text-sm">Fallecimiento — Ayuda</span></div>
+                    <div class="space-y-3 text-xs text-slate-600">
+                      <div><p class="font-semibold text-slate-700 mb-1">Si fallece el trabajador/a:</p><ul class="space-y-1 pl-3"><li>• Bienestar: <span class="cc-pill cc-pill-coral">$920.000</span> al 5° día hábil</li><li>• Indemnización voluntaria 85% años de servicio</li><li>• Empresa cubre gastos mortuorios</li></ul></div>
+                      <div><p class="font-semibold text-slate-700 mb-1">Si fallece cónyuge, hijo/a, padre o madre:</p><ul class="space-y-1 pl-3"><li>• <span class="cc-pill cc-pill-coral">$370.000 líquidos</span> al momento del deceso</li><li>• 5 días hábiles pagados adicionales</li></ul></div>
+                      <div><p class="font-semibold text-slate-700 mb-1">Si fallece un hermano de doble conjunción:</p><ul class="space-y-1 pl-3"><li>• 3 días hábiles pagados adicionales</li></ul></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CAP 4: PRÉSTAMOS Y AYUDA -->
+            <div class="glass-card rounded-2xl overflow-hidden">
+              <button onclick="ccToggle('cc-cap4')" class="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-slate-50/80 transition">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-purple-100 text-purple-700"><span class="material-icons-round text-lg">monetization_on</span></div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-[10px] font-bold uppercase tracking-widest text-purple-600">Capítulo 04</span>
+                  <h2 class="font-bold text-slate-800 text-sm leading-tight">Préstamos y Ayuda Económica</h2>
+                </div>
+                <span class="material-icons-round text-slate-400 cc-accordion-chevron" id="cc-chev-cc-cap4">expand_more</span>
+              </button>
+              <div class="cc-accordion-body" id="cc-cap4">
+                <div class="border-t border-slate-100 divide-y divide-slate-100">
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-purple-600 text-base">account_balance_wallet</span><span class="font-semibold text-slate-800 text-sm">Préstamos Personales (sin interés)</span></div>
+                    <div class="mt-2 space-y-2">
+                      <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+                        <div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Antigüedad</p><p class="text-xs font-semibold text-slate-700 mt-0.5">6 meses – 2 años</p></div>
+                        <div class="text-center"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Monto</p><span class="cc-pill cc-pill-navy mt-0.5 inline-block">$300.000</span></div>
+                        <div class="text-right"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Cuotas</p><p class="text-xs font-semibold text-slate-700 mt-0.5">Hasta 10</p></div>
+                      </div>
+                      <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+                        <div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Antigüedad</p><p class="text-xs font-semibold text-slate-700 mt-0.5">2 años o más</p></div>
+                        <div class="text-center"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Monto</p><span class="cc-pill cc-pill-navy mt-0.5 inline-block">$400.000</span></div>
+                        <div class="text-right"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Cuotas</p><p class="text-xs font-semibold text-slate-700 mt-0.5">Hasta 10</p></div>
+                      </div>
+                    </div>
+                    <div class="cc-note-box mt-2">No puedes pedir uno nuevo con cuotas pendientes.</div>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-purple-600 text-base">beach_access</span><span class="font-semibold text-slate-800 text-sm">Préstamo Vacaciones (sin interés)</span></div>
+                    <div class="mt-2 space-y-2">
+                      <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+                        <div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Antigüedad</p><p class="text-xs font-semibold text-slate-700 mt-0.5">6 meses – 2 años</p></div>
+                        <div class="text-center"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Monto</p><span class="cc-pill cc-pill-navy mt-0.5 inline-block">$200.000</span></div>
+                        <div class="text-right"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Cuotas</p><p class="text-xs font-semibold text-slate-700 mt-0.5">Hasta 8</p></div>
+                      </div>
+                      <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+                        <div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Antigüedad</p><p class="text-xs font-semibold text-slate-700 mt-0.5">2 años o más</p></div>
+                        <div class="text-center"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Monto</p><span class="cc-pill cc-pill-navy mt-0.5 inline-block">$300.000</span></div>
+                        <div class="text-right"><p class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Cuotas</p><p class="text-xs font-semibold text-slate-700 mt-0.5">Hasta 8</p></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-purple-600 text-base">local_pharmacy</span><span class="font-semibold text-slate-800 text-sm">Convenio Farmacia Ahumada</span></div>
+                    <p class="text-slate-600 text-xs leading-relaxed">Medicamentos con receta hasta <span class="cc-pill cc-pill-navy">$26.713/mes</span>, descontados de tu liquidación. Requiere <strong>1 año de antigüedad</strong> y estar afiliado al sindicato.</p>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-purple-600 text-base">cake</span><span class="font-semibold text-slate-800 text-sm">Aportes Fiestas Patrias y Navidad</span></div>
+                    <table class="cc-slim-table mt-1 rounded-xl overflow-hidden">
+                      <thead><tr><th>Grupo</th><th>Monto</th></tr></thead>
+                      <tbody>
+                        <tr><td>Neg. 2018 y 2021</td><td><span class="cc-pill cc-pill-amber">$57.000</span></td></tr>
+                        <tr><td>Neg. 2023</td><td><span class="cc-pill cc-pill-amber">$46.000</span></td></tr>
+                        <tr><td>Extensión 2023</td><td><span class="cc-pill cc-pill-amber">$40.000</span></td></tr>
+                        <tr><td>Nuevos socios</td><td><span class="cc-pill cc-pill-amber">$38.000</span></td></tr>
+                      </tbody>
+                    </table>
+                    <p class="text-xs text-slate-600 mt-2">Fechas: <strong>6 sep</strong> (Fiestas Patrias) y <strong>6 dic</strong> (Navidad).</p>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-purple-600 text-base">redeem</span><span class="font-semibold text-slate-800 text-sm">Fiesta de Navidad Hijos de Socios</span></div>
+                    <p class="text-slate-600 text-xs leading-relaxed">La empresa aporta <span class="cc-pill cc-pill-amber">$9.500.000</span> al sindicato. Pago el <strong>6 de diciembre</strong> de cada año.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CAP 5: FERIADOS Y PERMISOS -->
+            <div class="glass-card rounded-2xl overflow-hidden">
+              <button onclick="ccToggle('cc-cap5')" class="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-slate-50/80 transition">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-green-100 text-green-700"><span class="material-icons-round text-lg">beach_access</span></div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-[10px] font-bold uppercase tracking-widest text-green-600">Capítulo 05</span>
+                  <h2 class="font-bold text-slate-800 text-sm leading-tight">Feriados y Permisos</h2>
+                </div>
+                <span class="material-icons-round text-slate-400 cc-accordion-chevron" id="cc-chev-cc-cap5">expand_more</span>
+              </button>
+              <div class="cc-accordion-body" id="cc-cap5">
+                <div class="border-t border-slate-100 divide-y divide-slate-100">
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-green-600 text-base">calendar_month</span><span class="font-semibold text-slate-800 text-sm">Calendarización de Feriados</span></div>
+                    <p class="text-slate-600 text-xs leading-relaxed">Calendario entregado antes del <strong>30 de agosto</strong>. Vacaciones entre <strong>1° dic y 31 mar</strong>. Solicita con <strong>30 días de anticipación</strong>. Si la empresa no responde en 30 días, puedes tomarlas igual.</p>
+                    <div class="cc-note-box mt-2">La falta de firma no puede quitarte el derecho a vacaciones ya calendarizadas.</div>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-green-600 text-base">check_circle</span><span class="font-semibold text-slate-800 text-sm">Permisos con Goce de Sueldo</span></div>
+                    <p class="text-slate-600 text-xs mb-1">Hasta 3 días hábiles pagados por:</p>
+                    <ul class="text-xs text-slate-600 space-y-1">
+                      <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0"></span>Enfermedad o accidente grave de familiar directo</li>
+                      <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0"></span>Siniestros o daños a tus bienes</li>
+                      <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0"></span>Consultas/exámenes médicos (½ jornada; 1 día si es fuera de tu ciudad)</li>
+                    </ul>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-green-600 text-base">flight</span><span class="font-semibold text-slate-800 text-sm">Permiso Adicional Trabajadores Extranjeros</span></div>
+                    <p class="text-slate-600 text-xs leading-relaxed">Hasta <strong>15 días corridos sin sueldo</strong> para salir del país. Requiere: 2+ años de antigüedad, solicitud con 120+ días de anticipación, solo en meses: mar, abr, may, jun, ago, oct o nov.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CAP 6: UNIFORMES -->
+            <div class="glass-card rounded-2xl overflow-hidden">
+              <button onclick="ccToggle('cc-cap6')" class="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-slate-50/80 transition">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-blue-100 text-blue-700"><span class="material-icons-round text-lg">checkroom</span></div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-[10px] font-bold uppercase tracking-widest text-blue-600">Capítulo 06</span>
+                  <h2 class="font-bold text-slate-800 text-sm leading-tight">Uniformes y Capacitación</h2>
+                </div>
+                <span class="material-icons-round text-slate-400 cc-accordion-chevron" id="cc-chev-cc-cap6">expand_more</span>
+              </button>
+              <div class="cc-accordion-body" id="cc-cap6">
+                <div class="border-t border-slate-100 divide-y divide-slate-100">
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-blue-600 text-base">dry_cleaning</span><span class="font-semibold text-slate-800 text-sm">Uniformes y Ropa de Trabajo</span></div>
+                    <p class="text-slate-600 text-xs mb-2">Entrega <strong>dos veces al año</strong>:</p>
+                    <div class="grid grid-cols-2 gap-2">
+                      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-center">
+                        <span class="material-icons-round text-amber-600 text-2xl block mb-1">wb_sunny</span>
+                        <p class="text-xs font-bold text-amber-800">30 Abril · Verano</p>
+                        <p class="text-xs text-amber-700 mt-1">1 tenida completa</p>
+                      </div>
+                      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center">
+                        <span class="material-icons-round text-blue-600 text-2xl block mb-1">ac_unit</span>
+                        <p class="text-xs font-bold text-blue-800">31 Oct · Invierno</p>
+                        <p class="text-xs text-blue-700 mt-1">2 tenidas + polar + zapatos</p>
+                      </div>
+                    </div>
+                    <div class="cc-note-box mt-2">Ropa dañada por el trabajo se repone antes de las fechas. Elementos de seguridad: reposición al día siguiente.</div>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-blue-600 text-base">cast_for_education</span><span class="font-semibold text-slate-800 text-sm">Capacitación</span></div>
+                    <p class="text-slate-600 text-xs leading-relaxed">Hasta <span class="cc-pill cc-pill-navy">120 socios cada 3 meses</span>. Cursos definidos entre empresa y sindicato. Posibilidad de formato <strong>online</strong>.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CAP 7: CONDICIONES ESPECIALES -->
+            <div class="glass-card rounded-2xl overflow-hidden">
+              <button onclick="ccToggle('cc-cap7')" class="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-slate-50/80 transition">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-700 text-white"><span class="material-icons-round text-lg">gavel</span></div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Capítulo 07</span>
+                  <h2 class="font-bold text-slate-800 text-sm leading-tight">Condiciones Especiales y Derechos</h2>
+                </div>
+                <span class="material-icons-round text-slate-400 cc-accordion-chevron" id="cc-chev-cc-cap7">expand_more</span>
+              </button>
+              <div class="cc-accordion-body" id="cc-cap7">
+                <div class="border-t border-slate-100 divide-y divide-slate-100">
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-3"><span class="material-icons-round text-slate-600 text-base">shield</span><span class="font-semibold text-slate-800 text-sm">Condiciones que te Protegen</span></div>
+                    <div class="space-y-2">
+                      <div class="flex items-start gap-3 bg-amber-50 rounded-xl px-3 py-2.5">
+                        <span class="material-icons-round text-amber-600 text-base flex-shrink-0 mt-0.5">star</span>
+                        <p class="text-xs text-slate-700 leading-relaxed">Si tu contrato individual tiene valores <strong>mejores</strong>, se mantienen los tuyos.</p>
+                      </div>
+                      <div class="flex items-start gap-3 bg-amber-50 rounded-xl px-3 py-2.5">
+                        <span class="material-icons-round text-amber-600 text-base flex-shrink-0 mt-0.5">star</span>
+                        <p class="text-xs text-slate-700 leading-relaxed">Jornada de <strong>12 horas sin colación</strong> → esas horas se pagan como horas extra.</p>
+                      </div>
+                      <div class="flex items-start gap-3 bg-amber-50 rounded-xl px-3 py-2.5">
+                        <span class="material-icons-round text-amber-600 text-base flex-shrink-0 mt-0.5">star</span>
+                        <p class="text-xs text-slate-700 leading-relaxed"><strong>Cheques restaurant o Amipass</strong> se suman al cálculo de indemnización.</p>
+                      </div>
+                      <div class="flex items-start gap-3 bg-amber-50 rounded-xl px-3 py-2.5">
+                        <span class="material-icons-round text-amber-600 text-base flex-shrink-0 mt-0.5">star</span>
+                        <p class="text-xs text-slate-700 leading-relaxed">Para rendir la <strong>PAES</strong>: permiso o cambio de turno con 30 días de anticipación.</p>
+                      </div>
+                      <div class="flex items-start gap-3 bg-amber-50 rounded-xl px-3 py-2.5">
+                        <span class="material-icons-round text-amber-600 text-base flex-shrink-0 mt-0.5">star</span>
+                        <p class="text-xs text-slate-700 leading-relaxed">Trabajadores <strong>administrativos</strong>: salida a las 13:00 el día de su cumpleaños (día hábil).</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="cc-benefit-row px-5 py-4">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-slate-600 text-base">group_add</span><span class="font-semibold text-slate-800 text-sm">Extensión de Beneficios</span></div>
+                    <p class="text-slate-600 text-xs leading-relaxed">Se extienden a nuevos socios hasta <span class="cc-pill cc-pill-navy">2.700 socios totales</span>. Quienes acceden por extensión deben pagar el <strong>100% de la cuota sindical</strong>. Al renunciar al sindicato, pierden los beneficios.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- FOOTER DIRECTIVA -->
+            <div class="bg-gradient-to-br from-slate-900 to-blue-900 rounded-2xl p-5 text-white">
+              <div class="text-center mb-4">
+                <span class="material-icons-round text-amber-400 text-3xl block mb-2">handshake</span>
+                <h3 class="font-bold text-base">Tu Sindicato trabaja por ti</h3>
+                <p class="text-slate-400 text-xs mt-1">Ante cualquier duda, consulta a tu directiva</p>
+              </div>
+              <div class="grid grid-cols-2 gap-2 mt-3">
+                <div class="cc-directiva-card"><p class="text-amber-400 text-[10px] font-bold uppercase tracking-wider mb-0.5">Presidente</p><p class="text-white text-xs font-medium">Carlos Orellana G.</p></div>
+                <div class="cc-directiva-card"><p class="text-amber-400 text-[10px] font-bold uppercase tracking-wider mb-0.5">Tesorero</p><p class="text-white text-xs font-medium">Franco Collao V.</p></div>
+                <div class="cc-directiva-card"><p class="text-amber-400 text-[10px] font-bold uppercase tracking-wider mb-0.5">Secretario</p><p class="text-white text-xs font-medium">Carlos Pacheco M.</p></div>
+                <div class="cc-directiva-card"><p class="text-amber-400 text-[10px] font-bold uppercase tracking-wider mb-0.5">Directora</p><p class="text-white text-xs font-medium">Felicita Anartes C.</p></div>
+                <div class="cc-directiva-card col-span-2"><p class="text-amber-400 text-[10px] font-bold uppercase tracking-wider mb-0.5">Directora</p><p class="text-white text-xs font-medium">Sofia Leonardini C.</p></div>
+              </div>
+              <p class="text-center text-slate-500 text-[10px] mt-4">Sindicato N°3 · ISS SLIM S.A. · Alameda 1146, Of. 302, Santiago</p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       <!-- DASHBOARD -->
       <section id="dashboard-view" class="hidden w-full max-w-5xl z-10 flex-col md:flex-row glass-panel rounded-xl md:rounded-3xl shadow-2xl overflow-hidden fade-in-up transition-all duration-500 my-2 md:my-0">
         <header class="bg-slate-900 text-white p-5 md:p-6 md:w-72 flex-shrink-0 flex flex-col justify-between relative overflow-hidden">
@@ -256,6 +701,22 @@
           <div class="p-4 pb-2 md:p-8 md:pb-4"><h3 class="text-lg font-bold text-slate-800">Menú de Gestión</h3><p class="text-slate-500 text-xs">Selecciona una opción para comenzar</p></div>
           <div class="flex-grow p-4 md:p-8 pt-2"><div class="grid grid-cols-2 md:grid-cols-3 gap-3 pb-4">
               <button onclick="navAction('Mis Datos')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-blue-200 relative overflow-hidden"><div class="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">badge</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Mis Datos</span></button>
+
+              <button onclick="navAction('ContratoColectivo')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-amber-200 relative overflow-hidden">
+                <div class="absolute inset-0 bg-amber-50 opacity-0 group-hover:opacity-100 transition duration-300"></div>
+                <div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10">
+                  <span class="material-icons-round text-xl md:text-2xl">description</span>
+                </div>
+                <span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Mi Contrato</span>
+              </button>
+
+              <button onclick="navAction('ContratoColectivo')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-amber-200 relative overflow-hidden">
+                <div class="absolute inset-0 bg-amber-50 opacity-0 group-hover:opacity-100 transition duration-300"></div>
+                <div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10">
+                  <span class="material-icons-round text-xl md:text-2xl">description</span>
+                </div>
+                <span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Mi Contrato</span>
+              </button>
               
               <button onclick="navAction('RegistroAsistencia')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-green-200 relative overflow-hidden"><div class="absolute inset-0 bg-green-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">history_edu</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Registro Asistencia</span></button>
 
@@ -2189,9 +2650,16 @@
           loansSwitchContainer.classList.remove('hidden');
           loansSwitchContainer.classList.add('flex');
         }
+
+        var ccSwitchContainer = document.getElementById('cc-switch-container');
+        if (ccSwitchContainer) {
+          ccSwitchContainer.classList.remove('hidden');
+          ccSwitchContainer.classList.add('flex');
+        }
         
         loadJustifSwitchState();
         loadLoansSwitchState();
+        loadContratoColectivoSwitchState();
       } else {
         btnAdmin.classList.add('hidden');
         switchContainer.classList.add('hidden');
@@ -2199,6 +2667,11 @@
         var loansSwitchContainerHide = document.getElementById('loans-switch-container');
         if (loansSwitchContainerHide) {
           loansSwitchContainerHide.classList.add('hidden');
+        }
+
+        var ccSwitchContainerHide = document.getElementById('cc-switch-container');
+        if (ccSwitchContainerHide) {
+          ccSwitchContainerHide.classList.add('hidden');
         }
       }
 
@@ -2226,10 +2699,10 @@
           return;
         }
         
-        ['login-view','dashboard-view','logout-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view'].forEach(id => document.getElementById(id).classList.add('hidden'));
+        ['login-view','dashboard-view','logout-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view','contrato-colectivo-view'].forEach(id => document.getElementById(id).classList.add('hidden'));
         const view = document.getElementById(viewId);
         view.classList.remove('hidden');
-        if (['dashboard-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view'].includes(viewId)) view.classList.add('flex');
+        if (['dashboard-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view','contrato-colectivo-view'].includes(viewId)) view.classList.add('flex');
       }
 
       function handleLogout() {
@@ -2326,9 +2799,21 @@
            document.getElementById('search-rut-input').value = '';
            document.getElementById('id-credential-result').classList.add('hidden');
         } else if (module === 'GestionSocios') {
-           loadManagementView();
+          loadManagementView();
+        } else if (module === 'ContratoColectivo') {
+          if (esAdmin) {
+            switchView('contrato-colectivo-view');
+          } else {
+            google.script.run.withSuccessHandler(function(res) {
+              if (res.habilitado) {
+                switchView('contrato-colectivo-view');
+              } else {
+                showWarning("El módulo Contrato Colectivo está temporalmente deshabilitado. Consulta con la directiva para más información.");
+              }
+            }).obtenerEstadoSwitchContratoColectivo();
+          }
         } else {
-           showConstruction(module);
+          showConstruction(module);
         }
       }
 
@@ -5087,6 +5572,41 @@ divForm.classList.add('flex');
             console.error('Error:', error);
           })
           .consultarIdCredencialBackend(currentRut, rutBuscar);
+      }
+
+      function loadContratoColectivoSwitchState() {
+        google.script.run.withSuccessHandler(function(res) {
+          var switchEl = document.getElementById('cc-switch');
+          if (switchEl) switchEl.checked = res.habilitado;
+        }).obtenerEstadoSwitchContratoColectivo();
+      }
+
+      function handleContratoColectivoSwitch() {
+        var switchEl = document.getElementById('cc-switch');
+        var estado = switchEl.checked;
+        google.script.run.withSuccessHandler(function(res) {
+          if (res.success) {
+            showSuccess(estado ? "Módulo Contrato Colectivo habilitado." : "Módulo Contrato Colectivo deshabilitado.");
+          } else {
+            showWarning("Error al actualizar el módulo.");
+            switchEl.checked = !estado;
+          }
+        }).withFailureHandler(function() {
+          showWarning("Error de conexión al actualizar el módulo.");
+          switchEl.checked = !estado;
+        }).toggleSwitchContratoColectivo(estado);
+      }
+
+      function ccToggle(id) {
+        const body    = document.getElementById(id);
+        const chevron = document.getElementById('cc-chev-' + id);
+        const isOpen  = body.classList.contains('open');
+        document.querySelectorAll('.cc-accordion-body').forEach(b => b.classList.remove('open'));
+        document.querySelectorAll('.cc-accordion-chevron').forEach(c => c.classList.remove('open'));
+        if (!isOpen) {
+          body.classList.add('open');
+          chevron.classList.add('open');
+        }
       }
 
     </script>
