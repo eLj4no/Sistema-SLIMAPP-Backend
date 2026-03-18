@@ -1572,6 +1572,81 @@ function toggleSwitchPrestamos(estado) {
 }
 
 // ==========================================
+// SWITCH MÓDULO CALCULADORA HORAS EXTRA
+// ==========================================
+
+function obtenerEstadoSwitchCalculadora() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var estado = props.getProperty('calculadora_habilitada');
+    var habilitado = (estado === null || estado === 'true');
+    return { success: true, habilitado: habilitado };
+  } catch (e) {
+    return { success: true, habilitado: true };
+  }
+}
+
+function toggleSwitchCalculadora(estado) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    props.setProperty('calculadora_habilitada', estado ? 'true' : 'false');
+    return { success: true };
+  } catch (e) {
+    return { success: false, message: 'Error: ' + e.toString() };
+  }
+}
+
+// ==========================================
+// SWITCH MÓDULO CONTRATO COLECTIVO
+// ==========================================
+
+function obtenerEstadoSwitchContratoColectivo() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var estado = props.getProperty('contrato_colectivo_habilitado');
+    var habilitado = (estado === null || estado === 'true');
+    return { success: true, habilitado: habilitado };
+  } catch (e) {
+    return { success: true, habilitado: true };
+  }
+}
+
+function toggleSwitchContratoColectivo(estado) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    props.setProperty('contrato_colectivo_habilitado', estado ? 'true' : 'false');
+    return { success: true };
+  } catch (e) {
+    return { success: false, message: 'Error: ' + e.toString() };
+  }
+}
+
+// ==========================================
+// SWITCH MÓDULO SLIM QUEST
+// ==========================================
+
+function obtenerEstadoSwitchSlimQuest() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var estado = props.getProperty('slimquest_habilitado');
+    var habilitado = (estado === null || estado === 'true');
+    return { success: true, habilitado: habilitado };
+  } catch (e) {
+    return { success: true, habilitado: true };
+  }
+}
+
+function toggleSwitchSlimQuest(estado) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    props.setProperty('slimquest_habilitado', estado ? 'true' : 'false');
+    return { success: true };
+  } catch (e) {
+    return { success: false, message: 'Error: ' + e.toString() };
+  }
+}
+
+// ==========================================
 // LÓGICA DE JUSTIFICACIONES (CON SWITCH)
 // ==========================================
 
