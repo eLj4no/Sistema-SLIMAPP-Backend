@@ -1540,6 +1540,39 @@ function toggleSwitchPrestamos(estado) {
 }
 
 // ==========================================
+// SWITCH MÓDULO CONTRATO COLECTIVO
+// ==========================================
+
+/**
+ * Obtener estado del switch de Contrato Colectivo.
+ * Por defecto habilitado (null = primera ejecución).
+ */
+function obtenerEstadoSwitchContratoColectivo() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var estado = props.getProperty('contrato_colectivo_habilitado');
+    var habilitado = (estado === null || estado === 'true');
+    return { success: true, habilitado: habilitado };
+  } catch (e) {
+    Logger.log('Error en obtenerEstadoSwitchContratoColectivo: ' + e.toString());
+    return { success: true, habilitado: true };
+  }
+}
+
+/**
+ * Actualizar estado del switch de Contrato Colectivo (solo ADMIN).
+ */
+function toggleSwitchContratoColectivo(estado) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    props.setProperty('contrato_colectivo_habilitado', estado ? 'true' : 'false');
+    return { success: true };
+  } catch (e) {
+    return { success: false, message: 'Error: ' + e.toString() };
+  }
+}
+
+// ==========================================
 // LÓGICA DE JUSTIFICACIONES (CON SWITCH)
 // ==========================================
 
