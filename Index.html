@@ -775,7 +775,7 @@
 
       <!-- ============================================================ -->
       <!-- VISTA: CALCULADORA HORAS EXTRAORDINARIAS CC 2026             -->
-      <!-- Fórmula oficial DT: (Sueldo÷30 × 28) ÷ (h/sem × 4) × 1.5  -->
+      <!-- Fórmula oficial DT: (Sueldo÷30 × 30) ÷ (h/sem × 4) × 1.5  -->
       <!-- ============================================================ -->
       <section id="calculator-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4 h-[90vh]">
         <!-- Barra de navegación fija (solo flecha atrás) -->
@@ -7461,7 +7461,7 @@ divForm.classList.add('flex');
 
       // =============================================
       // CALCULADORA DE HORAS EXTRAORDINARIAS CC 2026
-      // Fórmula oficial DT: (Base÷30 × 28) ÷ (h/sem × 4) × 1.5
+      // Fórmula oficial DT: (Base÷30 × 30) ÷ (h/sem × 4) × 1.5
       // =============================================
       let _calcCargo = null;
 
@@ -7555,7 +7555,7 @@ divForm.classList.add('flex');
           base = calcNormalizarBase(base, 'g');
         }
         const valorDiario     = base / 30;
-        const valorCuatroSem  = valorDiario * 28;
+        const valorCuatroSem  = valorDiario * 30;
         const divisorHoras    = horasSemanales * 4;
         const valorHoraNormal = valorCuatroSem / divisorHoras;
         const valorHoraExtra  = valorHoraNormal * 1.5;
