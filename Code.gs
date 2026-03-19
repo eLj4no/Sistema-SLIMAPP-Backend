@@ -3402,7 +3402,7 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
         }
 
         urlDocFinal = resultadoSubida.url;
-        estadoFinal = "Documento Adjuntado";
+        estadoFinal = "Solicitado con Documento";
         fechaSubidaFinal = fechaHoyCompleta;
       }
       // ===== FIN SUBIDA DOCUMENTO =====
@@ -3472,32 +3472,41 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
       // Correo al socio (solo cuando gestiona por sí mismo)
       if (gestion !== "Dirigente") {
         if (esCorreoValido(beneficiario.correo)) {
-          var fechaInicioObjEmail = new Date(fechaInicioNormalizada);
-          var fechaInicioEmailStr = fechaInicioObjEmail.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' });
-          var mensajeSocio = urlDocFinal !== "Sin documento"
-            ? "Hola " + beneficiario.nombre + ", se ha registrado tu solicitud de permiso medico y el documento de respaldo ha sido adjuntado exitosamente. No necesitas realizar ninguna accion adicional."
-            : "Hola " + beneficiario.nombre + ", se ha registrado tu solicitud de permiso medico.\n<strong>IMPORTANTE:</strong> Debes adjuntar el documento de respaldo en el historial del modulo una vez realizada la atencion medica.";
-          var datosSocio = {
-            "ID": idUnico,
-            "Trabajador": beneficiario.nombre,
-            "RUT": beneficiario.rut,
-            "Tipo": tipoPermiso,
-            "Fecha Inicio": new Date(fechaInicio + 'T12:00:00').toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' }),
-            "Motivo": motivo,
-            "Fecha Solicitud": fechaHoy.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' }),
-            "Documento": urlDocFinal !== "Sin documento"
-              ? '<a href="' + urlDocFinal + '" style="color:#10b981;text-decoration:none;font-weight:600;">Ver Documento Adjunto</a>'
-              : "Pendiente de adjuntar desde el historial"
-          };
+          var fechaInicioEmailStr = new Date(fechaInicio + 'T12:00:00').toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' });
+          var asuntoSocio, tituloSocio, mensajeSocio, datosSocio;
+
+          if (urlDocFinal !== "Sin documento") {
+            // EVENTO 2: Solicitud CON documento adjunto al momento
+            asuntoSocio  = "Permiso Medico Registrado con Documento - Sindicato SLIM n3";
+            tituloSocio  = "Solicitud Completa con Documento";
+            mensajeSocio = "Hola <strong>" + beneficiario.nombre + "</strong>, tu permiso medico ha sido registrado correctamente y el documento medico de respaldo fue adjuntado en el mismo momento. No necesitas realizar ninguna accion adicional.";
+            datosSocio = {
+              "ID": idUnico,
+              "Tipo Permiso": tipoPermiso,
+              "Fecha Inicio": fechaInicioEmailStr,
+              "Motivo": motivo,
+              "Estado": estadoFinal,
+              "Fecha Solicitud": fechaHoy.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' }),
+              "Documento": '<a href="' + urlDocFinal + '" style="color:#10b981;text-decoration:none;font-weight:600;">Ver Documento Adjunto</a>'
+            };
+          } else {
+            // EVENTO 1: Solicitud SIN documento
+            asuntoSocio  = "Solicitud de Permiso Medico Registrada - Sindicato SLIM n3";
+            tituloSocio  = "Permiso Medico Solicitado";
+            mensajeSocio = "Hola <strong>" + beneficiario.nombre + "</strong>, tu solicitud de permiso medico ha sido registrada exitosamente. Recuerda adjuntar el documento medico de respaldo desde el historial del modulo una vez realizada la atencion medica.";
+            datosSocio = {
+              "ID": idUnico,
+              "Tipo Permiso": tipoPermiso,
+              "Fecha Inicio": fechaInicioEmailStr,
+              "Motivo": motivo,
+              "Estado": estadoFinal,
+              "Fecha Solicitud": fechaHoy.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' }),
+              "Documento": "Pendiente - Adjuntar desde historial una vez realizada la atencion medica"
+            };
+          }
+
           try {
-            enviarCorreoEstilizado(
-              beneficiario.correo,
-              "Solicitud Permiso Medico - Sindicato SLIM n3",
-              "Permiso Medico Solicitado",
-              mensajeSocio,
-              datosSocio,
-              "#10b981"
-            );
+            enviarCorreoEstilizado(beneficiario.correo, asuntoSocio, tituloSocio, mensajeSocio, datosSocio, "#10b981");
             sheetPermisos.getRange(filaRepLegal, COL_PERM.NOTIFICADO_SOCIO + 1).setValue(true);
           } catch (eSocio) {
             Logger.log("Advertencia solicitarPermisoMedico: Fallo envio socio fila " + filaRepLegal + " - " + eSocio.toString());
@@ -3508,30 +3517,46 @@ function solicitarPermisoMedico(rutGestor, tipoPermiso, fechaInicio, motivo, rut
       }
       
       try {
-        enviarCorreoEstilizado(
-          CORREO_REPRESENTANTE_LEGAL,
-          "Notificacion Permiso Medico - Sindicato SLIM n3",
-          "Nueva Solicitud de Permiso Medico",
-          "Se ha registrado una solicitud de permiso medico para el trabajador <strong>" + beneficiario.nombre + "</strong>.",
-          { 
+        var asuntoRepLegal, tituloRepLegal, mensajeRepLegal, datosRepLegal;
+
+        if (urlDocFinal !== "Sin documento") {
+          // EVENTO 2: Solicitud CON documento adjunto al momento
+          asuntoRepLegal  = "Nueva Solicitud Permiso Medico con Documento - Sindicato SLIM n3";
+          tituloRepLegal  = "Solicitud de Permiso Medico con Documento Adjunto";
+          mensajeRepLegal = "El trabajador <strong>" + beneficiario.nombre + "</strong> ha registrado una solicitud de permiso medico con el documento de respaldo adjunto al momento del registro.";
+          datosRepLegal = {
             "ID": idUnico,
             "Trabajador": beneficiario.nombre,
             "RUT": beneficiario.rut,
-            "Tipo": tipoPermiso,
+            "Tipo Permiso": tipoPermiso,
             "Fecha Inicio": fechaInicioNormalizada,
             "Motivo": motivo,
             "Estado": estadoFinal,
             "Fecha Solicitud": fechaHoyCompleta.toLocaleDateString(),
-            "Documento": urlDocFinal !== "Sin documento"
-              ? '<a href="' + urlDocFinal + '" style="color:#10b981;text-decoration:none;font-weight:600;">Ver Documento Adjunto</a>'
-              : "Pendiente"
-          },
-          "#10b981"
-        );
+            "Documento": '<a href="' + urlDocFinal + '" style="color:#10b981;text-decoration:none;font-weight:600;">Ver Documento Adjunto</a>'
+          };
+        } else {
+          // EVENTO 1: Solicitud SIN documento
+          asuntoRepLegal  = "Nueva Solicitud Permiso Medico - Sindicato SLIM n3";
+          tituloRepLegal  = "Solicitud de Permiso Medico Sin Documento";
+          mensajeRepLegal = "El trabajador <strong>" + beneficiario.nombre + "</strong> ha registrado una solicitud de permiso medico. El documento de respaldo aun no ha sido adjuntado.";
+          datosRepLegal = {
+            "ID": idUnico,
+            "Trabajador": beneficiario.nombre,
+            "RUT": beneficiario.rut,
+            "Tipo Permiso": tipoPermiso,
+            "Fecha Inicio": fechaInicioNormalizada,
+            "Motivo": motivo,
+            "Estado": estadoFinal,
+            "Fecha Solicitud": fechaHoyCompleta.toLocaleDateString(),
+            "Documento": "Pendiente - El trabajador debe adjuntarlo posteriormente"
+          };
+        }
+
+        enviarCorreoEstilizado(CORREO_REPRESENTANTE_LEGAL, asuntoRepLegal, tituloRepLegal, mensajeRepLegal, datosRepLegal, "#10b981");
         sheetPermisos.getRange(filaRepLegal, COL_PERM.NOTIFICADO_REP_LEGAL + 1).setValue(true);
       } catch (eRepLegal) {
         Logger.log("Advertencia solicitarPermisoMedico: Fallo envio Rep. Legal fila " + filaRepLegal + " - " + eRepLegal.toString());
-        // Queda en false para ser reintentado por el trigger
       }
       
       if (gestion === "Dirigente" && correoDirigente && correoDirigente.includes("@") && correoDirigente !== beneficiario.correo) {
@@ -4863,13 +4888,31 @@ Logger.log("Total de triggers activos: " + ScriptApp.getProjectTriggers().length
           var tieneDoc = urlDoc && urlDoc !== '' && urlDoc !== 'Sin documento';
 
           try {
-            if (estado === 'Documento Adjuntado') {
-              // Reintento del correo de documento adjuntado al socio
+            if (estado === 'Solicitado con Documento') {
+              // EVENTO 2: Reintento solicitud CON documento adjunto al momento
               enviarCorreoEstilizado(
                 correo,
-                "Documento Adjuntado - Sindicato SLIM n3",
+                "Permiso Medico Registrado con Documento - Sindicato SLIM n3",
+                "Solicitud Completa con Documento",
+                "Hola <strong>" + nombre + "</strong>, tu permiso medico ha sido registrado correctamente y el documento medico de respaldo fue adjuntado en el mismo momento. No necesitas realizar ninguna accion adicional.",
+                {
+                  "ID": idPermiso,
+                  "Tipo Permiso": tipoPermiso,
+                  "Fecha Inicio": fechaInicioStr,
+                  "Estado": estado,
+                  "Documento": tieneDoc
+                    ? '<a href="' + urlDoc + '" style="color:#10b981;font-weight:bold;">Ver Documento Adjunto</a>'
+                    : "Sin documento"
+                },
+                "#10b981"
+              );
+            } else if (estado === 'Documento Adjuntado') {
+              // EVENTO 3: Reintento documento adjuntado posterior desde historial
+              enviarCorreoEstilizado(
+                correo,
+                "Documento de Respaldo Adjuntado - Sindicato SLIM n3",
                 "Documento de Permiso Medico Adjuntado",
-                "Hola " + nombre + ", tu documento de respaldo ha sido adjuntado exitosamente.",
+                "Hola " + nombre + ", has adjuntado tu documento medico de respaldo exitosamente a tu permiso existente.",
                 {
                   "ID": idPermiso,
                   "Tipo Permiso": tipoPermiso,
@@ -4960,17 +5003,38 @@ Logger.log("Total de triggers activos: " + ScriptApp.getProjectTriggers().length
           var tieneDoc = urlDoc && urlDoc !== '' && urlDoc !== 'Sin documento';
 
           try {
-            if (estado === 'Documento Adjuntado') {
+            if (estado === 'Solicitado con Documento') {
+              // EVENTO 2: Solicitud con documento adjunto al momento
               enviarCorreoEstilizado(
                 CORREO_REPRESENTANTE_LEGAL,
-                "Documento Permiso Medico Adjuntado - Sindicato SLIM n3",
-                "Documento de Permiso Medico Disponible",
-                "El trabajador <strong>" + nombre + "</strong> ha adjuntado el documento de respaldo para su permiso medico.",
+                "Nueva Solicitud Permiso Medico con Documento - Sindicato SLIM n3",
+                "Solicitud de Permiso Medico con Documento Adjunto",
+                "El trabajador <strong>" + nombre + "</strong> ha registrado una solicitud de permiso medico con el documento de respaldo adjunto al momento del registro.",
                 {
                   "ID": idPermiso,
                   "Trabajador": nombre,
                   "RUT": rut,
-                  "Tipo": tipoPermiso,
+                  "Tipo Permiso": tipoPermiso,
+                  "Fecha Inicio": fechaInicioStr,
+                  "Estado": estado,
+                  "Documento": tieneDoc
+                    ? '<a href="' + urlDoc + '" style="color:#10b981;font-weight:bold;">Ver Documento Adjunto</a>'
+                    : "Sin documento"
+                },
+                "#10b981"
+              );
+            } else if (estado === 'Documento Adjuntado') {
+              // EVENTO 3: Documento adjuntado posteriormente desde historial
+              enviarCorreoEstilizado(
+                CORREO_REPRESENTANTE_LEGAL,
+                "Documento de Respaldo Adjuntado - Permiso Medico - Sindicato SLIM n3",
+                "Documento de Permiso Medico Disponible",
+                "El trabajador <strong>" + nombre + "</strong> ha adjuntado el documento medico de respaldo a su permiso existente.",
+                {
+                  "ID": idPermiso,
+                  "Trabajador": nombre,
+                  "RUT": rut,
+                  "Tipo Permiso": tipoPermiso,
                   "Fecha Inicio": fechaInicioStr,
                   "Estado": estado,
                   "Documento": tieneDoc
@@ -4980,22 +5044,21 @@ Logger.log("Total de triggers activos: " + ScriptApp.getProjectTriggers().length
                 "#475569"
               );
             } else {
+              // EVENTO 1: Solicitud sin documento
               enviarCorreoEstilizado(
                 CORREO_REPRESENTANTE_LEGAL,
-                "Notificacion Permiso Medico - Sindicato SLIM n3",
-                "Solicitud de Permiso Medico",
-                "Se ha registrado una solicitud de permiso medico para el trabajador <strong>" + nombre + "</strong>.",
+                "Nueva Solicitud Permiso Medico - Sindicato SLIM n3",
+                "Solicitud de Permiso Medico Sin Documento",
+                "El trabajador <strong>" + nombre + "</strong> ha registrado una solicitud de permiso medico. El documento de respaldo aun no ha sido adjuntado.",
                 {
                   "ID": idPermiso,
                   "Trabajador": nombre,
                   "RUT": rut,
-                  "Tipo": tipoPermiso,
+                  "Tipo Permiso": tipoPermiso,
                   "Fecha Inicio": fechaInicioStr,
                   "Motivo": motivo,
                   "Estado": estado,
-                  "Documento": tieneDoc
-                    ? '<a href="' + urlDoc + '" style="color:#10b981;font-weight:bold;">Ver Documento</a>'
-                    : "Pendiente"
+                  "Documento": "Pendiente - El trabajador debe adjuntarlo posteriormente"
                 },
                 "#10b981"
               );
