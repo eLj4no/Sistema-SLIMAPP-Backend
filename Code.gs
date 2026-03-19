@@ -1639,13 +1639,16 @@ function obtenerEstadosSwitchDashboard() {
       justificaciones = false;
     }
 
+    var permisosMedicos = (props.getProperty('permisos_medicos_habilitado') !== 'false');
+
     return {
       success: true,
       prestamos:       prestamos,
       justificaciones: justificaciones,
       contrato:        contrato,
       slimquest:       slimquest,
-      calculadora:     calculadora
+      calculadora:     calculadora,
+      permisosMedicos: permisosMedicos
     };
   } catch (e) {
     Logger.log('Error en obtenerEstadosSwitchDashboard: ' + e.toString());
