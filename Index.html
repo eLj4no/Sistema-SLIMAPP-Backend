@@ -2505,9 +2505,6 @@
       let wizardBancoSeleccionado = "";
       let wizardTipoCuentaSeleccionada = "";
       let wizardPaso = 0;
-      let wizardModalTitle = null;
-      let wizardModalDesc = null;
-      let wizardModalContainer = null;
       let activeLoanType = "";
       let currentEditingLoanId = "";
       let loanRecordsCache = [];
@@ -3889,32 +3886,26 @@
            desc.innerText = "Ingrese los 8 dígitos (sin +569)."; 
            const suffix = parsePhoneToSuffix(userDataCache.contacto || ""); 
            container.innerHTML = `<div class="flex items-center input-modern rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-400"><span class="bg-slate-200 px-4 py-3 text-slate-600 font-bold text-sm border-r border-slate-300 select-none">+569</span><input id="modal-input" type="tel" maxlength="8" class="w-full px-4 py-3 text-sm font-medium text-slate-700 outline-none bg-transparent" placeholder="12345678" value="${suffix}" oninput="this.value = this.value.replace(/[^0-9]/g, '')"></div>`; 
-        } else if (field === 'contacto') { 
-          title.innerText = "Editar Teléfono"; 
-          desc.innerText = "Ingrese los 8 dígitos (sin +569)."; 
-          const suffix = parsePhoneToSuffix(userDataCache.contacto || ""); 
-          container.innerHTML = `<div class="flex items-center input-modern rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-400"><span class="bg-slate-200 px-4 py-3 text-slate-600 font-bold text-sm border-r border-slate-300 select-none">+569</span><input id="modal-input" type="tel" maxlength="8" class="w-full px-4 py-3 text-sm font-medium text-slate-700 outline-none bg-transparent" placeholder="12345678" value="${suffix}" oninput="this.value = this.value.replace(/[^0-9]/g, '')"></div>`; 
-
-        // ========== AGREGAR ESTOS CASOS NUEVOS ==========
-        function wizardMostrarPaso2() {
-        wizardTipoCuentaSeleccionada = "";
-
-        wizardModalTitle.innerText = "Paso 2 de 3 \u2014 Tipo de Cuenta";
-        wizardModalDesc.innerText  = "Seleccione el tipo de cuenta en " + wizardBancoSeleccionado + ".";
-
-        wizardModalContainer.innerHTML =
-          '<div class="space-y-2">' +
-          tiposCuentaList.map(function(tipo) {
-            return '<div onclick="wizardSeleccionarTipoCuenta(this, \'' + tipo + '\')" ' +
-              'class="region-option p-3 rounded-lg text-sm cursor-pointer flex items-center justify-between border border-slate-200">' +
-              tipo + '</div>';
-          }).join('') + '</div>';
-
-        var btn = document.getElementById('btn-save-modal');
-        btn.innerText = 'Siguiente';
-        btn.setAttribute('onclick', 'wizardAvanzar()');
-        btn.disabled = false;
-      }
+        } else if (field === 'banco') {
+          // === WIZARD BANCARIO — PASO 1: Seleccionar Banco ===
+          wizardPaso = 1;
+          wizardBancoSeleccionado = userDataCache.banco || "";
+          wizardTipoCuentaSeleccionada = "";
+          title.innerText = "Paso 1 de 3 \u2014 Seleccionar Banco";
+          desc.innerText  = "Seleccione su banco. Los dem\u00e1s campos se actualizar\u00e1n a continuaci\u00f3n.";
+          container.innerHTML = '<div class="max-h-64 overflow-y-auto custom-scroll">' +
+            bancosList.map(function(b) {
+              var sel = (wizardBancoSeleccionado === b);
+              return '<div onclick="wizardSeleccionarBanco(this, \'' + b.replace(/'/g, "\\'") + '\')" ' +
+                'class="region-option p-3 rounded-lg mb-2 text-sm cursor-pointer flex items-center justify-between ' +
+                (sel ? 'selected' : '') + '">' + b +
+                (sel ? '<span class="material-icons-round text-blue-600 text-sm check-icon">check</span>' : '') +
+                '</div>';
+            }).join('') + '</div>';
+          var btnW = document.getElementById('btn-save-modal');
+          btnW.innerText = 'Siguiente';
+          btnW.setAttribute('onclick', 'wizardAvanzar()');
+          btnW.disabled = false;
 
         } else if (field === 'tipoCuenta') {
           title.innerText = "Editar Tipo de Cuenta";
@@ -4000,19 +3991,16 @@
       }
 
       function wizardMostrarPaso2() {
-        document.getElementById('modal-title').innerText = "Paso 2 de 3 — Tipo de Cuenta";
-        document.getElementById('modal-desc').innerText = "Seleccione el tipo de cuenta en " + wizardBancoSeleccionado + ".";
-
         wizardTipoCuentaSeleccionada = "";
-
-        document.getElementById('modal-container').innerHTML =
+        document.getElementById('modal-title').innerText = "Paso 2 de 3 \u2014 Tipo de Cuenta";
+        document.getElementById('modal-desc').innerText  = "Seleccione el tipo de cuenta en " + wizardBancoSeleccionado + ".";
+        document.getElementById('modal-input-container').innerHTML =
           '<div class="space-y-2">' +
           tiposCuentaList.map(function(tipo) {
             return '<div onclick="wizardSeleccionarTipoCuenta(this, \'' + tipo + '\')" ' +
               'class="region-option p-3 rounded-lg text-sm cursor-pointer flex items-center justify-between border border-slate-200">' +
               tipo + '</div>';
           }).join('') + '</div>';
-
         var btn = document.getElementById('btn-save-modal');
         btn.innerText = 'Siguiente';
         btn.setAttribute('onclick', 'wizardAvanzar()');
@@ -4035,17 +4023,15 @@
       }
 
       function wizardMostrarPaso3() {
-        wizardModalTitle.innerText = "Paso 3 de 3 \u2014 N\u00famero de Cuenta";
-        wizardModalDesc.innerText  = "Ingrese el n\u00famero de cuenta en " + wizardBancoSeleccionado + ".";
-
-        wizardModalContainer.innerHTML =
+        document.getElementById('modal-title').innerText = "Paso 3 de 3 \u2014 N\u00famero de Cuenta";
+        document.getElementById('modal-desc').innerText  = "Ingrese el n\u00famero de cuenta en " + wizardBancoSeleccionado + ".";
+        document.getElementById('modal-input-container').innerHTML =
           '<input id="wizard-num-input" type="text" maxlength="20" ' +
           'class="input-modern w-full px-4 py-3 rounded-lg text-sm outline-none font-mono" ' +
-          'placeholder="Ej: 1234567890" oninput="this.value = this.value.replace(/[^0-9]/g, \'\')">' +
+          'placeholder="Ej: 1234567890" oninput="this.value=this.value.replace(/[^0-9]/g,\'\')">' +
           '<p class="text-[10px] text-slate-500 mt-2"><strong>Consejos:</strong><br>' +
           '\u2022 Solo n\u00fameros, sin guiones ni espacios<br>' +
           '\u2022 Longitud t\u00edpica: 6-20 d\u00edgitos</p>';
-
         var btn = document.getElementById('btn-save-modal');
         btn.innerText = 'Guardar';
         btn.setAttribute('onclick', 'wizardGuardar()');
@@ -4077,6 +4063,7 @@
               document.getElementById('display-banco').innerText         = wizardBancoSeleccionado;
               document.getElementById('display-tipo-cuenta').innerText   = wizardTipoCuentaSeleccionada;
               document.getElementById('display-numero-cuenta').innerText = numeroCuenta;
+              actualizarBotonesEdicionBancaria();
               showSuccess("Datos bancarios actualizados correctamente.");
             } else {
               showWarning(res.message || "Error al guardar. Intente nuevamente.");
@@ -4108,7 +4095,8 @@
               document.getElementById('display-banco').innerText         = 'BANCO ESTADO (Cuenta RUT)';
               document.getElementById('display-tipo-cuenta').innerText   = 'CUENTA VISTA';
               document.getElementById('display-numero-cuenta').innerText = res.numeroCuenta;
-              showSuccess("Datos bancarios actualizados automáticamente.");
+              actualizarBotonesEdicionBancaria();
+              showSuccess("Datos bancarios actualizados autom\u00e1ticamente.");
             } else {
               showWarning(res.message || "Error al actualizar.");
             }
