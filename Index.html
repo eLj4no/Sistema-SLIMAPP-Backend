@@ -3461,6 +3461,7 @@
         console.warn('Usuario desvinculado: acceso limitado a "Mis Datos"');
         // La validación de acciones se hace en navAction()
       }
+      updateMuteIcon();
     }
 
       function switchView(viewId) {
@@ -3558,14 +3559,6 @@
                }
              }).obtenerEstadoSwitchSlimQuest();
            }
-        // ========== VALIDACIÓN DE ESTADO DESVINCULADO ==========
-        // Si es DESVINCULADO pero NO es ADMIN, mostrar advertencia al intentar acciones
-        if (esDesvinculado && !esAdmin) {
-          console.warn('Usuario desvinculado: acceso limitado a "Mis Datos"');
-          // La validación de acciones se hace en navAction()
-        }
-        updateMuteIcon();
-      }
         } else if (module === 'Prestamos') {
            if (esAdmin) {
               document.getElementById('loans-menu').classList.remove('hidden');
