@@ -702,7 +702,8 @@
           <div class="flex-grow p-4 md:p-8 pt-2"><div class="grid grid-cols-2 md:grid-cols-3 gap-3 pb-4">
               <button onclick="navAction('Mis Datos')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-blue-200 relative overflow-hidden"><div class="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">badge</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Mis Datos</span></button>
 
-              <button onclick="navAction('ContratoColectivo')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-amber-200 relative overflow-hidden">
+              <button id="card-mod-contrato" onclick="navAction('ContratoColectivo')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-amber-200 relative overflow-hidden">
+                <div id="badge-mod-contrato" class="absolute top-1.5 right-1.5 z-20 w-5 h-5 rounded-full hidden items-center justify-center shadow-md pointer-events-none"></div>
                 <div class="absolute inset-0 bg-amber-50 opacity-0 group-hover:opacity-100 transition duration-300"></div>
                 <div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10">
                   <span class="material-icons-round text-xl md:text-2xl">description</span>
@@ -710,16 +711,17 @@
                 <span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Cont. Colectivo 2026-2028</span>
               </button>
 
-              <button onclick="navAction('Justificaciones')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-orange-200 relative overflow-hidden"><div class="absolute inset-0 bg-orange-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">assignment_late</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Justificaciones</span></button>
+              <button id="card-mod-justificaciones" onclick="navAction('Justificaciones')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-orange-200 relative overflow-hidden"><div id="badge-mod-justificaciones" class="absolute top-1.5 right-1.5 z-20 w-5 h-5 rounded-full hidden items-center justify-center shadow-md pointer-events-none"></div><div class="absolute inset-0 bg-orange-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">assignment_late</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Justificaciones</span></button>
 
               <button onclick="navAction('Apelaciones')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-red-200 relative overflow-hidden"><div class="absolute inset-0 bg-red-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">gavel</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Apelaciones</span></button>
               
-              <button onclick="navAction('Prestamos')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-purple-200 relative overflow-hidden"><div class="absolute inset-0 bg-purple-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">monetization_on</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Préstamos</span></button>
+              <button id="card-mod-prestamos" onclick="navAction('Prestamos')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-purple-200 relative overflow-hidden"><div id="badge-mod-prestamos" class="absolute top-1.5 right-1.5 z-20 w-5 h-5 rounded-full hidden items-center justify-center shadow-md pointer-events-none"></div><div class="absolute inset-0 bg-purple-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">monetization_on</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Préstamos</span></button>
 
               <button onclick="navAction('PermisoMedico')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-emerald-200 relative overflow-hidden"><div class="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">local_hospital</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Permiso Médico</span></button>
 
               <!-- CALCULADORA HORAS EXTRA -->
-              <button onclick="navAction('CalculadoraHE')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-emerald-200 relative overflow-hidden">
+              <button id="card-mod-calculadora" onclick="navAction('CalculadoraHE')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-emerald-200 relative overflow-hidden">
+                <div id="badge-mod-calculadora" class="absolute top-1.5 right-1.5 z-20 w-5 h-5 rounded-full hidden items-center justify-center shadow-md pointer-events-none"></div>
                 <div class="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition duration-300"></div>
                 <div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10">
                   <span class="material-icons-round text-xl md:text-2xl">calculate</span>
@@ -729,7 +731,8 @@
 
               <button onclick="navAction('RegistroAsistencia')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-green-200 relative overflow-hidden"><div class="absolute inset-0 bg-green-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">history_edu</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Registro Asistencia</span></button>
 
-              <button onclick="navAction('MiProgreso')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-purple-200 relative overflow-hidden">
+              <button id="card-mod-slimquest" onclick="navAction('MiProgreso')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-purple-200 relative overflow-hidden">
+                <div id="badge-mod-slimquest" class="absolute top-1.5 right-1.5 z-20 w-5 h-5 rounded-full hidden items-center justify-center shadow-md pointer-events-none"></div>
                 <div class="absolute inset-0 bg-purple-50 opacity-0 group-hover:opacity-100 transition duration-300"></div>
                 <div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10">
                   <span class="material-icons-round text-xl md:text-2xl">sports_esports</span>
@@ -1297,8 +1300,8 @@
               <button onclick="showLoanForm('emergencia')" class="glass-card p-4 flex items-center gap-4 hover:bg-white hover:border-red-200 transition group">
                  <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition"><span class="material-icons-round">medical_services</span></div>
                  <div class="text-left">
-                    <h4 class="font-bold text-slate-700">Préstamo de Emergencia</h4>
-                    <p class="text-xs text-slate-500">$200.000 - Hasta 10 cuotas</p>
+                    <h4 class="font-bold text-slate-700">Préstamo Personal</h4>
+                    <p class="text-xs text-slate-500">$300.000 / $400.000 · Hasta 10 cuotas</p>
                  </div>
                  <span class="material-icons-round ml-auto text-slate-300">chevron_right</span>
               </button>
@@ -1307,7 +1310,7 @@
                  <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition"><span class="material-icons-round">beach_access</span></div>
                  <div class="text-left">
                     <h4 class="font-bold text-slate-700">Préstamo de Vacaciones</h4>
-                    <p class="text-xs text-slate-500">$150.000 - Hasta 8 cuotas</p>
+                    <p class="text-xs text-slate-500">$200.000 / $300.000 · Hasta 8 cuotas</p>
                  </div>
                  <span class="material-icons-round ml-auto text-slate-300">chevron_right</span>
               </button>
@@ -1327,6 +1330,45 @@
               <h3 id="form-title" class="text-xl font-bold text-slate-800 mb-1">Solicitud</h3><p class="text-xs text-slate-500 mb-6">Complete los detalles del préstamo.</p>
               
               <div class="space-y-5">
+
+                 <!-- SELECTOR VERSIÓN PRÉSTAMO (Contrato Colectivo 2026) -->
+                 <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Versión del Préstamo</label>
+                    <p class="text-[11px] text-slate-400 mb-3">Selecciona según tu antigüedad en la empresa:</p>
+                    <div class="flex flex-col gap-2" id="loan-version-options">
+                       <label class="cursor-pointer">
+                          <input type="radio" name="loan_version" value="A" class="peer sr-only" onchange="updateLoanVersionInfo()">
+                          <div id="loan-version-A-card" class="p-3 rounded-xl border-2 border-slate-200 bg-white peer-checked:border-blue-500 peer-checked:bg-blue-50 transition">
+                             <div class="flex items-center justify-between">
+                                <div>
+                                   <p class="text-sm font-bold text-slate-700" id="loan-version-A-label">Opción A — 6 meses a menos de 2 años</p>
+                                   <p class="text-xs text-slate-500 mt-0.5" id="loan-version-A-detail">Cargando...</p>
+                                </div>
+                                <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-blue-500 flex-shrink-0"></div>
+                             </div>
+                          </div>
+                       </label>
+                       <label class="cursor-pointer">
+                          <input type="radio" name="loan_version" value="B" class="peer sr-only" onchange="updateLoanVersionInfo()">
+                          <div id="loan-version-B-card" class="p-3 rounded-xl border-2 border-slate-200 bg-white peer-checked:border-blue-500 peer-checked:bg-blue-50 transition">
+                             <div class="flex items-center justify-between">
+                                <div>
+                                   <p class="text-sm font-bold text-slate-700" id="loan-version-B-label">Opción B — 2 o más años de antigüedad</p>
+                                   <p class="text-xs text-slate-500 mt-0.5" id="loan-version-B-detail">Cargando...</p>
+                                </div>
+                                <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-blue-500 flex-shrink-0"></div>
+                             </div>
+                          </div>
+                       </label>
+                    </div>
+                    <!-- Indicador de monto seleccionado -->
+                    <div id="loan-monto-display" class="hidden mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
+                       <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Monto del Préstamo</p>
+                       <p id="loan-monto-valor" class="text-2xl font-black text-emerald-700 mt-0.5"></p>
+                       <p id="loan-monto-cuotas" class="text-[11px] text-emerald-500 mt-0.5"></p>
+                    </div>
+                 </div>
+
                  <div id="loan-admin-field" class="hidden bg-indigo-50 p-4 rounded-xl border border-indigo-100 mb-2">
                     <label class="block text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-2 flex items-center gap-1"><span class="material-icons-round text-sm">admin_panel_settings</span> RUT del Socio Beneficiario</label>
                     <input id="loan-rut-socio" type="text" maxlength="12" class="input-modern w-full px-4 py-3 rounded-lg text-sm bg-white outline-none" placeholder="Ingrese RUT del socio" oninput="formatRutInput(this)">
@@ -1553,7 +1595,16 @@
         <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden flex-shrink-0">
            <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
            <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><span class="material-icons-round">arrow_back</span></button>
-           <h2 class="text-lg font-bold z-10">Permiso Médico</h2>
+           <h2 class="text-lg font-bold z-10 flex-grow">Permiso Médico</h2>
+
+           <!-- SWITCH ADMIN (solo visible para ADMIN) -->
+           <div id="permission-switch-container" class="hidden z-10 flex flex-col items-center gap-1">
+              <label class="toggle-switch">
+                 <input type="checkbox" id="permission-switch" onchange="handlePermissionSwitch()">
+                 <span class="toggle-slider"></span>
+              </label>
+              <span class="text-[9px] text-white/60 font-semibold">Módulo</span>
+           </div>
         </div>
 
         <div class="flex-grow flex flex-col bg-slate-50/50 overflow-hidden">
@@ -1625,11 +1676,16 @@
                     </label>
                   </div>
 
-                 <div id="permission-doc-reminder-warning" class="bg-amber-50 border-l-4 border-amber-400 p-3 mb-4">
-                    <div class="flex items-start">
-                      <span class="material-icons-round text-amber-600 mr-2 text-lg">warning</span>
-                      <p class="text-xs text-amber-800 leading-relaxed">
-                        <strong>⚠️ Importante:</strong> El documento se debe adjuntar posteriormente una vez se realice el examen o atención médica para comprobar el correcto uso de este beneficio. El no hacerlo puede significar el descuento de las horas ausentadas.
+                 <!-- Aviso informativo para permiso de 1 día completo fuera de ciudad -->
+                 <div id="permission-fuera-ciudad-info" class="hidden bg-blue-50 border-l-4 border-blue-400 p-3 mb-3 rounded-r-xl">
+                    <div class="flex items-start gap-2">
+                      <span class="material-icons-round text-blue-500 text-lg flex-shrink-0 mt-0.5">info</span>
+                      <div>
+                        <p class="text-xs font-bold text-blue-800 mb-1">Permiso de 1 Día Completo — Fuera de Ciudad</p>
+                        <p class="text-xs text-blue-700 leading-relaxed">
+                          Este permiso aplica cuando la atención médica se realiza <strong>fuera de tu ciudad de residencia</strong>.<br><br>
+                          Para que sea válido con goce de remuneración, debes adjuntar el <strong>comprobante de pago de la consulta (bono) o del examen médico</strong> que acredite que fue realizado en otra ciudad.<br><br>
+                          Especifica en el campo Motivo la <strong>ciudad de atención y el tipo de examen o especialidad</strong>.
                       </p>
                     </div>
                   </div>
@@ -2228,6 +2284,24 @@
                 Vuelve a intentar más tarde o contacta con la directiva.
              </p>
              <button onclick="document.getElementById('calculator-maintenance-modal').classList.add('hidden')" class="w-full py-3 rounded-xl bg-slate-800 text-white font-bold text-sm hover:bg-slate-700 transition shadow-lg shadow-slate-500/30 flex items-center justify-center gap-2">
+                <span class="material-icons-round text-sm">arrow_back</span>
+                <span>Volver</span>
+             </button>
+         </div>
+      </div>
+
+      <!-- Modal Mantenimiento Permisos Médicos -->
+      <div id="permission-maintenance-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center fade-in-up">
+             <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span class="material-icons-round text-2xl">medical_services</span>
+             </div>
+             <h3 class="text-lg font-bold text-slate-800 mb-2">Módulo en Pausa</h3>
+             <p class="text-xs text-slate-600 mb-5">
+                El módulo de Permisos Médicos está en pausa por mantenimiento.<br><br>
+                Vuelva a intentar más tarde o consulte con la directiva.
+             </p>
+             <button onclick="document.getElementById('permission-maintenance-modal').classList.add('hidden')" class="w-full py-3 rounded-xl bg-slate-800 text-white font-bold text-sm hover:bg-slate-700 transition shadow-lg shadow-slate-500/30 flex items-center justify-center gap-2">
                 <span class="material-icons-round text-sm">arrow_back</span>
                 <span>Volver</span>
              </button>
@@ -3416,12 +3490,19 @@
           calcSwitchContainer.classList.remove('hidden');
           calcSwitchContainer.classList.add('flex');
         }
+
+        var permissionSwitchContainer = document.getElementById('permission-switch-container');
+        if (permissionSwitchContainer) {
+          permissionSwitchContainer.classList.remove('hidden');
+          permissionSwitchContainer.classList.add('flex');
+        }
         
         loadJustifSwitchState();
         loadLoansSwitchState();
         loadContratoColectivoSwitchState();
         loadSlimQuestSwitchState();
         loadCalculadoraSwitchState();
+        loadPermissionSwitchState();
       } else {
         btnAdmin.classList.add('hidden');
         switchContainer.classList.add('hidden');
@@ -3444,6 +3525,11 @@
         if (calcSwitchContainerHide) {
           calcSwitchContainerHide.classList.add('hidden');
         }
+
+        var permissionSwitchContainerHide = document.getElementById('permission-switch-container');
+        if (permissionSwitchContainerHide) {
+          permissionSwitchContainerHide.classList.add('hidden');
+        }
       }
 
       // ========== BOTÓN CONSULTA ID ==========
@@ -3462,6 +3548,7 @@
         // La validación de acciones se hace en navAction()
       }
       updateMuteIcon();
+      cargarBadgesDashboard();
     }
 
       function switchView(viewId) {
@@ -3590,8 +3677,19 @@
            toggleAppealsTab('form'); 
            switchView('appeals-view');
         } else if (module === 'PermisoMedico') {
-           togglePermissionTab('form');
-           switchView('permission-view');
+           if (esAdmin) {
+              togglePermissionTab('form');
+              switchView('permission-view');
+           } else {
+              google.script.run.withSuccessHandler(function(res) {
+                 if (res.habilitado) {
+                    togglePermissionTab('form');
+                    switchView('permission-view');
+                 } else {
+                    document.getElementById('permission-maintenance-modal').classList.remove('hidden');
+                 }
+              }).obtenerEstadoSwitchPermisosMedicos();
+           }
         } else if (module === 'PanelAdmin') {
            switchView('admin-panel-view');
         } else if (module === 'ConsultaID') {
@@ -3678,6 +3776,37 @@
         }).enviarContrasenaCorreo(rutInput);
       }
 
+      // === BADGES DE ESTADO DE MÓDULOS EN DASHBOARD ===
+      function cargarBadgesDashboard() {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (!res || !res.success) return;
+            aplicarBadge('justificaciones', res.justificaciones);
+            aplicarBadge('prestamos',       res.prestamos);
+            aplicarBadge('contrato',        res.contrato);
+            aplicarBadge('calculadora',     res.calculadora);
+            aplicarBadge('slimquest',       res.slimquest);
+          })
+          .withFailureHandler(function() { /* silencioso */ })
+          .obtenerEstadosSwitchDashboard();
+      }
+
+      function aplicarBadge(modulo, habilitado) {
+        var badge = document.getElementById('badge-mod-' + modulo);
+        if (!badge) return;
+        badge.classList.remove('hidden');
+        badge.classList.add('flex');
+        if (habilitado) {
+          badge.style.background  = '#10b981';   /* emerald-500 */
+          badge.title             = 'Módulo habilitado';
+          badge.innerHTML         = '<span class="material-icons-round text-white" style="font-size:11px;line-height:1">check</span>';
+        } else {
+          badge.style.background  = '#ef4444';   /* red-500 */
+          badge.title             = 'Módulo deshabilitado temporalmente';
+          badge.innerHTML         = '<span class="material-icons-round text-white" style="font-size:11px;line-height:1">lock</span>';
+        }
+      }
+
       // === FUNCIONES PRÉSTAMOS ===
       function backToLoansMenu() {
          document.getElementById('loans-form').classList.add('hidden');
@@ -3691,10 +3820,45 @@
          document.getElementById('loans-menu').classList.add('hidden'); 
          document.getElementById('loans-form').classList.remove('hidden'); 
          document.getElementById('loans-form').classList.add('flex'); 
-         document.getElementById('form-title').innerText = "Solicitud: " + activeLoanType; 
+         document.getElementById('form-title').innerText = (type === 'emergencia') ? 'Solicitud: Préstamo Personal' : 'Solicitud: Préstamo de Vacaciones'; 
          tempSelectedQuota = ""; 
          document.getElementById('selected-quota-text').innerText = "Seleccione..."; 
          document.getElementsByName('pago').forEach(r => r.checked = false); 
+         document.getElementsByName('loan_version').forEach(r => r.checked = false); 
+         document.getElementById('loan-monto-display').classList.add('hidden'); 
+         updateLoanVersionInfo(); 
+      }
+
+      function updateLoanVersionInfo() {
+         const isEmergencia = (activeLoanType === 'Emergencia');
+         const labelA = document.getElementById('loan-version-A-detail');
+         const labelB = document.getElementById('loan-version-B-detail');
+         const montoDisplay = document.getElementById('loan-monto-display');
+         const montoValor = document.getElementById('loan-monto-valor');
+         const montoCuotas = document.getElementById('loan-monto-cuotas');
+
+         if (isEmergencia) {
+            labelA.innerText = 'Hasta $300.000 · Hasta 10 cuotas sin interés';
+            labelB.innerText = 'Hasta $400.000 · Hasta 10 cuotas sin interés';
+         } else {
+            labelA.innerText = '$200.000 · Hasta 8 cuotas sin interés';
+            labelB.innerText = '$300.000 · Hasta 8 cuotas sin interés';
+         }
+
+         const selected = document.querySelector('input[name="loan_version"]:checked');
+         if (selected) {
+            const isB = selected.value === 'B';
+            if (isEmergencia) {
+               montoValor.innerText = isB ? '$400.000' : '$300.000';
+               montoCuotas.innerText = 'Hasta 10 cuotas mensuales · Sin interés ni reajuste';
+            } else {
+               montoValor.innerText = isB ? '$300.000' : '$200.000';
+               montoCuotas.innerText = 'Hasta 8 cuotas mensuales · Sin interés ni reajuste';
+            }
+            montoDisplay.classList.remove('hidden');
+         } else {
+            montoDisplay.classList.add('hidden');
+         }
       }
       
       function openQuotaModal() { 
@@ -3719,27 +3883,56 @@
       }
       
       function submitLoanRequest() { 
+         const versionSeleccionada = document.querySelector('input[name="loan_version"]:checked');
+         if(!versionSeleccionada) return showWarning("Selecciona la versión del préstamo según tu antigüedad.");
+         const versionPrestamo = versionSeleccionada.value;
+
          const cuotas = tempSelectedQuota; 
-         const radios = document.getElementsByName('pago'); 
-         let medio = ""; 
-         for(const r of radios) { if(r.checked) medio = r.value; } 
-         const rutBeneficiario = document.getElementById('loan-rut-socio').value; 
          if(!cuotas) return showWarning("Seleccione la cantidad de cuotas."); 
-         if(!medio) return showWarning("Seleccione un medio de pago."); 
-         const btn = document.getElementById('btn-submit-loan'); 
-         const oldHtml = btn.innerHTML; 
-         btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Enviando...</span></div>'; 
-         btn.disabled = true; 
-         google.script.run.withSuccessHandler(res => { 
-            btn.innerHTML = oldHtml; 
-            btn.disabled = false; 
-            if(res.success) { 
-               showSuccess("Solicitud enviada."); 
-               backToLoansMenu(); 
-            } else { 
-               showWarning(res.message); 
-            } 
-         }).crearSolicitudPrestamo(currentRut, activeLoanType, cuotas, medio, rutBeneficiario); 
+         const medio = document.querySelector('input[name="pago"]:checked')?.value; 
+         const rutBeneficiario = document.getElementById('loan-rut-socio')?.value || ""; 
+         if(!medio) return showWarning("Seleccione un medio de pago.");
+
+         const isEmergencia = (activeLoanType === 'Emergencia');
+         const isB = (versionPrestamo === 'B');
+         const montoStr = isEmergencia ? (isB ? '$400.000' : '$300.000') : (isB ? '$300.000' : '$200.000');
+         const requisito = isB ? '2 o más años de antigüedad' : 'entre 6 meses y 2 años de antigüedad';
+         const tipoNombre = isEmergencia ? 'Préstamo Personal' : 'Préstamo de Vacaciones';
+         const tipoConVersion = activeLoanType + ' - Opción ' + versionPrestamo;
+
+         Swal.fire({
+            icon: 'warning',
+            title: '⚠️ Antes de continuar',
+            html: '<div style="text-align:left; font-size:0.92rem; line-height:1.6;">' +
+               '<p style="margin-bottom:10px;">Estás solicitando un <strong>' + tipoNombre + ' (Opción ' + versionPrestamo + ')</strong> por <strong>' + montoStr + '</strong>.</p>' +
+               '<p style="margin-bottom:10px;">Esta opción requiere <strong>' + requisito + '</strong> en la empresa.</p>' +
+               '<p style="background:#fef3c7; border-left:3px solid #f59e0b; padding:8px 12px; border-radius:4px; margin-bottom:0;">' +
+               '<strong>Aviso importante:</strong> Si la empresa verifica que no cumples el requisito de antigüedad para esta versión, tu solicitud será <strong>rechazada</strong>. En caso de duda, consulta con un dirigente antes de enviar.' +
+               '</p></div>',
+            confirmButtonText: 'Sí, enviar solicitud',
+            cancelButtonText: 'Revisar',
+            showCancelButton: true,
+            confirmButtonColor: '#1e293b',
+            cancelButtonColor: '#64748b',
+            customClass: { popup: 'rounded-2xl' }
+         }).then(result => {
+            if (!result.isConfirmed) return;
+
+            const btn = document.getElementById('btn-submit-loan'); 
+            const oldHtml = btn.innerHTML; 
+            btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Enviando...</span></div>'; 
+            btn.disabled = true; 
+            google.script.run.withSuccessHandler(res => { 
+               btn.innerHTML = oldHtml; 
+               btn.disabled = false; 
+               if(res.success) { 
+                  showSuccess("Solicitud enviada."); 
+                  backToLoansMenu(); 
+               } else { 
+                  showWarning(res.message); 
+               } 
+            }).crearSolicitudPrestamo(currentRut, tipoConVersion, cuotas, medio, rutBeneficiario); 
+         });
       }
       
       function showLoanRecords() { 
@@ -4523,6 +4716,30 @@
          }).toggleSwitchPrestamos(estado);
       }
 
+      // === FUNCIONES PERMISOS MÉDICOS (CON SWITCH) ===
+      function loadPermissionSwitchState() {
+         google.script.run.withSuccessHandler(function(res) {
+            var switchEl = document.getElementById('permission-switch');
+            if (switchEl) switchEl.checked = res.habilitado;
+         }).obtenerEstadoSwitchPermisosMedicos();
+      }
+
+      function handlePermissionSwitch() {
+         var switchEl = document.getElementById('permission-switch');
+         var estado = switchEl.checked;
+         google.script.run.withSuccessHandler(function(res) {
+            if (res.success) {
+               showSuccess(estado ? "Módulo de Permisos Médicos habilitado." : "Módulo de Permisos Médicos pausado por mantenimiento.");
+            } else {
+               showWarning("Error al actualizar el módulo de Permisos Médicos.");
+               switchEl.checked = !estado;
+            }
+         }).withFailureHandler(function() {
+            showWarning("Error de conexión al actualizar el módulo.");
+            switchEl.checked = !estado;
+         }).toggleSwitchPermisosMedicos(estado);
+      }
+
       function toggleJustifTab(tab) {
          const btnForm = document.getElementById('tab-justif-form'); 
          const btnList = document.getElementById('tab-justif-list'); 
@@ -5269,6 +5486,7 @@ divForm.classList.add('flex');
       function openPermissionTypeModal() {
         const types = [
           "Media jornada (Examen médico. Debe utilizar el permiso al inició o al final de la jornada laboral. En caso de utilizarlo al inicio, debe volver al lugar de trabajo. - CON GOCE DE REMUNERACIÓN)",
+          "1 día completo (Consulta o examen médico realizado fuera de la ciudad de residencia del trabajador. Debe presentar comprobante de pago de la consulta o examen médico realizado. - CON GOCE DE REMUNERACIÓN)",
           "3 días hábiles (Accidente o enfermedad grave de los padres, hijos, cónyuge, conviviente civil, hermanos, siniestros, daños o pérdidas que afecten a los bienes del trabajador - CON GOCE DE REMUNERACIÓN)",
         ];
         const modal = document.getElementById('permission-type-modal');
@@ -5284,6 +5502,14 @@ divForm.classList.add('flex');
             tempSelectedPermissionType = type;
             document.getElementById('selected-permission-type-text').innerText = type;
             modal.classList.add('hidden');
+
+            // Mostrar aviso informativo si selecciona el permiso de 1 día completo
+            var infoBox = document.getElementById('permission-fuera-ciudad-info');
+            if (type.startsWith("1 día completo")) {
+              infoBox.classList.remove('hidden');
+            } else {
+              infoBox.classList.add('hidden');
+            }
           };
           container.appendChild(item);
         });
@@ -5298,6 +5524,11 @@ divForm.classList.add('flex');
         const rutBeneficiario = document.getElementById('permission-rut-socio').value;
         
         if (!tipo) return showWarning("Debe seleccionar el tipo de permiso.");
+
+        // Validación especial: 1 día completo requiere justificar ciudad diferente en motivo
+        if (tipo.startsWith("1 día completo") && (!motivo || motivo.trim().length < 15)) {
+          return showWarning("Para el permiso de 1 día completo debe especificar en el campo Motivo la ciudad donde se realizará la atención médica y el nombre del centro médico o especialidad (mínimo 15 caracteres).");
+        }
         if (!fechaInicio) return showWarning("Debe seleccionar la fecha de inicio del permiso.");
         if (!motivo || motivo.trim().length < 10) return showWarning("Debe especificar el motivo (mínimo 10 caracteres).");
         if (motivo.length > 150) return showWarning("El motivo no puede superar los 150 caracteres.");
