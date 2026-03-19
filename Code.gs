@@ -855,8 +855,49 @@ function actualizarDatoUsuario(rutInput, campo, valor) {
     } finally {
       lock.releaseLock();
     }
+    
   } else {
     return { success: false, message: "Servidor ocupado." };
+  }
+}
+
+/**
+ * Actualiza los 3 campos bancarios en conjunto para Cuenta RUT de Banco Estado
+ * Establece: BANCO, TIPO_CUENTA y NUMERO_CUENTA automáticamente
+ */
+function actualizarBancoEstado(rutInput) {
+  var lock = LockService.getScriptLock();
+  if (lock.tryLock(30000)) {
+    try {
+      var sheet = getSheet('USUARIOS', 'USUARIOS');
+      var data = sheet.getDataRange().getValues();
+      var rutLimpioInput = cleanRut(rutInput);
+      var COL = CONFIG.COLUMNAS.USUARIOS;
+
+      // RUT sin dígito verificador = número de Cuenta RUT estándar
+      var rutBody = rutLimpioInput.slice(0, -1);
+
+      for (var i = 1; i < data.length; i++) {
+        if (cleanRut(String(data[i][COL.RUT])) === rutLimpioInput) {
+          sheet.getRange(i + 1, COL.BANCO + 1).setValue("BANCO ESTADO (Cuenta RUT)");
+          sheet.getRange(i + 1, COL.TIPO_CUENTA + 1).setValue("CUENTA VISTA");
+          sheet.getRange(i + 1, COL.NUMERO_CUENTA + 1).setValue(rutBody);
+
+          // Invalidar caché del usuario
+          var cache = CacheService.getScriptCache();
+          cache.remove('user_' + rutLimpioInput);
+
+          return { success: true, numeroCuenta: rutBody, tipoCuenta: "CUENTA VISTA" };
+        }
+      }
+      return { success: false, message: "Usuario no encontrado." };
+    } catch (e) {
+      return { success: false, message: "Error al actualizar: " + e.toString() };
+    } finally {
+      lock.releaseLock();
+    }
+  } else {
+    return { success: false, message: "Servidor ocupado. Intente nuevamente." };
   }
 }
 
