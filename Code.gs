@@ -1613,6 +1613,47 @@ function verificarCambiosPrestamos() {
 }
 
 // ==========================================
+// ESTADOS SWITCHES PARA DASHBOARD (badges)
+// ==========================================
+
+/**
+ * Retorna el estado habilitado/deshabilitado de todos los módulos
+ * con switch, en una sola llamada al backend, para mostrar badges
+ * de estado en las tarjetas del dashboard.
+ */
+function obtenerEstadosSwitchDashboard() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+
+    var prestamos     = (props.getProperty('prestamos_habilitado')        !== 'false');
+    var contrato      = (props.getProperty('contrato_colectivo_habilitado') !== 'false');
+    var slimquest     = (props.getProperty('slimquest_habilitado')         !== 'false');
+    var calculadora   = (props.getProperty('calculadora_habilitada')       !== 'false');
+
+    // Justificaciones usa lógica de fecha; reutilizamos la función existente
+    var justificaciones = false;
+    try {
+      var resJ = obtenerEstadoSwitchJustificaciones();
+      justificaciones = resJ.habilitado;
+    } catch (eJ) {
+      justificaciones = false;
+    }
+
+    return {
+      success: true,
+      prestamos:       prestamos,
+      justificaciones: justificaciones,
+      contrato:        contrato,
+      slimquest:       slimquest,
+      calculadora:     calculadora
+    };
+  } catch (e) {
+    Logger.log('Error en obtenerEstadosSwitchDashboard: ' + e.toString());
+    return { success: false };
+  }
+}
+
+// ==========================================
 // SWITCH MÓDULO PRÉSTAMOS
 // ==========================================
 
@@ -1672,6 +1713,39 @@ function toggleSwitchContratoColectivo(estado) {
   try {
     var props = PropertiesService.getScriptProperties();
     props.setProperty('contrato_colectivo_habilitado', estado ? 'true' : 'false');
+    return { success: true };
+  } catch (e) {
+    return { success: false, message: 'Error: ' + e.toString() };
+  }
+}
+
+// ==========================================
+// SWITCH MÓDULO PERMISOS MÉDICOS
+// ==========================================
+
+/**
+ * Obtener estado del switch de Permisos Médicos.
+ * Por defecto habilitado (null = primera ejecución).
+ */
+function obtenerEstadoSwitchPermisosMedicos() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var estado = props.getProperty('permisos_medicos_habilitado');
+    var habilitado = (estado === null || estado === 'true');
+    return { success: true, habilitado: habilitado };
+  } catch (e) {
+    Logger.log('Error en obtenerEstadoSwitchPermisosMedicos: ' + e.toString());
+    return { success: true, habilitado: true };
+  }
+}
+
+/**
+ * Actualizar estado del switch de Permisos Médicos (solo ADMIN).
+ */
+function toggleSwitchPermisosMedicos(estado) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    props.setProperty('permisos_medicos_habilitado', estado ? 'true' : 'false');
     return { success: true };
   } catch (e) {
     return { success: false, message: 'Error: ' + e.toString() };
