@@ -2502,6 +2502,12 @@
       let currentEditingField = "";
       let userDataCache = {};
       let selectedRegionTemp = "";
+      let wizardBancoSeleccionado = "";
+      let wizardTipoCuentaSeleccionada = "";
+      let wizardPaso = 0;
+      let wizardModalTitle = null;
+      let wizardModalDesc = null;
+      let wizardModalContainer = null;
       let activeLoanType = "";
       let currentEditingLoanId = "";
       let loanRecordsCache = [];
@@ -3890,18 +3896,25 @@
           container.innerHTML = `<div class="flex items-center input-modern rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-400"><span class="bg-slate-200 px-4 py-3 text-slate-600 font-bold text-sm border-r border-slate-300 select-none">+569</span><input id="modal-input" type="tel" maxlength="8" class="w-full px-4 py-3 text-sm font-medium text-slate-700 outline-none bg-transparent" placeholder="12345678" value="${suffix}" oninput="this.value = this.value.replace(/[^0-9]/g, '')"></div>`; 
 
         // ========== AGREGAR ESTOS CASOS NUEVOS ==========
-        } else if (field === 'banco') {
-          title.innerText = "Editar Banco";
-          desc.innerText = "Seleccione su banco.";
-          const currentVal = userDataCache.banco || "";
-          
-          container.innerHTML = '<div class="max-h-80 overflow-y-auto custom-scroll">' +
-            bancosList.map(banco => {
-              const isSelected = currentVal === banco;
-              return `<div onclick="selectBankOption(this, '${banco}')" class="region-option p-3 rounded-lg mb-2 text-sm cursor-pointer flex items-center justify-between ${isSelected ? 'selected' : ''}">${banco} ${isSelected ? '<span class="material-icons-round text-blue-600 text-sm check-icon">check</span>' : ''}</div>`;
-            }).join('') + '</div>';
-          
-          if (currentVal) selectedRegionTemp = currentVal;
+        function wizardMostrarPaso2() {
+        wizardTipoCuentaSeleccionada = "";
+
+        wizardModalTitle.innerText = "Paso 2 de 3 \u2014 Tipo de Cuenta";
+        wizardModalDesc.innerText  = "Seleccione el tipo de cuenta en " + wizardBancoSeleccionado + ".";
+
+        wizardModalContainer.innerHTML =
+          '<div class="space-y-2">' +
+          tiposCuentaList.map(function(tipo) {
+            return '<div onclick="wizardSeleccionarTipoCuenta(this, \'' + tipo + '\')" ' +
+              'class="region-option p-3 rounded-lg text-sm cursor-pointer flex items-center justify-between border border-slate-200">' +
+              tipo + '</div>';
+          }).join('') + '</div>';
+
+        var btn = document.getElementById('btn-save-modal');
+        btn.innerText = 'Siguiente';
+        btn.setAttribute('onclick', 'wizardAvanzar()');
+        btn.disabled = false;
+      }
 
         } else if (field === 'tipoCuenta') {
           title.innerText = "Editar Tipo de Cuenta";
@@ -3933,35 +3946,195 @@
         modal.classList.remove('hidden');
       }
       
-      function closeEditModal() { document.getElementById('edit-modal').classList.add('hidden'); }
+      function closeEditModal() {
+        document.getElementById('edit-modal').classList.add('hidden');
+        // Si el wizard estaba activo, restaurar el botón al estado normal
+        if (wizardPaso > 0) {
+          wizardPaso = 0;
+          var btn = document.getElementById('btn-save-modal');
+          if (btn) {
+            btn.setAttribute('onclick', 'saveEdit()');
+            btn.innerText = 'Guardar';
+            btn.disabled = false;
+          }
+        }
+      }
+
+      // ================================================================
+      // WIZARD BANCARIO — 3 pasos dentro del modal existente
+      // ================================================================
+
+      function wizardSeleccionarBanco(el, valor) {
+        wizardBancoSeleccionado = valor;
+        var items = el.parentElement.querySelectorAll('.region-option');
+        items.forEach(function(op) {
+          op.classList.remove('selected');
+          var chk = op.querySelector('.check-icon');
+          if (chk) chk.remove();
+        });
+        el.classList.add('selected');
+        var chkSpan = document.createElement('span');
+        chkSpan.className = 'material-icons-round text-blue-600 text-sm check-icon';
+        chkSpan.innerText = 'check';
+        el.appendChild(chkSpan);
+      }
+
+      function wizardAvanzar() {
+        if (wizardPaso === 1) {
+          if (!wizardBancoSeleccionado) return showWarning("Seleccione un banco para continuar.");
+
+          // Caso especial: Banco Estado Cuenta RUT → auto-rellena y guarda
+          if (wizardBancoSeleccionado === 'BANCO ESTADO (Cuenta RUT)') {
+            wizardGuardarBancoEstadoRut();
+            return;
+          }
+
+          wizardPaso = 2;
+          wizardMostrarPaso2();
+
+        } else if (wizardPaso === 2) {
+          if (!wizardTipoCuentaSeleccionada) return showWarning("Seleccione un tipo de cuenta para continuar.");
+          wizardPaso = 3;
+          wizardMostrarPaso3();
+        }
+      }
+
+      function wizardMostrarPaso2() {
+        document.getElementById('modal-title').innerText = "Paso 2 de 3 — Tipo de Cuenta";
+        document.getElementById('modal-desc').innerText = "Seleccione el tipo de cuenta en " + wizardBancoSeleccionado + ".";
+
+        wizardTipoCuentaSeleccionada = "";
+
+        document.getElementById('modal-container').innerHTML =
+          '<div class="space-y-2">' +
+          tiposCuentaList.map(function(tipo) {
+            return '<div onclick="wizardSeleccionarTipoCuenta(this, \'' + tipo + '\')" ' +
+              'class="region-option p-3 rounded-lg text-sm cursor-pointer flex items-center justify-between border border-slate-200">' +
+              tipo + '</div>';
+          }).join('') + '</div>';
+
+        var btn = document.getElementById('btn-save-modal');
+        btn.innerText = 'Siguiente';
+        btn.setAttribute('onclick', 'wizardAvanzar()');
+        btn.disabled = false;
+      }
+
+      function wizardSeleccionarTipoCuenta(el, valor) {
+        wizardTipoCuentaSeleccionada = valor;
+        var items = el.parentElement.querySelectorAll('.region-option');
+        items.forEach(function(op) {
+          op.classList.remove('selected');
+          var chk = op.querySelector('.check-icon');
+          if (chk) chk.remove();
+        });
+        el.classList.add('selected');
+        var chkSpan = document.createElement('span');
+        chkSpan.className = 'material-icons-round text-blue-600 text-sm check-icon';
+        chkSpan.innerText = 'check';
+        el.appendChild(chkSpan);
+      }
+
+      function wizardMostrarPaso3() {
+        wizardModalTitle.innerText = "Paso 3 de 3 \u2014 N\u00famero de Cuenta";
+        wizardModalDesc.innerText  = "Ingrese el n\u00famero de cuenta en " + wizardBancoSeleccionado + ".";
+
+        wizardModalContainer.innerHTML =
+          '<input id="wizard-num-input" type="text" maxlength="20" ' +
+          'class="input-modern w-full px-4 py-3 rounded-lg text-sm outline-none font-mono" ' +
+          'placeholder="Ej: 1234567890" oninput="this.value = this.value.replace(/[^0-9]/g, \'\')">' +
+          '<p class="text-[10px] text-slate-500 mt-2"><strong>Consejos:</strong><br>' +
+          '\u2022 Solo n\u00fameros, sin guiones ni espacios<br>' +
+          '\u2022 Longitud t\u00edpica: 6-20 d\u00edgitos</p>';
+
+        var btn = document.getElementById('btn-save-modal');
+        btn.innerText = 'Guardar';
+        btn.setAttribute('onclick', 'wizardGuardar()');
+        btn.disabled = false;
+      }
+
+      function wizardGuardar() {
+        var numInput = document.getElementById('wizard-num-input');
+        if (!numInput) return showWarning("Error interno. Cierre y vuelva a intentarlo.");
+        var numeroCuenta = numInput.value.trim();
+
+        if (numeroCuenta.length < 6) return showWarning("El número de cuenta debe tener al menos 6 dígitos.");
+        if (numeroCuenta.length > 20) return showWarning("El número de cuenta no puede tener más de 20 dígitos.");
+
+        var btn = document.getElementById('btn-save-modal');
+        var oldHtml = btn.innerHTML;
+        btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Guardando...</span></div>';
+        btn.disabled = true;
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+            if (res.success) {
+              closeEditModal();
+              userDataCache.banco        = wizardBancoSeleccionado;
+              userDataCache.tipoCuenta   = wizardTipoCuentaSeleccionada;
+              userDataCache.numeroCuenta = numeroCuenta;
+              document.getElementById('display-banco').innerText         = wizardBancoSeleccionado;
+              document.getElementById('display-tipo-cuenta').innerText   = wizardTipoCuentaSeleccionada;
+              document.getElementById('display-numero-cuenta').innerText = numeroCuenta;
+              showSuccess("Datos bancarios actualizados correctamente.");
+            } else {
+              showWarning(res.message || "Error al guardar. Intente nuevamente.");
+            }
+          })
+          .withFailureHandler(function(err) {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+            showWarning("Error de conexión: " + err);
+          })
+          .actualizarDatosBancarios(currentRut, wizardBancoSeleccionado, wizardTipoCuentaSeleccionada, numeroCuenta);
+      }
+
+      function wizardGuardarBancoEstadoRut() {
+        var btn = document.getElementById('btn-save-modal');
+        var oldHtml = btn.innerHTML;
+        btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Guardando...</span></div>';
+        btn.disabled = true;
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+            if (res.success) {
+              closeEditModal();
+              userDataCache.banco        = 'BANCO ESTADO (Cuenta RUT)';
+              userDataCache.tipoCuenta   = 'CUENTA VISTA';
+              userDataCache.numeroCuenta = res.numeroCuenta;
+              document.getElementById('display-banco').innerText         = 'BANCO ESTADO (Cuenta RUT)';
+              document.getElementById('display-tipo-cuenta').innerText   = 'CUENTA VISTA';
+              document.getElementById('display-numero-cuenta').innerText = res.numeroCuenta;
+              showSuccess("Datos bancarios actualizados automáticamente.");
+            } else {
+              showWarning(res.message || "Error al actualizar.");
+            }
+          })
+          .withFailureHandler(function(err) {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+            showWarning("Error de conexión: " + err);
+          })
+          .actualizarBancoEstado(currentRut);
+      }
 
       function actualizarBotonesEdicionBancaria() {
-        var esBancoEstadoRut = (userDataCache.banco === "BANCO ESTADO (Cuenta RUT)");
+        var aviso = "showWarning('Para modificar este campo, presiona el botón Editar Banco. El sistema te guiará para actualizar los 3 datos bancarios correctamente.')";
         var btnTipo = document.getElementById('btn-edit-tipo-cuenta');
         var btnNum  = document.getElementById('btn-edit-numero-cuenta');
 
         if (btnTipo) {
-          if (esBancoEstadoRut) {
-            btnTipo.setAttribute('onclick', "showWarning('Este campo se gestiona automáticamente para Banco Estado (Cuenta RUT).')");
-            btnTipo.classList.remove('bg-green-500', 'hover:bg-green-600');
-            btnTipo.classList.add('bg-slate-300', 'cursor-not-allowed');
-          } else {
-            btnTipo.setAttribute('onclick', "openEditModal('tipoCuenta')");
-            btnTipo.classList.remove('bg-slate-300', 'cursor-not-allowed');
-            btnTipo.classList.add('bg-green-500', 'hover:bg-green-600');
-          }
+          btnTipo.setAttribute('onclick', aviso);
+          btnTipo.classList.remove('bg-green-500', 'hover:bg-green-600');
+          btnTipo.classList.add('bg-slate-300', 'cursor-not-allowed');
         }
-
         if (btnNum) {
-          if (esBancoEstadoRut) {
-            btnNum.setAttribute('onclick', "showWarning('Este campo se gestiona automáticamente para Banco Estado (Cuenta RUT).')");
-            btnNum.classList.remove('bg-green-500', 'hover:bg-green-600');
-            btnNum.classList.add('bg-slate-300', 'cursor-not-allowed');
-          } else {
-            btnNum.setAttribute('onclick', "openEditModal('numeroCuenta')");
-            btnNum.classList.remove('bg-slate-300', 'cursor-not-allowed');
-            btnNum.classList.add('bg-green-500', 'hover:bg-green-600');
-          }
+          btnNum.setAttribute('onclick', aviso);
+          btnNum.classList.remove('bg-green-500', 'hover:bg-green-600');
+          btnNum.classList.add('bg-slate-300', 'cursor-not-allowed');
         }
       }
       
@@ -4014,38 +4187,6 @@
         let finalValue = val; 
         if(currentEditingField === 'contacto') finalValue = "+569" + val;
 
-        // ========== CASO ESPECIAL: BANCO ESTADO (Cuenta RUT) ==========
-        if (currentEditingField === 'banco' && finalValue === 'BANCO ESTADO (Cuenta RUT)') {
-          const oldBtnHtmlBE = btn.innerHTML;
-          btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Guardando...</span></div>';
-          btn.disabled = true;
-          google.script.run
-            .withSuccessHandler(function(res) {
-              btn.innerHTML = oldBtnHtmlBE;
-              btn.disabled = false;
-              if (res.success) {
-                closeEditModal();
-                userDataCache.banco        = 'BANCO ESTADO (Cuenta RUT)';
-                userDataCache.tipoCuenta   = 'CUENTA VISTA';
-                userDataCache.numeroCuenta = res.numeroCuenta;
-                document.getElementById('display-banco').innerText        = 'BANCO ESTADO (Cuenta RUT)';
-                document.getElementById('display-tipo-cuenta').innerText  = 'CUENTA VISTA';
-                document.getElementById('display-numero-cuenta').innerText = res.numeroCuenta;
-                actualizarBotonesEdicionBancaria();
-                showSuccess("Datos bancarios actualizados automáticamente.");
-              } else {
-                showWarning(res.message || "Error al actualizar.");
-              }
-            })
-            .withFailureHandler(function(err) {
-              btn.innerHTML = oldBtnHtmlBE;
-              btn.disabled = false;
-              showWarning("Error: " + err);
-            })
-            .actualizarBancoEstado(currentRut);
-          return;
-        }
-        
         // ========== ENVIAR ACTUALIZACIÓN ==========
         const oldBtnHtml = btn.innerHTML;
         btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Guardando...</span></div>'; 
