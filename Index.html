@@ -4750,13 +4750,12 @@
          const divList = document.getElementById('justif-list-content'); 
          if (tab === 'form') {
             if (!justifModuloHabilitado) {
-               showOutOfDeadlineWarning();
+               showWarning("El módulo está deshabilitado. Solo puedes revisar tu historial.");
                btnList.className = "flex-1 py-2 rounded-lg text-sm font-bold transition bg-orange-100 text-orange-700";
                btnForm.className = "flex-1 py-2 rounded-lg text-sm font-bold transition text-slate-500 hover:bg-slate-100";
                divForm.classList.add('hidden');
                divList.classList.remove('hidden');
                divList.classList.add('flex');
-               loadJustificationHistory();
                return;
             }
             btnForm.className = "flex-1 py-2 rounded-lg text-sm font-bold transition bg-orange-100 text-orange-700"; 
