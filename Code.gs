@@ -902,6 +902,39 @@ function actualizarBancoEstado(rutInput) {
 }
 
 /**
+ * Guarda los 3 campos bancarios en una sola operación atómica.
+ * Invocada por el wizard de datos bancarios del frontend.
+ */
+function actualizarDatosBancarios(rutInput, banco, tipoCuenta, numeroCuenta) {
+  var lock = LockService.getScriptLock();
+  if (lock.tryLock(30000)) {
+    try {
+      var sheet = getSheet('USUARIOS', 'USUARIOS');
+      var data = sheet.getDataRange().getValues();
+      var rutLimpioInput = cleanRut(rutInput);
+      var COL = CONFIG.COLUMNAS.USUARIOS;
+
+      for (var i = 1; i < data.length; i++) {
+        if (cleanRut(String(data[i][COL.RUT])) === rutLimpioInput) {
+          sheet.getRange(i + 1, COL.BANCO + 1).setValue(banco);
+          sheet.getRange(i + 1, COL.TIPO_CUENTA + 1).setValue(tipoCuenta);
+          sheet.getRange(i + 1, COL.NUMERO_CUENTA + 1).setValue(numeroCuenta);
+          CacheService.getScriptCache().remove('user_' + rutLimpioInput);
+          return { success: true };
+        }
+      }
+      return { success: false, message: "Usuario no encontrado." };
+    } catch (e) {
+      return { success: false, message: "Error al actualizar: " + e.toString() };
+    } finally {
+      lock.releaseLock();
+    }
+  } else {
+    return { success: false, message: "Servidor ocupado. Intente nuevamente." };
+  }
+}
+
+/**
  * RECUPERAR CONTRASEÑA
  */
 function recuperarContrasena(rutInput) {
