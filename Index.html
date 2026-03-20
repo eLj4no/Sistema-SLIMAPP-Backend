@@ -1397,12 +1397,12 @@
                  <div>
                     <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Medio de Pago</label>
                     <div class="grid grid-cols-2 gap-3">
-                       <label class="cursor-pointer">
-                          <input type="radio" name="pago" value="Cuenta RUT" class="peer sr-only">
+                       <label class="cursor-pointer relative">
+                          <input type="radio" name="pago" value="Cuenta RUT" class="peer absolute opacity-0 w-0 h-0">
                           <div class="p-3 rounded-lg border border-slate-200 bg-white text-center peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 transition"><span class="block text-sm font-bold">Cuenta RUT</span></div>
                        </label>
-                       <label class="cursor-pointer">
-                          <input type="radio" name="pago" value="ServiPag" class="peer sr-only">
+                       <label class="cursor-pointer relative">
+                          <input type="radio" name="pago" value="ServiPag" class="peer absolute opacity-0 w-0 h-0">
                           <div class="p-3 rounded-lg border border-slate-200 bg-white text-center peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 transition"><span class="block text-sm font-bold">ServiPag</span></div>
                        </label>
                     </div>
@@ -3920,6 +3920,11 @@
          const selected = document.querySelector('input[name="loan_version"]:checked');
          if (selected) {
             const isB = selected.value === 'B';
+            const maxCuotas = isEmergencia ? (isB ? 12 : 10) : 8;
+            if (tempSelectedQuota && parseInt(tempSelectedQuota) > maxCuotas) {
+               tempSelectedQuota = "";
+               document.getElementById('selected-quota-text').innerText = "Seleccione...";
+            }
             if (isEmergencia) {
                montoValor.innerText = isB ? '$400.000' : '$300.000';
                montoCuotas.innerText = isB ? 'Hasta 12 cuotas mensuales · Sin interés ni reajuste' : 'Hasta 10 cuotas mensuales · Sin interés ni reajuste';
