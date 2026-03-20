@@ -1310,7 +1310,7 @@
                  <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition"><span class="material-icons-round">medical_services</span></div>
                  <div class="text-left">
                     <h4 class="font-bold text-slate-700">Préstamo Personal</h4>
-                    <p class="text-xs text-slate-500">$300.000 / $400.000 · Hasta 10 cuotas</p>
+                    <p class="text-xs text-slate-500">$300.000 (10 cuotas) / $400.000 (12 cuotas)</p>
                  </div>
                  <span class="material-icons-round ml-auto text-slate-300">chevron_right</span>
               </button>
@@ -3738,6 +3738,18 @@
                  }
               }).obtenerEstadoSwitchCalculadora();
            }
+        } else if (module === 'RegistroAsistencia') {
+          if (esAdmin) {
+            loadAttendanceRecords();
+          } else {
+            google.script.run.withSuccessHandler(function(res) {
+              if (res.habilitado) {
+                loadAttendanceRecords();
+              } else {
+                showConstruction('RegistroAsistencia');
+              }
+            }).obtenerEstadoSwitchAsistencia();
+          }
         } else {
           showConstruction(module);
         }
@@ -3851,7 +3863,7 @@
 
          if (isEmergencia) {
             labelA.innerText = 'Hasta $300.000 · Hasta 10 cuotas sin interés';
-            labelB.innerText = 'Hasta $400.000 · Hasta 10 cuotas sin interés';
+            labelB.innerText = 'Hasta $400.000 · Hasta 12 cuotas sin interés';
          } else {
             labelA.innerText = '$200.000 · Hasta 8 cuotas sin interés';
             labelB.innerText = '$300.000 · Hasta 8 cuotas sin interés';
@@ -3862,7 +3874,7 @@
             const isB = selected.value === 'B';
             if (isEmergencia) {
                montoValor.innerText = isB ? '$400.000' : '$300.000';
-               montoCuotas.innerText = 'Hasta 10 cuotas mensuales · Sin interés ni reajuste';
+               montoCuotas.innerText = isB ? 'Hasta 12 cuotas mensuales · Sin interés ni reajuste' : 'Hasta 10 cuotas mensuales · Sin interés ni reajuste';
             } else {
                montoValor.innerText = isB ? '$300.000' : '$200.000';
                montoCuotas.innerText = 'Hasta 8 cuotas mensuales · Sin interés ni reajuste';
@@ -3877,7 +3889,8 @@
          const modal = document.getElementById('quota-modal'); 
          const container = document.getElementById('quota-list-container'); 
          container.innerHTML = ""; 
-         const maxCuotas = (activeLoanType === 'Emergencia') ? 10 : 8; 
+         const versionActual = (document.querySelector('input[name="loan_version"]:checked') || {}).value || 'A';
+         const maxCuotas = (activeLoanType === 'Emergencia') ? (versionActual === 'B' ? 12 : 10) : 8;
          for(let i=1; i<=maxCuotas; i++) { 
             const label = i + (i===1 ? " Cuota" : " Cuotas"); 
             const isSelected = tempSelectedQuota == i; 
@@ -4099,7 +4112,9 @@
       
       function startEditLoan(id, tipo, cuotas, medio) {
         currentEditingLoanId = id;
-        const maxCuotas = (tipo === 'Emergencia') ? 10 : 8;
+        const esEmergencia = tipo.includes('Emergencia');
+        const esOpcionB = tipo.includes('Opción B');
+        const maxCuotas = esEmergencia ? (esOpcionB ? 12 : 10) : 8;
         const selectCuotas = document.getElementById('edit-loan-cuotas');
         selectCuotas.innerHTML = "";
         for(let i=1; i<=maxCuotas; i++) {
