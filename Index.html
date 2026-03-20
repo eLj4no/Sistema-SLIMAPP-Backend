@@ -883,10 +883,10 @@
                   <label class="block text-xs font-bold text-slate-700 mb-1.5">Jornada semanal</label>
                   <div class="relative">
                     <select id="calc-jornada-limpieza" class="w-full appearance-none pl-4 pr-10 py-3 bg-white border-2 border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-emerald-400 cursor-pointer shadow-sm transition-all">
-                      <option value="44">44 hrs/semana · Jornada actual</option>
-                      <option value="42">42 hrs/semana · Legal desde 26 Abr 2026</option>
-                      <option value="30">30 hrs/semana · Jornada parcial</option>
-                      <option value="20">20 hrs/semana · Jornada parcial</option>
+                      <option value="44">5×2 · 44h semana · Factor 0.0079545</option>
+                      <option value="42">5×2 · 42h semana (desde 26 Abr 2026) · Factor 0.0083333</option>
+                      <option value="30">Jornada parcial 30h/sem · Factor 0.0116667</option>
+                      <option value="20">Jornada parcial 20h/sem · Factor 0.0175000</option>
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                       <span class="material-icons-round text-emerald-500 text-lg">expand_more</span>
@@ -975,13 +975,14 @@
                   <p class="text-slate-400 text-[10px] mt-1 ml-1">Suma TODOS los conceptos en "Haberes y Otros Haberes" de tu liquidación, excepto las "horas extras" ya que es el valor que se va a calcular.</p>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-slate-700 mb-1.5">Jornada semanal</label>
+                  <label class="block text-xs font-bold text-slate-700 mb-1.5">Tipo de turno</label>
                   <div class="relative">
                     <select id="calc-jornada-guardia" class="w-full appearance-none pl-4 pr-10 py-3 bg-white border-2 border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:border-emerald-400 cursor-pointer shadow-sm transition-all">
-                      <option value="44">44 hrs/semana · Jornada actual</option>
-                      <option value="42">42 hrs/semana · Legal desde 26 Abr 2026</option>
-                      <option value="48">48 hrs/semana · Turno 12h / 4 días</option>
-                      <option value="30">30 hrs/semana · Jornada parcial</option>
+                      <option value="48">4×4 · Turno 12h (48h / ciclo 8 días) · Factor 0.0083333</option>
+                      <option value="84">7×7 · Turno 12h (84h / ciclo 14 días) · Factor 0.0083333</option>
+                      <option value="44">5×2 · 44h semana · Factor 0.0079545</option>
+                      <option value="42">5×2 · 42h semana (desde 26 Abr 2026) · Factor 0.0083333</option>
+                      <option value="30">Jornada parcial 30h/sem · Factor 0.0116667</option>
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                       <span class="material-icons-round text-emerald-500 text-lg">expand_more</span>
@@ -1050,7 +1051,7 @@
                     <span id="calc-result-base" class="text-xs font-bold text-slate-700">$0</span>
                   </div>
                   <div class="flex justify-between items-center px-4 py-2.5">
-                    <span class="text-xs text-slate-500">Divisor DT (h/sem × 4 sem)</span>
+                    <span class="text-xs text-slate-500">Divisor FHE (NHC/NDC × 30 días)</span>
                     <span id="calc-result-divisor" class="text-xs font-bold text-slate-700">—</span>
                   </div>
                   <div class="flex justify-between items-center px-4 py-2.5">
@@ -1694,9 +1695,10 @@
                           Este permiso aplica cuando la atención médica se realiza <strong>fuera de tu ciudad de residencia</strong>.<br><br>
                           Para que sea válido con goce de remuneración, debes adjuntar el <strong>comprobante de pago de la consulta (bono) o del examen médico</strong> que acredite que fue realizado en otra ciudad.<br><br>
                           Especifica en el campo Motivo la <strong>ciudad de atención y el tipo de examen o especialidad</strong>.
-                      </p>
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                 </div>
 
                  <button onclick="submitPermission()" id="btn-submit-permission" class="w-full py-3 rounded-xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-500/30 hover:bg-emerald-700 transition flex items-center justify-center gap-2">
                     <span>Enviar Solicitud</span>
@@ -7556,26 +7558,27 @@ divForm.classList.add('flex');
           base = calcNormalizarBase(base, 'l');
         } else {
           base           = calcParseCLP(document.getElementById('calc-total-guardia').value);
-          horasSemanales = parseFloat(document.getElementById('calc-jornada-guardia').value) || 44;
+          horasSemanales = parseFloat(document.getElementById('calc-jornada-guardia').value) || 48;
           numHoras       = parseFloat(document.getElementById('calc-horas-guardia').value) || 0;
           if (!base)     { showWarning('Ingresa el Total de Haberes mensual.'); return; }
           if (!numHoras) { showWarning('Ingresa el número de horas extra a calcular.'); return; }
           base = calcNormalizarBase(base, 'g');
         }
-        const valorDiario     = base / 30;
-        const valorCuatroSem  = valorDiario * 28;
-        const divisorHoras    = horasSemanales * 4;
-        const valorHoraNormal = valorCuatroSem / divisorHoras;
-        const valorHoraExtra  = valorHoraNormal * 1.5;
+        const ndcMap          = { 44: 7, 42: 7, 48: 8, 84: 14, 30: 7, 20: 7 };
+        const ndc             = ndcMap[horasSemanales] || 7;
+        const fhe             = 1.5 / ((horasSemanales / ndc) * 30);
+        const valorHoraExtra  = base * fhe;
+        const valorHoraNormal = valorHoraExtra / 1.5;
         const totalAPagar     = valorHoraExtra * numHoras;
         const fmt = n => Math.round(n).toLocaleString('es-CL');
         const cargoLabel = cargo === 'limpieza' ? 'Limpieza / Aseo y otros' : 'Guardia de Seguridad';
         const nota = cargo === 'limpieza'
-          ? 'Base: Total Imponible. Fórmula: (Base ÷ 30 × 28) ÷ (' + horasSemanales + 'h × 4 sem) × 1.5. Cláusula Cuarta CC 2026.'
-          : 'Base: Total de Haberes (sueldo + colación + movilización + todos los bonos). Fórmula: (Base ÷ 30 × 28) ÷ (' + horasSemanales + 'h × 4 sem) × 1.5. Cláusula Cuarta CC 2026.';
+          ? 'Base: Total Imponible. Fórmula: Base × FHE | FHE = 1.5 ÷ ((NHC/NDC) × 30). Factor aplicado: ' + fhe.toFixed(7) + '. Cláusula Cuarta CC 2026.'
+          : 'Base: Total de Haberes (sueldo + colación + movilización + todos los bonos). Fórmula: Base × FHE | FHE = 1.5 ÷ ((NHC/NDC) × 30). Factor aplicado: ' + fhe.toFixed(7) + '. Cláusula Cuarta CC 2026.';
         document.getElementById('calc-result-cargo').textContent      = cargoLabel;
         document.getElementById('calc-result-base').textContent       = '$' + fmt(base);
-        document.getElementById('calc-result-divisor').textContent    = divisorHoras + ' hrs (' + horasSemanales + 'h × 4 sem)';
+        const divisorMensual  = Math.round((horasSemanales / ndc) * 30 * 10) / 10;
+        document.getElementById('calc-result-divisor').textContent    = divisorMensual + ' hrs/mes · FHE=' + fhe.toFixed(7);
         document.getElementById('calc-result-hora-normal').textContent = '$' + fmt(valorHoraNormal);
         document.getElementById('calc-result-hora-extra').textContent  = '$' + fmt(valorHoraExtra);
         document.getElementById('calc-result-num-horas').textContent   = numHoras + (numHoras === 1 ? ' hora extra' : ' horas extra');
