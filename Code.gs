@@ -1640,6 +1640,7 @@ function obtenerEstadosSwitchDashboard() {
     }
 
     var permisosMedicos = (props.getProperty('permisos_medicos_habilitado') !== 'false');
+    var asistencia      = (props.getProperty('asistencia_habilitada')       !== 'false');
 
     return {
       success: true,
@@ -1648,11 +1649,45 @@ function obtenerEstadosSwitchDashboard() {
       contrato:        contrato,
       slimquest:       slimquest,
       calculadora:     calculadora,
-      permisosMedicos: permisosMedicos
+      permisosMedicos: permisosMedicos,
+      asistencia:      asistencia
     };
   } catch (e) {
     Logger.log('Error en obtenerEstadosSwitchDashboard: ' + e.toString());
     return { success: false };
+  }
+}
+
+// ==========================================
+// SWITCH MÓDULO REGISTRO ASISTENCIA
+// ==========================================
+
+/**
+ * Obtener estado del switch de Registro Asistencia.
+ * Por defecto habilitado (null = primera ejecución).
+ */
+function obtenerEstadoSwitchAsistencia() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var estado = props.getProperty('asistencia_habilitada');
+    var habilitado = (estado === null || estado === 'true');
+    return { success: true, habilitado: habilitado };
+  } catch (e) {
+    Logger.log('Error en obtenerEstadoSwitchAsistencia: ' + e.toString());
+    return { success: true, habilitado: true };
+  }
+}
+
+/**
+ * Actualizar estado del switch de Registro Asistencia (solo ADMIN).
+ */
+function toggleSwitchAsistencia(estado) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    props.setProperty('asistencia_habilitada', estado ? 'true' : 'false');
+    return { success: true };
+  } catch (e) {
+    return { success: false, message: 'Error: ' + e.toString() };
   }
 }
 
