@@ -729,7 +729,7 @@
                 <span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Calculadora HE</span>
               </button>
 
-              <button onclick="navAction('RegistroAsistencia')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-green-200 relative overflow-hidden"><div class="absolute inset-0 bg-green-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">history_edu</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Registro Asistencia</span></button>
+              <button id="card-mod-asistencia" onclick="navAction('RegistroAsistencia')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-green-200 relative overflow-hidden"><div id="badge-mod-asistencia" class="absolute top-1.5 right-1.5 z-20 w-5 h-5 rounded-full hidden items-center justify-center shadow-md pointer-events-none"></div><div class="absolute inset-0 bg-green-50 opacity-0 group-hover:opacity-100 transition duration-300"></div><div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10"><span class="material-icons-round text-xl md:text-2xl">history_edu</span></div><span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Registro Asistencia</span></button>
 
               <button id="card-mod-slimquest" onclick="navAction('MiProgreso')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-purple-200 relative overflow-hidden">
                 <div id="badge-mod-slimquest" class="absolute top-1.5 right-1.5 z-20 w-5 h-5 rounded-full hidden items-center justify-center shadow-md pointer-events-none"></div>
@@ -1154,7 +1154,7 @@
               
               <!-- ESTADO NEGOCIACIÓN COLECTIVA -->
               <button onclick="mostrarInfoEstado('negociacion')" class="bg-white rounded-lg p-3 border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all text-left group">
-                <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 group-hover:text-indigo-600 transition-colors">Negociación Colectiva 2026</label>
+                <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 group-hover:text-indigo-600 transition-colors">Negociación Colectiva</label>
                 <div id="p-estado-negociacion" class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-slate-100 text-slate-500">
                   <span class="material-icons-round text-xs">info</span>
                   S/D
@@ -1723,7 +1723,15 @@
         <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden flex-shrink-0">
            <div class="absolute top-0 right-0 w-32 h-32 bg-green-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
            <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><span class="material-icons-round">arrow_back</span></button>
-           <h2 class="text-lg font-bold z-10">Historial de Asistencia</h2>
+           <h2 class="text-lg font-bold z-10 flex-grow">Historial de Asistencia</h2>
+           <!-- SWITCH ADMIN (solo visible para ADMIN) -->
+           <div id="attendance-switch-container" class="hidden z-10 flex flex-col items-center gap-1">
+              <label class="toggle-switch">
+                 <input type="checkbox" id="attendance-switch" onchange="handleAttendanceSwitch()">
+                 <span class="toggle-slider"></span>
+              </label>
+              <span class="text-[9px] text-white/60 font-semibold">Módulo</span>
+           </div>
         </div>
 
         <div class="flex-grow flex flex-col bg-slate-50/50 overflow-hidden">
@@ -3506,6 +3514,12 @@
           permissionSwitchContainer.classList.remove('hidden');
           permissionSwitchContainer.classList.add('flex');
         }
+
+        var attendanceSwitchContainer = document.getElementById('attendance-switch-container');
+        if (attendanceSwitchContainer) {
+          attendanceSwitchContainer.classList.remove('hidden');
+          attendanceSwitchContainer.classList.add('flex');
+        }
         
         loadJustifSwitchState();
         loadLoansSwitchState();
@@ -3513,6 +3527,7 @@
         loadSlimQuestSwitchState();
         loadCalculadoraSwitchState();
         loadPermissionSwitchState();
+        loadAttendanceSwitchState();
       } else {
         btnAdmin.classList.add('hidden');
         switchContainer.classList.add('hidden');
@@ -3539,6 +3554,11 @@
         var permissionSwitchContainerHide = document.getElementById('permission-switch-container');
         if (permissionSwitchContainerHide) {
           permissionSwitchContainerHide.classList.add('hidden');
+        }
+
+        var attendanceSwitchContainerHide = document.getElementById('attendance-switch-container');
+        if (attendanceSwitchContainerHide) {
+          attendanceSwitchContainerHide.classList.add('hidden');
         }
       }
 
@@ -3740,6 +3760,9 @@
            }
         } else if (module === 'RegistroAsistencia') {
           if (esAdmin) {
+            var attSwContainer = document.getElementById('attendance-switch-container');
+            if (attSwContainer) { attSwContainer.classList.remove('hidden'); attSwContainer.classList.add('flex'); }
+            loadAttendanceSwitchState();
             loadAttendanceRecords();
           } else {
             google.script.run.withSuccessHandler(function(res) {
@@ -3810,6 +3833,7 @@
             aplicarBadge('calculadora',     res.calculadora);
             aplicarBadge('slimquest',       res.slimquest);
             aplicarBadge('permiso',         res.permisosMedicos);
+            aplicarBadge('asistencia',      res.asistencia);
           })
           .withFailureHandler(function() { /* silencioso */ })
           .obtenerEstadosSwitchDashboard();
@@ -3870,6 +3894,33 @@
          }
 
          const selected = document.querySelector('input[name="loan_version"]:checked');
+
+         // --- Actualizar círculos indicadores ---
+         const circleA = document.querySelector('#loan-version-A-card .rounded-full');
+         const circleB = document.querySelector('#loan-version-B-card .rounded-full');
+         const dotHtml = '<div style="width:10px;height:10px;background:#3b82f6;border-radius:50%;flex-shrink:0;"></div>';
+         const circleStyle = 'display:flex;align-items:center;justify-content:center;';
+         if (circleA) {
+            if (selected && selected.value === 'A') {
+               circleA.style.borderColor = '#3b82f6';
+               circleA.style.cssText += circleStyle;
+               circleA.innerHTML = dotHtml;
+            } else {
+               circleA.style.borderColor = '';
+               circleA.innerHTML = '';
+            }
+         }
+         if (circleB) {
+            if (selected && selected.value === 'B') {
+               circleB.style.borderColor = '#3b82f6';
+               circleB.style.cssText += circleStyle;
+               circleB.innerHTML = dotHtml;
+            } else {
+               circleB.style.borderColor = '';
+               circleB.innerHTML = '';
+            }
+         }
+
          if (selected) {
             const isB = selected.value === 'B';
             if (isEmergencia) {
@@ -4219,6 +4270,9 @@
               } else if (estadoNeg.includes("EXTENSION") || estadoNeg.includes("BENEFICIO")) {
                   badgeNeg.classList.add('bg-purple-500', 'text-white');
                   badgeNeg.innerHTML = '<span class="material-icons-round text-xs">extension</span> ' + (estadoNeg.length > 25 ? 'EXTENSIÓN' : estadoNeg);
+              } else if (estadoNeg.includes("CONTRATO COLECTIVO")) {
+                  badgeNeg.classList.add('bg-indigo-600', 'text-white');
+                  badgeNeg.innerHTML = '<span class="material-icons-round text-xs">workspace_premium</span> CONT. COLEC. 2026';
               } else if (estadoNeg.includes("OTRO") || estadoNeg.includes("CONT")) {
                   badgeNeg.classList.add('bg-amber-500', 'text-white');
                   badgeNeg.innerHTML = '<span class="material-icons-round text-xs">description</span> OTRO CONT. COLEC.';
@@ -5883,6 +5937,30 @@ divForm.classList.add('flex');
          reader.readAsDataURL(file);
       }
 
+      // === FUNCIONES SWITCH REGISTRO ASISTENCIA ===
+      function loadAttendanceSwitchState() {
+        google.script.run.withSuccessHandler(function(res) {
+          var switchEl = document.getElementById('attendance-switch');
+          if (switchEl) switchEl.checked = res.habilitado;
+        }).obtenerEstadoSwitchAsistencia();
+      }
+
+      function handleAttendanceSwitch() {
+        var switchEl = document.getElementById('attendance-switch');
+        var estado = switchEl.checked;
+        google.script.run.withSuccessHandler(function(res) {
+          if (res.success) {
+            showSuccess(estado ? "Módulo Registro Asistencia habilitado." : "Módulo Registro Asistencia pausado.");
+          } else {
+            showWarning("Error al actualizar el módulo.");
+            switchEl.checked = !estado;
+          }
+        }).withFailureHandler(function() {
+          showWarning("Error de conexión al actualizar el módulo.");
+          switchEl.checked = !estado;
+        }).toggleSwitchAsistencia(estado);
+      }
+
       // === FUNCIONES REGISTRO ASISTENCIA ===
       function loadAttendanceRecords() {
          switchView('attendance-records-view');
@@ -6396,7 +6474,7 @@ divForm.classList.add('flex');
           
         } else if (tipoEstado === 'negociacion') {
           // ESTADO NEGOCIACIÓN COLECTIVA
-          titulo.innerText = "Negociación Colectiva 2026";
+          titulo.innerText = "Negociación Colectiva";
           icono.innerText = "gavel";
           
           const estado = estadoActualNegociacion.toUpperCase();
@@ -6500,6 +6578,55 @@ divForm.classList.add('flex');
             `;
             nota.classList.add('hidden');
             
+          } else if (estado.includes("CONTRATO COLECTIVO")) {
+            badge.className = "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide shadow-lg";
+            badge.style.background = "linear-gradient(135deg, #1e3a8a, #4f46e5, #7c3aed)";
+            badge.style.color = "#ffffff";
+            badge.innerHTML = '<span class="material-icons-round text-base">workspace_premium</span> CONTRATO COLECTIVO 2026';
+
+            descripcion.innerHTML = `
+              <div class="text-center mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-3" style="background: linear-gradient(135deg, #dbeafe, #ede9fe);">
+                  <span class="material-icons-round text-4xl" style="color: #4f46e5;">workspace_premium</span>
+                </div>
+                <h4 class="text-lg font-bold mb-1" style="color: #1e3a8a;">Instrumento Colectivo 2026–2028</h4>
+                <p class="text-xs text-slate-500">Vigente desde el 25 de febrero de 2026 · 34 meses</p>
+              </div>
+
+              <p class="text-sm text-slate-700 leading-relaxed mb-3">
+                Eres parte del <strong>Contrato Colectivo 2026–2028</strong> suscrito por el Sindicato SLIM N°3. Este instrumento te garantiza todos los beneficios pactados por <strong>34 meses</strong>, con vencimiento en <strong>diciembre de 2028</strong>.
+              </p>
+
+              <div class="space-y-3">
+                <div class="p-3 rounded-lg border-l-4" style="background: #eff6ff; border-color: #6366f1;">
+                  <h5 class="text-xs font-bold mb-1 flex items-center gap-1" style="color: #1e1b4b;">
+                    <span class="material-icons-round text-sm">shield</span>
+                    FUERO SINDICAL
+                  </h5>
+                  <p class="text-xs text-slate-700 leading-relaxed">
+                    Tienes <strong>fuero sindical activo por 30 días</strong> desde la firma del instrumento el <strong>12 de marzo de 2026</strong>. No puedes ser desvinculado(a) sin mutuo acuerdo hasta el <strong>12 de abril de 2026</strong>.
+                  </p>
+                </div>
+
+                <div class="p-3 rounded-lg border-l-4" style="background: #f0fdf4; border-color: #16a34a;">
+                  <h5 class="text-xs font-bold mb-1 flex items-center gap-1" style="color: #14532d;">
+                    <span class="material-icons-round text-sm">menu_book</span>
+                    TUS BENEFICIOS
+                  </h5>
+                  <p class="text-xs text-slate-700 leading-relaxed">
+                    Revisa todos los beneficios en el módulo <strong>"Contrato Colectivo 2026–2028"</strong> de esta aplicación, o solicita el libro físico a cualquier dirigente sindical.
+                  </p>
+                </div>
+
+                <div class="p-3 rounded-lg border" style="background: #fafafa; border-color: #e2e8f0;">
+                  <p class="text-xs text-slate-500 text-center">
+                    Firmado el 12 de marzo de 2026 · Sindicato SLIM N°3
+                  </p>
+                </div>
+              </div>
+            `;
+            nota.classList.add('hidden');
+
           } else if (estado.includes("OTRO") || estado.includes("CONT")) {
             badge.className = "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide bg-amber-500 text-white shadow-lg";
             badge.innerHTML = '<span class="material-icons-round text-base">description</span> OTRO CONTRATO COLECTIVO';
