@@ -6630,3 +6630,141 @@ function obtenerPreguntasSecreto(rutInput, cantidad) {
     return { success: false, message: "Error: " + e.toString() };
   }
 }
+
+/**
+ * ============================================================
+ * COMPLETAR CAMPOS BANCARIOS EN BLANCO — Banco Estado Cuenta RUT
+ * ------------------------------------------------------------
+ * Lógica:
+ *   - BANCO en blanco  → completa los 3 campos con Cuenta RUT
+ *   - BANCO con datos  → solo verifica consistencia y reporta
+ *   - Otro banco       → no toca nada
+ *
+ * INSTRUCCIONES:
+ *   1. Pegar al final de Code.gs
+ *   2. Seleccionar "completarCamposBancariosEnBlanco" y presionar ▶
+ *   3. Revisar: Ver > Registros de ejecución
+ *   4. Eliminar esta función una vez confirmada la ejecución
+ * ============================================================
+ */
+function completarCamposBancariosEnBlanco() {
+  try {
+    var sheet = getSheet('USUARIOS', 'USUARIOS');
+    if (!sheet) {
+      Logger.log('❌ No se pudo acceder a la hoja de usuarios.');
+      return;
+    }
+
+    var COL     = CONFIG.COLUMNAS.USUARIOS;
+    var lastRow = sheet.getLastRow();
+
+    if (lastRow < 2) {
+      Logger.log('⚠️ No hay registros en la hoja.');
+      return;
+    }
+
+    var data = sheet.getRange(2, 1, lastRow - 1, COL.NUMERO_CUENTA + 1).getValues();
+
+    var contCompletados  = 0; // Filas en blanco que se completaron
+    var contOK           = 0; // Filas con datos correctos (solo verificación)
+    var contAvisos       = 0; // Filas con datos pero con inconsistencias
+    var contOtrosBancos  = 0; // Filas con otro banco, sin tocar
+    var contSinRut       = 0; // Filas con RUT inválido, omitidas
+
+    for (var i = 0; i < data.length; i++) {
+      var fila       = i + 2;
+      var rutRaw     = String(data[i][COL.RUT]          || '').trim();
+      var banco      = String(data[i][COL.BANCO]         || '').trim();
+      var tipoCuenta = String(data[i][COL.TIPO_CUENTA]   || '').trim();
+      var numCuenta  = String(data[i][COL.NUMERO_CUENTA] || '').trim();
+      var nombre     = String(data[i][COL.NOMBRE]        || '').trim();
+      var bancoUp    = banco.toUpperCase();
+
+      // Validar RUT
+      var rutLimpio = cleanRut(rutRaw);
+      if (!rutLimpio || rutLimpio.length < 7) {
+        contSinRut++;
+        continue;
+      }
+
+      var rutBody = rutLimpio.slice(0, -1); // RUT sin dígito verificador
+
+      // ─────────────────────────────────────────────────────────
+      // CASO 1: BANCO EN BLANCO → completar los 3 campos
+      // ─────────────────────────────────────────────────────────
+      if (!banco) {
+        sheet.getRange(fila, COL.BANCO + 1).setValue('BANCO ESTADO (Cuenta RUT)');
+        sheet.getRange(fila, COL.TIPO_CUENTA + 1).setValue('CUENTA VISTA');
+        sheet.getRange(fila, COL.NUMERO_CUENTA + 1).setValue(rutBody);
+
+        try { CacheService.getScriptCache().remove('user_' + rutLimpio); } catch(e) {}
+
+        Logger.log('✅ Fila ' + fila + ' | ' + nombre + ' | Completado → Cuenta RUT: ' + rutBody);
+        contCompletados++;
+
+        // Pausa cada 30 escrituras
+        if (contCompletados % 30 === 0) Utilities.sleep(500);
+
+      // ─────────────────────────────────────────────────────────
+      // CASO 2: BANCO ESTADO (Cuenta RUT) → verificar y corregir
+      // Solo actúa si el tipo es CUENTA VISTA o está vacío.
+      // Si es CUENTA CORRIENTE u otro tipo, no se toca.
+      // ─────────────────────────────────────────────────────────
+      } else if (bancoUp === 'BANCO ESTADO (CUENTA RUT)') {
+        var tipoCuentaUp = tipoCuenta.toUpperCase();
+
+        // Si tiene CUENTA CORRIENTE u otro tipo distinto a CUENTA VISTA → omitir
+        if (tipoCuentaUp !== '' && tipoCuentaUp !== 'CUENTA VISTA') {
+          contOtrosBancos++;
+          continue;
+        }
+
+        var tipoOK   = (tipoCuentaUp === 'CUENTA VISTA');
+        var numeroOK = (numCuenta === rutBody);
+
+        if (tipoOK && numeroOK) {
+          contOK++;
+        } else {
+          var problemas = [];
+          if (!tipoOK) {
+            sheet.getRange(fila, COL.TIPO_CUENTA + 1).setValue('CUENTA VISTA');
+            problemas.push('TIPO_CUENTA corregido: "' + tipoCuenta + '" \u2192 "CUENTA VISTA"');
+          }
+          if (!numeroOK) {
+            sheet.getRange(fila, COL.NUMERO_CUENTA + 1).setValue(rutBody);
+            problemas.push('NUMERO_CUENTA corregido: "' + numCuenta + '" \u2192 "' + rutBody + '"');
+          }
+          try { CacheService.getScriptCache().remove('user_' + rutLimpio); } catch(e) {}
+          Logger.log('\uD83D\uDD27 Fila ' + fila + ' | ' + nombre + ' | ' + problemas.join(' | '));
+          contAvisos++;
+
+          if (contAvisos % 30 === 0) Utilities.sleep(500);
+        }
+
+      // ─────────────────────────────────────────────────────────
+      // CASO 3: Cualquier otro banco → no tocar, no reportar
+      // ─────────────────────────────────────────────────────────
+      } else {
+        contOtrosBancos++;
+      }
+    }
+
+    Logger.log('');
+    Logger.log('============= RESUMEN =============');
+    Logger.log('✅ Completados (estaban en blanco): ' + contCompletados);
+    Logger.log('🔍 Verificados y correctos        : ' + contOK);
+    Logger.log('⚠️  Con inconsistencias (revisar)  : ' + contAvisos);
+    Logger.log('⏭️  Otro banco (sin cambios)        : ' + contOtrosBancos);
+    Logger.log('🚫 RUT inválido (omitidos)         : ' + contSinRut);
+    Logger.log('===================================');
+
+    if (contAvisos > 0) {
+      Logger.log('');
+      Logger.log('ℹ️  Las filas con inconsistencias NO fueron modificadas.');
+      Logger.log('   Corrígelas manualmente o vuelve a ejecutar la función de migración completa.');
+    }
+
+  } catch (e) {
+    Logger.log('❌ Error en completarCamposBancariosEnBlanco: ' + e.toString());
+  }
+}
