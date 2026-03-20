@@ -1334,11 +1334,13 @@
               </button>
            </div>
 
-           <div id="loans-form" class="hidden flex-col h-full p-6 overflow-y-auto">
+           <div id="loans-form" class="hidden flex-col flex-grow p-6 overflow-y-auto">
               <button onclick="backToLoansMenu()" class="text-xs text-slate-500 flex items-center gap-1 mb-4 hover:text-slate-800"><span class="material-icons-round text-sm">arrow_back</span> Volver</button>
               <h3 id="form-title" class="text-xl font-bold text-slate-800 mb-1">Solicitud</h3><p class="text-xs text-slate-500 mb-6">Complete los detalles del préstamo.</p>
               
-              <div class="space-y-5">
+              <p class="text-xs text-slate-500 mb-6">Complete los detalles del préstamo.</p>
+              
+              <div class="space-y-5 pb-6">
 
                  <!-- SELECTOR VERSIÓN PRÉSTAMO (Contrato Colectivo 2026) -->
                  <div>
@@ -2364,6 +2366,28 @@
             </div>
          </div>
       </div>
+
+      <!-- MODAL CONFIRMACIÓN ENVÍO PRÉSTAMO -->
+        <div id="loan-submit-confirm-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+            <div class="p-5 border-b border-slate-200 flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <span class="material-icons-round text-amber-600 text-xl">warning</span>
+              </div>
+              <h3 class="text-lg font-bold text-slate-800">Confirmar Solicitud</h3>
+            </div>
+            <div class="p-5 space-y-3">
+              <p id="loan-confirm-texto" class="text-sm text-slate-700 leading-relaxed"></p>
+              <div class="bg-amber-50 border-l-4 border-amber-400 rounded-r-lg p-3">
+                <p class="text-xs text-amber-800"><strong>Aviso importante:</strong> Si la empresa verifica que no cumples el requisito de antigüedad para esta versión, tu solicitud será <strong>rechazada</strong>. En caso de duda, consulta con un dirigente antes de enviar.</p>
+              </div>
+            </div>
+            <div class="p-4 border-t border-slate-200 flex gap-3">
+              <button onclick="document.getElementById('loan-submit-confirm-modal').classList.add('hidden')" class="flex-1 py-2.5 rounded-xl border border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50 transition">Revisar</button>
+              <button onclick="confirmarEnvioPrestamo()" id="btn-confirm-send-loan" class="flex-1 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition shadow-lg">Sí, enviar</button>
+            </div>
+          </div>
+        </div>
       
         <!-- MODAL EDITAR PRÉSTAMO (Gestión) -->
         <div id="edit-loan-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
@@ -3931,57 +3955,71 @@
          modal.classList.remove('hidden'); 
       }
       
+      var _loanPendingData = {};
+
       function submitLoanRequest() { 
-         const versionSeleccionada = document.querySelector('input[name="loan_version"]:checked');
-         if(!versionSeleccionada) return showWarning("Selecciona la versión del préstamo según tu antigüedad.");
-         const versionPrestamo = versionSeleccionada.value;
+         var versionSeleccionada = document.querySelector('input[name="loan_version"]:checked');
+         if (!versionSeleccionada) return showWarning("Selecciona la versión del préstamo según tu antigüedad.");
+         var versionPrestamo = versionSeleccionada.value;
 
-         const cuotas = tempSelectedQuota; 
-         if(!cuotas) return showWarning("Seleccione la cantidad de cuotas."); 
-         const medio = document.querySelector('input[name="pago"]:checked')?.value; 
-         const rutBeneficiario = document.getElementById('loan-rut-socio')?.value || ""; 
-         if(!medio) return showWarning("Seleccione un medio de pago.");
+         var cuotas = tempSelectedQuota; 
+         if (!cuotas) return showWarning("Seleccione la cantidad de cuotas."); 
+         var pagoInput = document.querySelector('input[name="pago"]:checked');
+         var medio = pagoInput ? pagoInput.value : "";
+         var rutBeneficiario = document.getElementById('loan-rut-socio').value || ""; 
+         if (!medio) return showWarning("Seleccione un medio de pago.");
 
-         const isEmergencia = (activeLoanType === 'Emergencia');
-         const isB = (versionPrestamo === 'B');
-         const montoStr = isEmergencia ? (isB ? '$400.000' : '$300.000') : (isB ? '$300.000' : '$200.000');
-         const requisito = isB ? '2 o más años de antigüedad' : 'entre 6 meses y 2 años de antigüedad';
-         const tipoNombre = isEmergencia ? 'Préstamo Personal' : 'Préstamo de Vacaciones';
-         const tipoConVersion = activeLoanType + ' - Opción ' + versionPrestamo;
+         var isEmergencia = (activeLoanType === 'Emergencia');
+         var isB = (versionPrestamo === 'B');
+         var montoStr = isEmergencia ? (isB ? '$400.000' : '$300.000') : (isB ? '$300.000' : '$200.000');
+         var requisito = isB ? '2 o más años de antigüedad' : 'entre 6 meses y 2 años de antigüedad';
+         var tipoNombre = isEmergencia ? 'Préstamo Personal' : 'Préstamo de Vacaciones';
+         var tipoConVersion = activeLoanType + ' - Opción ' + versionPrestamo;
 
-         Swal.fire({
-            icon: 'warning',
-            title: '⚠️ Antes de continuar',
-            html: '<div style="text-align:left; font-size:0.92rem; line-height:1.6;">' +
-               '<p style="margin-bottom:10px;">Estás solicitando un <strong>' + tipoNombre + ' (Opción ' + versionPrestamo + ')</strong> por <strong>' + montoStr + '</strong>.</p>' +
-               '<p style="margin-bottom:10px;">Esta opción requiere <strong>' + requisito + '</strong> en la empresa.</p>' +
-               '<p style="background:#fef3c7; border-left:3px solid #f59e0b; padding:8px 12px; border-radius:4px; margin-bottom:0;">' +
-               '<strong>Aviso importante:</strong> Si la empresa verifica que no cumples el requisito de antigüedad para esta versión, tu solicitud será <strong>rechazada</strong>. En caso de duda, consulta con un dirigente antes de enviar.' +
-               '</p></div>',
-            confirmButtonText: 'Sí, enviar solicitud',
-            cancelButtonText: 'Revisar',
-            showCancelButton: true,
-            confirmButtonColor: '#1e293b',
-            cancelButtonColor: '#64748b',
-            customClass: { popup: 'rounded-2xl' }
-         }).then(result => {
-            if (!result.isConfirmed) return;
+         _loanPendingData = {
+            cuotas: cuotas,
+            medio: medio,
+            rutBeneficiario: rutBeneficiario,
+            tipoConVersion: tipoConVersion
+         };
 
-            const btn = document.getElementById('btn-submit-loan'); 
-            const oldHtml = btn.innerHTML; 
-            btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Enviando...</span></div>'; 
-            btn.disabled = true; 
-            google.script.run.withSuccessHandler(res => { 
+         document.getElementById('loan-confirm-texto').innerHTML =
+            'Estás solicitando un <strong>' + tipoNombre + ' (Opción ' + versionPrestamo + ')</strong> por <strong>' + montoStr + '</strong>.<br><br>' +
+            'Esta opción requiere <strong>' + requisito + '</strong> en la empresa.';
+
+         document.getElementById('loan-submit-confirm-modal').classList.remove('hidden');
+      }
+
+      function confirmarEnvioPrestamo() {
+         document.getElementById('loan-submit-confirm-modal').classList.add('hidden');
+
+         var d = _loanPendingData;
+         if (!d || !d.cuotas) return showWarning("Error: datos incompletos. Intenta nuevamente.");
+
+         var btn = document.getElementById('btn-submit-loan'); 
+         var oldHtml = btn.innerHTML; 
+         btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Enviando...</span></div>'; 
+         btn.disabled = true; 
+
+         google.script.run
+            .withSuccessHandler(function(res) { 
                btn.innerHTML = oldHtml; 
                btn.disabled = false; 
-               if(res.success) { 
+               if (res.success) { 
                   showSuccess("Solicitud enviada."); 
                   backToLoansMenu(); 
                } else { 
                   showWarning(res.message); 
                } 
-            }).crearSolicitudPrestamo(currentRut, tipoConVersion, cuotas, medio, rutBeneficiario); 
-         });
+            })
+            .withFailureHandler(function(err) {
+               btn.innerHTML = oldHtml;
+               btn.disabled = false;
+               showWarning("Error de conexión. Intenta nuevamente.");
+            })
+            .crearSolicitudPrestamo(currentRut, d.tipoConVersion, d.cuotas, d.medio, d.rutBeneficiario); 
+
+         _loanPendingData = {};
       }
       
       function showLoanRecords() { 
