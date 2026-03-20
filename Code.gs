@@ -1049,32 +1049,40 @@ function crearSolicitudPrestamo(rutGestor, tipo, cuotas, medioPago, rutBeneficia
          if (!beneficiario) return { success: false, message: "RUT del socio no encontrado." };
       }
 
-      // 3. Validar préstamos activos (LÓGICA NUEVA: Por Tipo)
+      // 3. Validar préstamos activos — bloquear si hay un préstamo del mismo tipo base activo
       const dataPrestamos = sheetPrestamos.getDataRange().getDisplayValues();
+      
+      // Extraer el tipo base del nuevo préstamo (antes de " - Opción")
+      const tipoBaseNuevo = tipo.split(' - ')[0].trim(); // "Emergencia" o "Vacaciones"
+      
       for (let i = 1; i < dataPrestamos.length; i++) {
         const row = dataPrestamos[i];
         const rowRut = cleanRut(row[COL_PRES.RUT]);
         const rowEstado = row[COL_PRES.ESTADO];
-        const rowTipo = row[COL_PRES.TIPO]; // Leemos el tipo de la fila
+        const rowTipo = String(row[COL_PRES.TIPO] || '');
         
         const estadosActivos = ["Solicitado", "Enviado", "Vigente"];
         
-        // CAMBIO AQUI: Validamos RUT + ESTADO + TIPO IGUAL
-        // Usamos .includes() para ser flexibles (ej: "Préstamo de Emergencia" vs "Emergencia")
+        // Extraer tipo base del registro existente para comparar correctamente
+        const tipoBaseExistente = rowTipo.split(' - ')[0].trim();
+        
         if (rowRut === cleanRut(beneficiario.rut) && 
             estadosActivos.includes(rowEstado) && 
-            rowTipo.includes(tipo)) {
+            tipoBaseExistente === tipoBaseNuevo) {
               
-          return { success: false, message: `El socio ${beneficiario.nombre} ya tiene un préstamo de tipo "${tipo}" en estado "${rowEstado}".` };
+          return { 
+            success: false, 
+            message: 'Tienes un préstamo de ' + tipoBaseNuevo + ' en estado "' + rowEstado + '". Solo puedes solicitar uno nuevo cuando el préstamo actual esté Pagado o Rechazado.' 
+          };
         }
       }
 
-      // --- LOGICA DEL MONTO ---
+      // --- LOGICA DEL MONTO (Contrato Colectivo 2026) ---
       let montoTexto = "$0";
       if (tipo.includes('Emergencia')) {
-        montoTexto = "$200.000";
-      } else { 
-        montoTexto = "$150.000";
+        montoTexto = tipo.includes('Opcion B') || tipo.includes('Opción B') ? "$400.000" : "$300.000";
+      } else if (tipo.includes('Vacaciones')) {
+        montoTexto = tipo.includes('Opcion B') || tipo.includes('Opción B') ? "$300.000" : "$200.000";
       }
 
       // 4. Preparar Datos y CALCULAR FECHA TÉRMINO (Lógica Contable)
