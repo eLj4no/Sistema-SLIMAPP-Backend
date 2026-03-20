@@ -3894,33 +3894,6 @@
          }
 
          const selected = document.querySelector('input[name="loan_version"]:checked');
-
-         // --- Actualizar círculos indicadores ---
-         const circleA = document.querySelector('#loan-version-A-card .rounded-full');
-         const circleB = document.querySelector('#loan-version-B-card .rounded-full');
-         const dotHtml = '<div style="width:10px;height:10px;background:#3b82f6;border-radius:50%;flex-shrink:0;"></div>';
-         const circleStyle = 'display:flex;align-items:center;justify-content:center;';
-         if (circleA) {
-            if (selected && selected.value === 'A') {
-               circleA.style.borderColor = '#3b82f6';
-               circleA.style.cssText += circleStyle;
-               circleA.innerHTML = dotHtml;
-            } else {
-               circleA.style.borderColor = '';
-               circleA.innerHTML = '';
-            }
-         }
-         if (circleB) {
-            if (selected && selected.value === 'B') {
-               circleB.style.borderColor = '#3b82f6';
-               circleB.style.cssText += circleStyle;
-               circleB.innerHTML = dotHtml;
-            } else {
-               circleB.style.borderColor = '';
-               circleB.innerHTML = '';
-            }
-         }
-
          if (selected) {
             const isB = selected.value === 'B';
             if (isEmergencia) {
