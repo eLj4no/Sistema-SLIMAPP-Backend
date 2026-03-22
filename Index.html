@@ -1841,69 +1841,23 @@
            <div id="attendance-list-content" class="flex-col h-full p-4 overflow-y-auto flex">
 
               <!-- PANEL ASAMBLEAS VIRTUALES -->
-              <div id="virtual-asamblea-panel" class="hidden rounded-xl border p-4 flex flex-col gap-3 mb-4">
-                <!-- Header -->
+              <div id="virtual-asamblea-panel" class="hidden rounded-xl border border-blue-200 bg-blue-50 p-4 flex flex-col gap-3 mb-4">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
                     <span class="material-icons-round">video_call</span>
                   </div>
                   <div class="flex-1 min-w-0">
-                    <p class="text-xs font-bold text-slate-700">Asamblea virtual activa</p>
+                    <p class="text-xs font-bold text-slate-700">Asamblea virtual en curso</p>
                     <p id="virtual-asamblea-nombre" class="text-[11px] text-slate-500 break-all"></p>
                   </div>
-                  <span id="virtual-asamblea-horario" class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full flex-shrink-0 whitespace-nowrap"></span>
+                  <span id="virtual-asamblea-horario" class="text-[10px] font-bold text-blue-600 bg-white px-2 py-1 rounded-full flex-shrink-0 whitespace-nowrap border border-blue-200"></span>
                 </div>
                 <!-- Selector múltiple (visible solo si hay más de una) -->
                 <div id="virtual-selector-wrap" class="hidden">
                   <label class="block text-[10px] font-bold text-slate-500 mb-1">Selecciona la asamblea</label>
                   <select id="virtual-selector" onchange="cambiarAsambleaSeleccionada(this.value)"
-                    class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-400 bg-slate-50">
+                    class="w-full px-3 py-2 border border-blue-200 rounded-xl text-sm focus:outline-none focus:border-blue-400 bg-white">
                   </select>
-                </div>
-                <!-- Sin región registrada (S/D) → obligatorio actualizar -->
-                <div id="virtual-region-sd" class="hidden bg-red-50 border border-red-200 rounded-xl p-3 flex flex-col gap-2">
-                  <div class="flex items-start gap-2">
-                    <span class="material-icons-round text-red-500 text-base flex-shrink-0 mt-0.5">location_off</span>
-                    <div>
-                      <p class="text-xs font-bold text-red-800">Región no registrada</p>
-                      <p class="text-[11px] text-red-700 mt-0.5">Debes indicar tu región antes de registrar tu asistencia. Este dato es necesario para el sistema.</p>
-                    </div>
-                  </div>
-                  <select id="virtual-region-select"
-                    class="w-full px-3 py-2 border border-red-200 rounded-xl text-sm focus:outline-none focus:border-red-400 bg-white">
-                    <option value="">— Selecciona tu región —</option>
-                  </select>
-                  <button onclick="guardarRegionDesdeAsistencia()"
-                    class="w-full py-2 bg-red-600 text-white text-xs font-bold rounded-xl hover:bg-red-700 transition flex items-center justify-center gap-1">
-                    <span class="material-icons-round text-sm">save</span>
-                    Guardar región y continuar
-                  </button>
-                </div>
-
-                <!-- Región diferente a la asamblea → advertencia con confirmación -->
-                <div id="virtual-region-warning" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-3 flex flex-col gap-2">
-                  <div class="flex items-start gap-2">
-                    <span class="material-icons-round text-amber-500 text-base flex-shrink-0 mt-0.5">warning</span>
-                    <div>
-                      <p class="text-xs font-bold text-amber-800">La asamblea es de otra región</p>
-                      <p id="virtual-region-warning-msg" class="text-[11px] text-amber-700 mt-0.5"></p>
-                    </div>
-                  </div>
-                  <!-- Actualizar región inline -->
-                  <details class="text-xs">
-                    <summary class="cursor-pointer font-bold text-amber-800 py-1">¿Tu región registrada es incorrecta? Actualízala aquí</summary>
-                    <div class="mt-2 flex flex-col gap-2">
-                      <select id="virtual-region-update-select"
-                        class="w-full px-3 py-2 border border-amber-200 rounded-xl text-sm focus:outline-none focus:border-amber-400 bg-white">
-                        <option value="">— Selecciona tu región —</option>
-                      </select>
-                      <button onclick="guardarRegionDesdeAsistencia()"
-                        class="w-full py-2 bg-amber-600 text-white text-xs font-bold rounded-xl hover:bg-amber-700 transition flex items-center justify-center gap-1">
-                        <span class="material-icons-round text-sm">save</span>
-                        Guardar y actualizar
-                      </button>
-                    </div>
-                  </details>
                 </div>
                 <!-- Botón registrar -->
                 <button id="btn-registrar-virtual" onclick="registrarAsistenciaVirtual()"
@@ -1912,7 +1866,7 @@
                   Registrar mi asistencia
                 </button>
                 <!-- Ya registrado -->
-                <div id="virtual-ya-registrado" class="hidden text-center text-xs font-bold text-green-600 flex items-center justify-center gap-1 py-2 bg-green-50 rounded-xl">
+                <div id="virtual-ya-registrado" class="hidden text-center text-xs font-bold text-green-600 flex items-center justify-center gap-1 py-2 bg-green-50 rounded-xl border border-green-200">
                   <span class="material-icons-round text-sm">check_circle</span>
                   Ya registraste tu asistencia en esta asamblea
                 </div>
@@ -4050,38 +4004,20 @@
       var _asambleaVirtualActual = null;
       var _asambleasVirtuales    = [];
 
-      // Mapeo de código corto (en nombre del punto) → fragmento de la región larga (en BD_SLIMAPP)
-      var _regionCodigoAFragmento = {
-        'XV-Arica':       'Arica',
-        'I-Iquique':      'Iquique',
-        'II-Antofagasta': 'Antofagasta',
-        'III-Copiapo':    'Copiap',
-        'IV-LaSerena':    'La Serena',
-        'V-Valparaiso':   'Valpara',
-        'RM-Santiago':    'Santiago',
-        'VI-Rancagua':    'Rancagua',
-        'VII-Talca':      'Talca',
-        'XVI-Chillan':    'hill',
-        'VIII-Concepcion':'Concepci',
-        'IX-Temuco':      'Temuco',
-        'XIV-Valdivia':   'Valdivia',
-        'X-PuertoMontt':  'Puerto Montt',
-        'XI-Coyhaique':   'Coyhaique',
-        'XII-PuntaArenas':'Punta Arenas'
-      };
-
-      // Extrae el código de región del nombre del punto (último segmento tras el último _)
-      function extraerCodigoRegionDePunto(nombrePunto) {
+      // Extrae la fecha DD-MM-YYYY del nombre del punto para clave de localStorage
+      // Ej: ASAMBLEA_24-03-2026_RM-Santiago → '24-03-2026'
+      function extraerFechaEventoDePunto(nombrePunto) {
         var partes = (nombrePunto || '').split('_');
-        return partes.length >= 3 ? partes[partes.length - 1] : '';
+        for (var i = 0; i < partes.length; i++) {
+          if (/^\d{2}-\d{2}-\d{4}$/.test(partes[i])) return partes[i];
+        }
+        return nombrePunto;
       }
 
-      // Retorna true si la región del usuario coincide con el código de la asamblea
-      function regionCoincide(codigoAsamblea, regionUsuario) {
-        if (!codigoAsamblea || !regionUsuario) return true; // sin datos → no advertir
-        var fragmento = _regionCodigoAFragmento[codigoAsamblea] || '';
-        if (!fragmento) return true; // código desconocido → no advertir
-        return regionUsuario.toLowerCase().indexOf(fragmento.toLowerCase()) !== -1;
+      // Clave única por fecha de evento — impide marcar en múltiples asambleas del mismo día
+      function lsKeyEvento(nombrePunto) {
+        var fecha = extraerFechaEventoDePunto(nombrePunto);
+        return 'asist_evento_' + fecha + '_' + currentRut;
       }
 
       function cargarEstadoAsambleaVirtual() {
@@ -4097,19 +4033,17 @@
               sinPanel.classList.remove('hidden');
               return;
             }
-
             _asambleasVirtuales = res.asambleas;
 
             var selectorWrap = document.getElementById('virtual-selector-wrap');
             var selector     = document.getElementById('virtual-selector');
 
             if (res.asambleas.length > 1) {
-              // Múltiples asambleas → mostrar selector
               selector.innerHTML = '';
               res.asambleas.forEach(function(a) {
                 var opt = document.createElement('option');
                 opt.value = a.nombre;
-                opt.text  = a.nombre + (a.apertura && a.cierre ? ' (' + a.apertura + '–' + a.cierre + ')' : '');
+                opt.text  = a.nombre + (a.apertura && a.cierre ? ' (' + a.apertura + ' - ' + a.cierre + ')' : '');
                 selector.appendChild(opt);
               });
               selectorWrap.classList.remove('hidden');
@@ -4117,7 +4051,6 @@
               selectorWrap.classList.add('hidden');
             }
 
-            // Seleccionar la primera por defecto
             aplicarAsambleaSeleccionada(res.asambleas[0]);
             panel.classList.remove('hidden');
           })
@@ -4128,60 +4061,142 @@
       }
 
       function cambiarAsambleaSeleccionada(nombre) {
-        var asamblea = _asambleasVirtuales.find(function(a) { return a.nombre === nombre; });
-        if (asamblea) aplicarAsambleaSeleccionada(asamblea);
+        for (var i = 0; i < _asambleasVirtuales.length; i++) {
+          if (_asambleasVirtuales[i].nombre === nombre) {
+            aplicarAsambleaSeleccionada(_asambleasVirtuales[i]);
+            return;
+          }
+        }
       }
 
       function aplicarAsambleaSeleccionada(asamblea) {
         _asambleaVirtualActual = asamblea.nombre;
 
-        var panel    = document.getElementById('virtual-asamblea-panel');
-        var warning  = document.getElementById('virtual-region-warning');
-        var warningMsg = document.getElementById('virtual-region-warning-msg');
-        var btn      = document.getElementById('btn-registrar-virtual');
-        var yaReg    = document.getElementById('virtual-ya-registrado');
+        var btn          = document.getElementById('btn-registrar-virtual');
+        var yaReg        = document.getElementById('virtual-ya-registrado');
+        var panel        = document.getElementById('virtual-asamblea-panel');
+        var selectorWrap = document.getElementById('virtual-selector-wrap');
+        var nombreEl     = document.getElementById('virtual-asamblea-nombre');
+        var horarioEl    = document.getElementById('virtual-asamblea-horario');
 
-        // Actualizar nombre y horario
-        document.getElementById('virtual-asamblea-nombre').innerText = asamblea.nombre;
-        var horario = (asamblea.apertura && asamblea.cierre)
-          ? (asamblea.apertura + ' – ' + asamblea.cierre) : 'Abierta';
-        document.getElementById('virtual-asamblea-horario').innerText = horario;
+        var lsKey        = lsKeyEvento(asamblea.nombre);
+        var valorGuardado = localStorage.getItem(lsKey);
+        var yaRegistrado  = !!valorGuardado;
 
-        // Comparación de región
-        var codigoRegionAsamblea = extraerCodigoRegionDePunto(asamblea.nombre);
-        var regionUsuario = userDataCache.region || '';
-        var coincide = regionCoincide(codigoRegionAsamblea, regionUsuario);
-
-        if (!coincide) {
-          var regionRegistrada = regionUsuario || 'no registrada';
-          warningMsg.innerText =
-            'La asamblea es de la region ' + codigoRegionAsamblea + '. ' +
-            'Tu region registrada es: ' + regionRegistrada + '. ' +
-            'Si tu region es incorrecta, actualiza el dato en Mis Datos.';
-          warning.classList.remove('hidden');
-        } else {
-          warning.classList.add('hidden');
-        }
-
-        // localStorage — ¿ya registró?
-        var lsKey = 'asist_' + asamblea.nombre + '_' + currentRut;
-        var yaRegistrado = localStorage.getItem(lsKey) === '1';
-
-        // Limpiar clases de color dinámicas
-        ['border-blue-200','bg-blue-50','border-green-200','bg-green-50'].forEach(function(c) {
-          panel.classList.remove(c);
-        });
+        panel.classList.remove('border-blue-200', 'bg-blue-50', 'border-green-200', 'bg-green-50');
 
         if (yaRegistrado) {
+          // Ocultar selector — irrelevante una vez registrado
+          if (selectorWrap) selectorWrap.classList.add('hidden');
+
+          // Determinar nombre registrado
+          // valorGuardado puede ser el nombre real (nuevo) o '1' (legacy localStorage)
+          var nombreRegistrado = (valorGuardado && valorGuardado !== '1')
+            ? valorGuardado
+            : null;
+
+          // Buscar horario de la asamblea registrada si se conoce el nombre
+          var horarioRegistrado = '';
+          if (nombreRegistrado) {
+            for (var i = 0; i < _asambleasVirtuales.length; i++) {
+              if (_asambleasVirtuales[i].nombre === nombreRegistrado) {
+                var a = _asambleasVirtuales[i];
+                horarioRegistrado = (a.apertura && a.cierre)
+                  ? (a.apertura + ' - ' + a.cierre) : '';
+                break;
+              }
+            }
+          }
+
+          // Mostrar estado: ya registrado
+          panel.classList.add('border-green-200', 'bg-green-50');
+          horarioEl.innerText = horarioRegistrado || '';
+          horarioEl.className = 'text-[10px] font-bold text-green-700 bg-white px-2 py-1 rounded-full flex-shrink-0 whitespace-nowrap border border-green-200';
+
+          if (nombreRegistrado) {
+            // Caso normal: sabemos exactamente dónde registró
+            nombreEl.innerHTML =
+              '<span class="text-[10px] font-bold text-green-600 uppercase tracking-wide">Registrado en:</span><br>' +
+              '<span class="text-xs font-bold text-slate-700 break-all">' + nombreRegistrado + '</span>';
+          } else {
+            // Caso legacy (localStorage tenía '1'): no sabemos el nombre exacto
+            nombreEl.innerHTML =
+              '<span class="text-xs text-slate-600">Asistencia registrada en evento de hoy</span>';
+          }
+
+          // Actualizar texto de confirmación
+          yaReg.innerHTML =
+            '<span class="material-icons-round text-sm">check_circle</span>' +
+            ' Tu asistencia fue registrada correctamente';
+
+          btn.classList.add('hidden');
+          yaReg.classList.remove('hidden');
+
+        } else {
+          // No ha registrado — mostrar panel normal
+          if (selectorWrap && _asambleasVirtuales.length > 1) {
+            selectorWrap.classList.remove('hidden');
+          }
+
+          nombreEl.innerText = asamblea.nombre;
+          var horarioActivo = (asamblea.apertura && asamblea.cierre)
+            ? (asamblea.apertura + ' - ' + asamblea.cierre) : 'Abierta';
+          horarioEl.innerText = horarioActivo;
+          horarioEl.className = 'text-[10px] font-bold text-blue-600 bg-white px-2 py-1 rounded-full flex-shrink-0 whitespace-nowrap border border-blue-200';
+
+          panel.classList.add('border-blue-200', 'bg-blue-50');
+          btn.classList.remove('hidden');
+          btn.disabled = false;
+          btn.innerHTML = '<span class="material-icons-round">how_to_reg</span> Registrar mi asistencia';
+          yaReg.classList.add('hidden');
+        }
+      }
+
+        _asambleaVirtualActual = asamblea.nombre;
+
+        var btn          = document.getElementById('btn-registrar-virtual');
+        var yaReg        = document.getElementById('virtual-ya-registrado');
+        var panel        = document.getElementById('virtual-asamblea-panel');
+        var selectorWrap = document.getElementById('virtual-selector-wrap');
+
+        // Verificar con clave por FECHA — valor guardado es el nombre de la asamblea registrada
+        var lsKey          = lsKeyEvento(asamblea.nombre);
+        var valorGuardado  = localStorage.getItem(lsKey);
+        var yaRegistrado   = !!valorGuardado;
+        var nombreRegistrado = valorGuardado && valorGuardado !== '1' ? valorGuardado : asamblea.nombre;
+
+        panel.classList.remove('border-blue-200', 'bg-blue-50', 'border-green-200', 'bg-green-50');
+
+        if (yaRegistrado) {
+          // Ocultar selector — ya no tiene sentido cambiarlo
+          if (selectorWrap) selectorWrap.classList.add('hidden');
+
+          // Mostrar la asamblea donde efectivamente registró
+          document.getElementById('virtual-asamblea-nombre').innerText = nombreRegistrado;
+          var asambleaRegistrada = null;
+          for (var i = 0; i < _asambleasVirtuales.length; i++) {
+            if (_asambleasVirtuales[i].nombre === nombreRegistrado) {
+              asambleaRegistrada = _asambleasVirtuales[i];
+              break;
+            }
+          }
+          var horario = asambleaRegistrada && asambleaRegistrada.apertura && asambleaRegistrada.cierre
+            ? (asambleaRegistrada.apertura + ' - ' + asambleaRegistrada.cierre) : 'Registrada';
+          document.getElementById('virtual-asamblea-horario').innerText = horario;
+
           panel.classList.add('border-green-200', 'bg-green-50');
           btn.classList.add('hidden');
           yaReg.classList.remove('hidden');
         } else {
+          document.getElementById('virtual-asamblea-nombre').innerText = asamblea.nombre;
+          var horarioActivo = (asamblea.apertura && asamblea.cierre)
+            ? (asamblea.apertura + ' - ' + asamblea.cierre) : 'Abierta';
+          document.getElementById('virtual-asamblea-horario').innerText = horarioActivo;
+
           panel.classList.add('border-blue-200', 'bg-blue-50');
           btn.classList.remove('hidden');
           btn.disabled = false;
-          var oldHtml = '<span class="material-icons-round">how_to_reg</span> Registrar mi asistencia';
-          btn.innerHTML = oldHtml;
+          btn.innerHTML = '<span class="material-icons-round">how_to_reg</span> Registrar mi asistencia';
           yaReg.classList.add('hidden');
         }
       }
@@ -4193,29 +4208,32 @@
         var btn = document.getElementById('btn-registrar-virtual');
         var oldHtml = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<div class="flex items-center justify-center gap-2"><div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>Registrando...</div>';
+        btn.innerHTML = '<div class="flex items-center justify-center gap-2">' +
+          '<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>' +
+          'Registrando...</div>';
 
         google.script.run
           .withSuccessHandler(function(res) {
             btn.innerHTML = oldHtml;
             if (res.success) {
-              // Guardar en localStorage para bloquear dobles registros en este dispositivo
-              var lsKey = 'asist_' + _asambleaVirtualActual + '_' + currentRut;
-              localStorage.setItem(lsKey, '1');
-              // Actualizar UI
-              btn.classList.add('hidden');
-              document.getElementById('virtual-ya-registrado').classList.remove('hidden');
-              var panel = document.getElementById('virtual-asamblea-panel');
-              if (panel) {
-                panel.classList.remove('border-blue-200', 'bg-blue-50');
-                panel.classList.add('border-green-200', 'bg-green-50');
+              // Guardar el NOMBRE de la asamblea registrada — permite mostrarla después
+              var lsKey = lsKeyEvento(_asambleaVirtualActual);
+              localStorage.setItem(lsKey, _asambleaVirtualActual);
+              // Bloquear las demás asambleas del mismo día con el mismo nombre registrado
+              for (var i = 0; i < _asambleasVirtuales.length; i++) {
+                if (_asambleasVirtuales[i].nombre !== _asambleaVirtualActual) {
+                  localStorage.setItem(lsKeyEvento(_asambleasVirtuales[i].nombre), _asambleaVirtualActual);
+                }
               }
+              btn.classList.add('hidden');
+              var panel = document.getElementById('virtual-asamblea-panel');
+              panel.classList.remove('border-blue-200', 'bg-blue-50');
+              panel.classList.add('border-green-200', 'bg-green-50');
+              document.getElementById('virtual-ya-registrado').classList.remove('hidden');
               SLIMSound.play('success');
               showSuccess('Asistencia registrada correctamente.');
             } else if (res.yaRegistrado) {
-              // Sincronizar localStorage si el backend ya lo tenía registrado
-              var lsKey2 = 'asist_' + _asambleaVirtualActual + '_' + currentRut;
-              localStorage.setItem(lsKey2, '1');
+              localStorage.setItem(lsKeyEvento(_asambleaVirtualActual), '1');
               btn.classList.add('hidden');
               document.getElementById('virtual-ya-registrado').classList.remove('hidden');
               showWarning(res.message);
