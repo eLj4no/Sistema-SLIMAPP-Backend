@@ -4058,11 +4058,50 @@ function registrarAsistencia(rutInput, nombreControl) {
   // obtenerUsuarioPorRut usa CacheService (TTL 10 min), evita leer BD_SLIMAPP
   // en cada llamada simultánea cuando hay mucha concurrencia.
   const usuario = obtenerUsuarioPorRut(rutInput);
-  if (!usuario.encontrado) {
-    return { success: false, message: "RUT no encontrado en el sistema." };
+  // ── VALIDACIÓN VENTANA HORARIA ──────────────────────────────────────────────
+  // Lee HORA_APERTURA (col E, índice 4) y HORA_CIERRE (col F, índice 5) desde
+  // la hoja PUNTOS_CONTROL del spreadsheet ASISTENCIA.
+  // Si ambas columnas tienen valor, bloquea el registro fuera de ese rango.
+  // Si están vacías, no se aplica restricción (retrocompatible).
+  try {
+    var ssAsistVentana = getSpreadsheet('ASISTENCIA');
+    var sheetPCtrl = ssAsistVentana.getSheetByName(CONFIG.HOJAS.PUNTOS_CONTROL);
+    if (sheetPCtrl && sheetPCtrl.getLastRow() > 1) {
+      var datosPC = sheetPCtrl.getDataRange().getDisplayValues();
+      for (var pc = 1; pc < datosPC.length; pc++) {
+        if (String(datosPC[pc][0]).trim() === nombreControl) {
+          var horaApertura = String(datosPC[pc][4] || '').trim();
+          var horaCierre   = String(datosPC[pc][5] || '').trim();
+          if (horaApertura && horaCierre) {
+            var horaActual = Utilities.formatDate(new Date(), 'America/Santiago', 'HH:mm');
+            if (horaActual < horaApertura) {
+              return {
+                success: false,
+                ventanaCerrada: true,
+                tipoVentana: 'aun_no_abre',
+                horaApertura: horaApertura,
+                horaCierre: horaCierre,
+                message: 'El registro de asistencia aun no ha comenzado. El modulo abre a las ' + horaApertura + ' hrs.'
+              };
+            }
+            if (horaActual > horaCierre) {
+              return {
+                success: false,
+                ventanaCerrada: true,
+                tipoVentana: 'ya_cerro',
+                horaApertura: horaApertura,
+                horaCierre: horaCierre,
+                message: 'El registro de asistencia ha cerrado. El periodo de registro fue de ' + horaApertura + ' a ' + horaCierre + ' hrs.'
+              };
+            }
+          }
+          break;
+        }
+      }
+    }
+  } catch (eVentana) {
+    Logger.log('Advertencia: error verificando ventana horaria: ' + eVentana.toString());
   }
-
-  // ── OPTIMIZACIÓN 2: Sección crítica reducida al mínimo indispensable ────────
   // El lock protege SOLO la verificación de duplicado + escritura en BD_ASISTENCIA.
   // Sin correos adentro → tiempo de lock baja de ~7-10 seg a ~1.5-2 seg.
   // Capacidad estimada: de 3-4 usuarios simultáneos a ~15-20.
@@ -6809,5 +6848,184 @@ function completarCamposBancariosEnBlanco() {
 
   } catch (e) {
     Logger.log('❌ Error en completarCamposBancariosEnBlanco: ' + e.toString());
+  }
+}
+
+/**
+ * Normaliza un string de hora al formato HH:mm requerido por <input type="time">.
+ * Acepta: "8:00", "08:00", "8:30 AM", "10:30 a.m.", "08:00:00".
+ * Retorna "" si el valor no es reconocible.
+ */
+function normalizarHoraHHmm(valor) {
+  if (!valor) return '';
+  var limpio = valor.replace(/\s/g, '').toUpperCase();
+  var esPM = limpio.indexOf('PM') !== -1;
+  var esAM = limpio.indexOf('AM') !== -1;
+  limpio = limpio.replace('A.M.', '').replace('P.M.', '').replace('AM', '').replace('PM', '');
+  var partes = limpio.split(':');
+  if (partes.length < 2) return '';
+  var horas   = parseInt(partes[0], 10);
+  var minutos = parseInt(partes[1], 10);
+  if (isNaN(horas) || isNaN(minutos)) return '';
+  if (esAM && horas === 12) horas = 0;
+  if (esPM && horas !== 12) horas += 12;
+  return ('0' + horas).slice(-2) + ':' + ('0' + minutos).slice(-2);
+}
+
+// ==========================================
+// MÓDULO: GESTIÓN PUNTOS DE CONTROL QR (ADMIN)
+// ==========================================
+
+/**
+ * Retorna todos los puntos de control con su ventana horaria.
+ * Columnas PUNTOS_CONTROL: A=NOMBRE, B=URL, C=QR_CODE, D=URL_BASE, E=HORA_APERTURA, F=HORA_CIERRE
+ */
+function obtenerPuntosControl() {
+  try {
+    var ss = getSpreadsheet('ASISTENCIA');
+    var sheet = ss.getSheetByName(CONFIG.HOJAS.PUNTOS_CONTROL);
+    if (!sheet || sheet.getLastRow() < 2) {
+      return { success: true, puntos: [] };
+    }
+    var datos = sheet.getDataRange().getDisplayValues();
+    var puntos = [];
+    for (var i = 1; i < datos.length; i++) {
+      var nombre = String(datos[i][0] || '').trim();
+      if (!nombre) continue;
+      puntos.push({
+        nombre:        nombre,
+        horaApertura:  normalizarHoraHHmm(String(datos[i][4] || '').trim()),
+        horaCierre:    normalizarHoraHHmm(String(datos[i][5] || '').trim())
+      });
+    }
+    return { success: true, puntos: puntos };
+  } catch (e) {
+    Logger.log('Error en obtenerPuntosControl: ' + e.toString());
+    return { success: false, message: e.toString() };
+  }
+}
+
+/**
+ * Crea un nuevo punto de control en la hoja PUNTOS_CONTROL.
+ * Genera automáticamente la fórmula de URL (col B) y el QR (col C).
+ */
+function crearPuntoControl(nombre) {
+  try {
+    nombre = String(nombre || '').trim();
+    if (!nombre) return { success: false, message: 'El nombre no puede estar vacío.' };
+
+    var ss = getSpreadsheet('ASISTENCIA');
+    var sheet = ss.getSheetByName(CONFIG.HOJAS.PUNTOS_CONTROL);
+    if (!sheet) return { success: false, message: 'Hoja PUNTOS_CONTROL no encontrada.' };
+
+    if (sheet.getLastRow() > 1) {
+      var existentes = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getDisplayValues();
+      for (var i = 0; i < existentes.length; i++) {
+        if (String(existentes[i][0]).trim() === nombre) {
+          return { success: false, message: 'Ya existe un punto de control con ese nombre.' };
+        }
+      }
+    }
+
+    var nuevaFila = sheet.getLastRow() + 1;
+    sheet.getRange(nuevaFila, 1).setValue(nombre);
+    sheet.getRange(nuevaFila, 2).setFormula('=$D$1&"?action=checkin&control="&A' + nuevaFila);
+    sheet.getRange(nuevaFila, 3).setFormula('=IMAGE("https://quickchart.io/qr?size=300&text="&ENCODEURL(B' + nuevaFila + '))');
+
+    return { success: true, message: 'Punto de control creado correctamente.' };
+  } catch (e) {
+    Logger.log('Error en crearPuntoControl: ' + e.toString());
+    return { success: false, message: e.toString() };
+  }
+}
+
+/**
+ * Guarda o actualiza la ventana horaria (HORA_APERTURA col E, HORA_CIERRE col F)
+ * de un punto de control específico. Permite valores vacíos para quitar restricción.
+ */
+function guardarVentanaPuntoControl(nombre, horaApertura, horaCierre) {
+  try {
+    nombre       = String(nombre       || '').trim();
+    horaApertura = String(horaApertura || '').trim();
+    horaCierre   = String(horaCierre   || '').trim();
+
+    var reHora = /^([01]\d|2[0-3]):[0-5]\d$/;
+    if (horaApertura && !reHora.test(horaApertura)) {
+      return { success: false, message: 'Hora de apertura inválida. Use formato HH:mm (ej: 08:30).' };
+    }
+    if (horaCierre && !reHora.test(horaCierre)) {
+      return { success: false, message: 'Hora de cierre inválida. Use formato HH:mm (ej: 10:30).' };
+    }
+
+    var ss = getSpreadsheet('ASISTENCIA');
+    var sheet = ss.getSheetByName(CONFIG.HOJAS.PUNTOS_CONTROL);
+    if (!sheet || sheet.getLastRow() < 2) {
+      return { success: false, message: 'Punto de control no encontrado.' };
+    }
+
+    var datos = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getDisplayValues();
+    for (var i = 0; i < datos.length; i++) {
+      if (String(datos[i][0]).trim() === nombre) {
+        sheet.getRange(i + 2, 5).setValue(horaApertura);
+        sheet.getRange(i + 2, 6).setValue(horaCierre);
+        return { success: true, message: 'Ventana horaria guardada correctamente.' };
+      }
+    }
+    return { success: false, message: 'Punto de control no encontrado.' };
+  } catch (e) {
+    Logger.log('Error en guardarVentanaPuntoControl: ' + e.toString());
+    return { success: false, message: e.toString() };
+  }
+}
+
+/**
+ * Elimina un punto de control completo de la hoja PUNTOS_CONTROL.
+ */
+function eliminarPuntoControl(nombre) {
+  try {
+    nombre = String(nombre || '').trim();
+    var ss = getSpreadsheet('ASISTENCIA');
+    var sheet = ss.getSheetByName(CONFIG.HOJAS.PUNTOS_CONTROL);
+    if (!sheet || sheet.getLastRow() < 2) {
+      return { success: false, message: 'Punto de control no encontrado.' };
+    }
+    var datos = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getDisplayValues();
+    for (var i = 0; i < datos.length; i++) {
+      if (String(datos[i][0]).trim() === nombre) {
+        sheet.deleteRow(i + 2);
+        return { success: true, message: 'Punto de control eliminado.' };
+      }
+    }
+    return { success: false, message: 'Punto de control no encontrado.' };
+  } catch (e) {
+    Logger.log('Error en eliminarPuntoControl: ' + e.toString());
+    return { success: false, message: e.toString() };
+  }
+}
+
+/**
+ * Cierra el registro de asistencia de inmediato fijando HORA_CIERRE
+ * con la hora actual de Santiago en la columna F.
+ */
+function cerrarRegistroAhora(nombre) {
+  try {
+    nombre = String(nombre || '').trim();
+    var horaActual = Utilities.formatDate(new Date(), 'America/Santiago', 'HH:mm');
+    var ss = getSpreadsheet('ASISTENCIA');
+    var sheet = ss.getSheetByName(CONFIG.HOJAS.PUNTOS_CONTROL);
+    if (!sheet || sheet.getLastRow() < 2) {
+      return { success: false, message: 'Punto de control no encontrado.' };
+    }
+    var datos = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getDisplayValues();
+    for (var i = 0; i < datos.length; i++) {
+      if (String(datos[i][0]).trim() === nombre) {
+        sheet.getRange(i + 2, 6).setValue(horaActual);
+        return { success: true, message: 'Registro cerrado. Hora de cierre fijada en ' + horaActual + ' hrs.', horaCierre: horaActual };
+      }
+    }
+    return { success: false, message: 'Punto de control no encontrado.' };
+  } catch (e) {
+    Logger.log('Error en cerrarRegistroAhora: ' + e.toString());
+    return { success: false, message: e.toString() };
   }
 }
