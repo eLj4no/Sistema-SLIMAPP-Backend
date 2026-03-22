@@ -1617,14 +1617,66 @@
                  Nuevo punto de control
               </h3>
               <div class="flex flex-col gap-2">
-                 <input id="nuevo-punto-nombre" type="text" placeholder="Ej: Asamblea_22-Marzo-2026_RM"
-                    class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-teal-400 bg-slate-50"/>
+                 <!-- Tipo de actividad -->
+                 <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1">Tipo de actividad</label>
+                    <select id="nuevo-punto-actividad" onchange="actualizarPreviewPunto()"
+                       class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-teal-400 bg-slate-50">
+                       <option value="">— Seleccionar —</option>
+                       <option value="ASAMBLEA">Asamblea</option>
+                       <option value="REUNION">Reunión</option>
+                       <option value="TRANSMISION">Transmisión</option>
+                    </select>
+                 </div>
+                 <!-- Fecha de la actividad -->
+                 <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1">Fecha de la actividad</label>
+                    <input id="nuevo-punto-fecha" type="date" onchange="actualizarPreviewPunto()"
+                       class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-teal-400 bg-slate-50"/>
+                 </div>
+                 <!-- Región -->
+                 <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1">Región</label>
+                    <select id="nuevo-punto-region" onchange="actualizarPreviewPunto()"
+                       class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-teal-400 bg-slate-50">
+                       <option value="">— Seleccionar —</option>
+                       <option value="XV-Arica">XV - Arica y Parinacota</option>
+                       <option value="I-Iquique">I - Tarapacá</option>
+                       <option value="II-Antofagasta">II - Antofagasta</option>
+                       <option value="III-Copiapo">III - Atacama</option>
+                       <option value="IV-LaSerena">IV - Coquimbo</option>
+                       <option value="V-Valparaiso">V - Valparaíso</option>
+                       <option value="RM-Santiago">RM - Metropolitana</option>
+                       <option value="VI-Rancagua">VI - O'Higgins</option>
+                       <option value="VII-Talca">VII - Maule</option>
+                       <option value="XVI-Chillan">XVI - Ñuble</option>
+                       <option value="VIII-Concepcion">VIII - Biobío</option>
+                       <option value="IX-Temuco">IX - Araucanía</option>
+                       <option value="XIV-Valdivia">XIV - Los Ríos</option>
+                       <option value="X-PuertoMontt">X - Los Lagos</option>
+                       <option value="XI-Coyhaique">XI - Aysén</option>
+                       <option value="XII-PuntaArenas">XII - Magallanes</option>
+                    </select>
+                 </div>
+                 <!-- Modalidad -->
+                 <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1">Modalidad</label>
+                    <select id="nuevo-punto-tipo" onchange="actualizarPreviewPunto()"
+                       class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-teal-400 bg-slate-50">
+                       <option value="PRESENCIAL">Presencial (QR físico)</option>
+                       <option value="VIRTUAL">Virtual (botón en app)</option>
+                    </select>
+                 </div>
+                 <!-- Preview nombre generado -->
+                 <div id="nuevo-punto-preview" class="hidden bg-slate-100 border border-slate-300 rounded-xl px-3 py-2">
+                    <p class="text-[10px] text-slate-500 font-bold mb-0.5">Nombre generado:</p>
+                    <p id="nuevo-punto-preview-texto" class="text-xs font-mono font-bold text-teal-700 break-all"></p>
+                 </div>
                  <button onclick="adminCrearPunto()"
                     class="w-full py-2.5 bg-teal-600 text-white text-sm font-bold rounded-xl hover:bg-teal-700 transition flex items-center justify-center gap-1">
                     <span class="material-icons-round text-base">add</span> Crear punto de control
                  </button>
               </div>
-              <p class="text-[10px] text-slate-400 mt-2 ml-1">El nombre no debe tener espacios. Se usará directamente como parámetro en la URL del QR.</p>
            </div>
 
            <!-- Loader -->
@@ -1787,6 +1839,94 @@
            </div>
 
            <div id="attendance-list-content" class="flex-col h-full p-4 overflow-y-auto flex">
+
+              <!-- PANEL ASAMBLEAS VIRTUALES -->
+              <div id="virtual-asamblea-panel" class="hidden rounded-xl border p-4 flex flex-col gap-3 mb-4">
+                <!-- Header -->
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                    <span class="material-icons-round">video_call</span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-xs font-bold text-slate-700">Asamblea virtual activa</p>
+                    <p id="virtual-asamblea-nombre" class="text-[11px] text-slate-500 break-all"></p>
+                  </div>
+                  <span id="virtual-asamblea-horario" class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full flex-shrink-0 whitespace-nowrap"></span>
+                </div>
+                <!-- Selector múltiple (visible solo si hay más de una) -->
+                <div id="virtual-selector-wrap" class="hidden">
+                  <label class="block text-[10px] font-bold text-slate-500 mb-1">Selecciona la asamblea</label>
+                  <select id="virtual-selector" onchange="cambiarAsambleaSeleccionada(this.value)"
+                    class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-400 bg-slate-50">
+                  </select>
+                </div>
+                <!-- Sin región registrada (S/D) → obligatorio actualizar -->
+                <div id="virtual-region-sd" class="hidden bg-red-50 border border-red-200 rounded-xl p-3 flex flex-col gap-2">
+                  <div class="flex items-start gap-2">
+                    <span class="material-icons-round text-red-500 text-base flex-shrink-0 mt-0.5">location_off</span>
+                    <div>
+                      <p class="text-xs font-bold text-red-800">Región no registrada</p>
+                      <p class="text-[11px] text-red-700 mt-0.5">Debes indicar tu región antes de registrar tu asistencia. Este dato es necesario para el sistema.</p>
+                    </div>
+                  </div>
+                  <select id="virtual-region-select"
+                    class="w-full px-3 py-2 border border-red-200 rounded-xl text-sm focus:outline-none focus:border-red-400 bg-white">
+                    <option value="">— Selecciona tu región —</option>
+                  </select>
+                  <button onclick="guardarRegionDesdeAsistencia()"
+                    class="w-full py-2 bg-red-600 text-white text-xs font-bold rounded-xl hover:bg-red-700 transition flex items-center justify-center gap-1">
+                    <span class="material-icons-round text-sm">save</span>
+                    Guardar región y continuar
+                  </button>
+                </div>
+
+                <!-- Región diferente a la asamblea → advertencia con confirmación -->
+                <div id="virtual-region-warning" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-3 flex flex-col gap-2">
+                  <div class="flex items-start gap-2">
+                    <span class="material-icons-round text-amber-500 text-base flex-shrink-0 mt-0.5">warning</span>
+                    <div>
+                      <p class="text-xs font-bold text-amber-800">La asamblea es de otra región</p>
+                      <p id="virtual-region-warning-msg" class="text-[11px] text-amber-700 mt-0.5"></p>
+                    </div>
+                  </div>
+                  <!-- Actualizar región inline -->
+                  <details class="text-xs">
+                    <summary class="cursor-pointer font-bold text-amber-800 py-1">¿Tu región registrada es incorrecta? Actualízala aquí</summary>
+                    <div class="mt-2 flex flex-col gap-2">
+                      <select id="virtual-region-update-select"
+                        class="w-full px-3 py-2 border border-amber-200 rounded-xl text-sm focus:outline-none focus:border-amber-400 bg-white">
+                        <option value="">— Selecciona tu región —</option>
+                      </select>
+                      <button onclick="guardarRegionDesdeAsistencia()"
+                        class="w-full py-2 bg-amber-600 text-white text-xs font-bold rounded-xl hover:bg-amber-700 transition flex items-center justify-center gap-1">
+                        <span class="material-icons-round text-sm">save</span>
+                        Guardar y actualizar
+                      </button>
+                    </div>
+                  </details>
+                </div>
+                <!-- Botón registrar -->
+                <button id="btn-registrar-virtual" onclick="registrarAsistenciaVirtual()"
+                  class="w-full py-3 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 active:scale-95 transition flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30">
+                  <span class="material-icons-round">how_to_reg</span>
+                  Registrar mi asistencia
+                </button>
+                <!-- Ya registrado -->
+                <div id="virtual-ya-registrado" class="hidden text-center text-xs font-bold text-green-600 flex items-center justify-center gap-1 py-2 bg-green-50 rounded-xl">
+                  <span class="material-icons-round text-sm">check_circle</span>
+                  Ya registraste tu asistencia en esta asamblea
+                </div>
+              </div>
+
+              <!-- SIN ASAMBLEA VIRTUAL ACTIVA -->
+              <div id="virtual-sin-asamblea" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center gap-3 mb-4">
+                <span class="material-icons-round text-slate-400 text-2xl">event_busy</span>
+                <div>
+                  <p class="text-xs font-bold text-slate-600">Sin asamblea virtual activa</p>
+                  <p class="text-[11px] text-slate-400">No hay ninguna asamblea virtual en curso en este momento.</p>
+                </div>
+              </div>
+
               <div id="attendance-loader" class="flex justify-center py-10 hidden"><div class="loader"></div></div>
               <div id="attendance-list" class="space-y-3"></div>
               <div id="attendance-empty" class="hidden text-center py-10 text-slate-400 text-sm">
@@ -3904,6 +4044,199 @@
       }
 
       // ==========================================
+      // ASISTENCIA VIRTUAL — BOTÓN DE REGISTRO
+      // ==========================================
+
+      var _asambleaVirtualActual = null;
+      var _asambleasVirtuales    = [];
+
+      // Mapeo de código corto (en nombre del punto) → fragmento de la región larga (en BD_SLIMAPP)
+      var _regionCodigoAFragmento = {
+        'XV-Arica':       'Arica',
+        'I-Iquique':      'Iquique',
+        'II-Antofagasta': 'Antofagasta',
+        'III-Copiapo':    'Copiap',
+        'IV-LaSerena':    'La Serena',
+        'V-Valparaiso':   'Valpara',
+        'RM-Santiago':    'Santiago',
+        'VI-Rancagua':    'Rancagua',
+        'VII-Talca':      'Talca',
+        'XVI-Chillan':    'hill',
+        'VIII-Concepcion':'Concepci',
+        'IX-Temuco':      'Temuco',
+        'XIV-Valdivia':   'Valdivia',
+        'X-PuertoMontt':  'Puerto Montt',
+        'XI-Coyhaique':   'Coyhaique',
+        'XII-PuntaArenas':'Punta Arenas'
+      };
+
+      // Extrae el código de región del nombre del punto (último segmento tras el último _)
+      function extraerCodigoRegionDePunto(nombrePunto) {
+        var partes = (nombrePunto || '').split('_');
+        return partes.length >= 3 ? partes[partes.length - 1] : '';
+      }
+
+      // Retorna true si la región del usuario coincide con el código de la asamblea
+      function regionCoincide(codigoAsamblea, regionUsuario) {
+        if (!codigoAsamblea || !regionUsuario) return true; // sin datos → no advertir
+        var fragmento = _regionCodigoAFragmento[codigoAsamblea] || '';
+        if (!fragmento) return true; // código desconocido → no advertir
+        return regionUsuario.toLowerCase().indexOf(fragmento.toLowerCase()) !== -1;
+      }
+
+      function cargarEstadoAsambleaVirtual() {
+        var panel    = document.getElementById('virtual-asamblea-panel');
+        var sinPanel = document.getElementById('virtual-sin-asamblea');
+        if (!panel || !sinPanel) return;
+        panel.classList.add('hidden');
+        sinPanel.classList.add('hidden');
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (!res || !res.success || !res.activa || res.asambleas.length === 0) {
+              sinPanel.classList.remove('hidden');
+              return;
+            }
+
+            _asambleasVirtuales = res.asambleas;
+
+            var selectorWrap = document.getElementById('virtual-selector-wrap');
+            var selector     = document.getElementById('virtual-selector');
+
+            if (res.asambleas.length > 1) {
+              // Múltiples asambleas → mostrar selector
+              selector.innerHTML = '';
+              res.asambleas.forEach(function(a) {
+                var opt = document.createElement('option');
+                opt.value = a.nombre;
+                opt.text  = a.nombre + (a.apertura && a.cierre ? ' (' + a.apertura + '–' + a.cierre + ')' : '');
+                selector.appendChild(opt);
+              });
+              selectorWrap.classList.remove('hidden');
+            } else {
+              selectorWrap.classList.add('hidden');
+            }
+
+            // Seleccionar la primera por defecto
+            aplicarAsambleaSeleccionada(res.asambleas[0]);
+            panel.classList.remove('hidden');
+          })
+          .withFailureHandler(function() {
+            sinPanel.classList.remove('hidden');
+          })
+          .obtenerAsambleaVirtualActiva();
+      }
+
+      function cambiarAsambleaSeleccionada(nombre) {
+        var asamblea = _asambleasVirtuales.find(function(a) { return a.nombre === nombre; });
+        if (asamblea) aplicarAsambleaSeleccionada(asamblea);
+      }
+
+      function aplicarAsambleaSeleccionada(asamblea) {
+        _asambleaVirtualActual = asamblea.nombre;
+
+        var panel    = document.getElementById('virtual-asamblea-panel');
+        var warning  = document.getElementById('virtual-region-warning');
+        var warningMsg = document.getElementById('virtual-region-warning-msg');
+        var btn      = document.getElementById('btn-registrar-virtual');
+        var yaReg    = document.getElementById('virtual-ya-registrado');
+
+        // Actualizar nombre y horario
+        document.getElementById('virtual-asamblea-nombre').innerText = asamblea.nombre;
+        var horario = (asamblea.apertura && asamblea.cierre)
+          ? (asamblea.apertura + ' – ' + asamblea.cierre) : 'Abierta';
+        document.getElementById('virtual-asamblea-horario').innerText = horario;
+
+        // Comparación de región
+        var codigoRegionAsamblea = extraerCodigoRegionDePunto(asamblea.nombre);
+        var regionUsuario = userDataCache.region || '';
+        var coincide = regionCoincide(codigoRegionAsamblea, regionUsuario);
+
+        if (!coincide) {
+          var regionRegistrada = regionUsuario || 'no registrada';
+          warningMsg.innerText =
+            'La asamblea es de la region ' + codigoRegionAsamblea + '. ' +
+            'Tu region registrada es: ' + regionRegistrada + '. ' +
+            'Si tu region es incorrecta, actualiza el dato en Mis Datos.';
+          warning.classList.remove('hidden');
+        } else {
+          warning.classList.add('hidden');
+        }
+
+        // localStorage — ¿ya registró?
+        var lsKey = 'asist_' + asamblea.nombre + '_' + currentRut;
+        var yaRegistrado = localStorage.getItem(lsKey) === '1';
+
+        // Limpiar clases de color dinámicas
+        ['border-blue-200','bg-blue-50','border-green-200','bg-green-50'].forEach(function(c) {
+          panel.classList.remove(c);
+        });
+
+        if (yaRegistrado) {
+          panel.classList.add('border-green-200', 'bg-green-50');
+          btn.classList.add('hidden');
+          yaReg.classList.remove('hidden');
+        } else {
+          panel.classList.add('border-blue-200', 'bg-blue-50');
+          btn.classList.remove('hidden');
+          btn.disabled = false;
+          var oldHtml = '<span class="material-icons-round">how_to_reg</span> Registrar mi asistencia';
+          btn.innerHTML = oldHtml;
+          yaReg.classList.add('hidden');
+        }
+      }
+
+      function registrarAsistenciaVirtual() {
+        if (!currentRut) { showWarning('Sesion expirada.'); return; }
+        if (!_asambleaVirtualActual) { showWarning('No hay asamblea virtual activa.'); return; }
+
+        var btn = document.getElementById('btn-registrar-virtual');
+        var oldHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<div class="flex items-center justify-center gap-2"><div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>Registrando...</div>';
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            btn.innerHTML = oldHtml;
+            if (res.success) {
+              // Guardar en localStorage para bloquear dobles registros en este dispositivo
+              var lsKey = 'asist_' + _asambleaVirtualActual + '_' + currentRut;
+              localStorage.setItem(lsKey, '1');
+              // Actualizar UI
+              btn.classList.add('hidden');
+              document.getElementById('virtual-ya-registrado').classList.remove('hidden');
+              var panel = document.getElementById('virtual-asamblea-panel');
+              if (panel) {
+                panel.classList.remove('border-blue-200', 'bg-blue-50');
+                panel.classList.add('border-green-200', 'bg-green-50');
+              }
+              SLIMSound.play('success');
+              showSuccess('Asistencia registrada correctamente.');
+            } else if (res.yaRegistrado) {
+              // Sincronizar localStorage si el backend ya lo tenía registrado
+              var lsKey2 = 'asist_' + _asambleaVirtualActual + '_' + currentRut;
+              localStorage.setItem(lsKey2, '1');
+              btn.classList.add('hidden');
+              document.getElementById('virtual-ya-registrado').classList.remove('hidden');
+              showWarning(res.message);
+            } else if (res.ventanaCerrada) {
+              btn.disabled = true;
+              showWarning(res.message);
+              cargarEstadoAsambleaVirtual();
+            } else {
+              btn.disabled = false;
+              showWarning(res.message || 'Error al registrar asistencia.');
+            }
+          })
+          .withFailureHandler(function(err) {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+            showWarning('Error de conexion: ' + (err.message || err));
+          })
+          .registrarAsistenciaVirtual(currentRut, _asambleaVirtualActual);
+      }
+
+      // ==========================================
       // GESTIÓN PUNTOS DE CONTROL QR (ADMIN)
       // ==========================================
 
@@ -3954,6 +4287,14 @@
         var apertura = p.horaApertura || '';
         var cierre   = p.horaCierre   || '';
         var estado = calcularEstadoPunto(apertura, cierre);
+        var tipoCss   = (p.tipo === 'VIRTUAL') ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600';
+        var tipoIcono = (p.tipo === 'VIRTUAL') ? 'video_call' : 'qr_code_scanner';
+        var tipoLabel = (p.tipo === 'VIRTUAL') ? 'Virtual' : 'Presencial';
+        var tipoTag =
+          '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ' + tipoCss + '">' +
+            '<span class="material-icons-round" style="font-size:11px;">' + tipoIcono + '</span>' +
+            tipoLabel +
+          '</span>';
         var estadoTag =
           '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ' + estado.css + '">' +
             '<span class="material-icons-round" style="font-size:11px;">' + estado.icono + '</span>' +
@@ -3963,9 +4304,9 @@
           '<div class="flex items-start justify-between gap-2">' +
             '<div class="flex-1 min-w-0">' +
               '<p class="text-sm font-bold text-slate-800 break-all">' + nombre + '</p>' +
-              estadoTag +
+              '<div class="flex items-center gap-1 flex-wrap mt-1">' + tipoTag + estadoTag + '</div>' +
             '</div>' +
-            '<button id="btn-del-' + idSlug + '" onclick="adminEliminarPunto(\'' + nombre.replace(/'/g, "\\'") + '\')" ' +
+            '<button onclick="adminEliminarPunto(this, \'' + nombre.replace(/'/g, "\\'") + '\')" ' +
               'class="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition flex-shrink-0">' +
               '<span class="material-icons-round text-base">delete</span>' +
             '</button>' +
@@ -3995,16 +4336,51 @@
         '</div>';
       }
 
+      function actualizarPreviewPunto() {
+        var actividad = document.getElementById('nuevo-punto-actividad').value;
+        var fechaRaw  = document.getElementById('nuevo-punto-fecha').value;
+        var region    = document.getElementById('nuevo-punto-region').value;
+        var preview   = document.getElementById('nuevo-punto-preview');
+        var previewTx = document.getElementById('nuevo-punto-preview-texto');
+
+        if (!actividad || !fechaRaw || !region) {
+          preview.classList.add('hidden');
+          return;
+        }
+
+        // Convertir fecha de YYYY-MM-DD a DD-MM-YYYY
+        var partes = fechaRaw.split('-');
+        var fechaFormato = partes[2] + '-' + partes[1] + '-' + partes[0];
+        var nombre = actividad + '_' + fechaFormato + '_' + region;
+
+        previewTx.innerText = nombre;
+        preview.classList.remove('hidden');
+      }
+
       function adminCrearPunto() {
-        var input = document.getElementById('nuevo-punto-nombre');
-        var nombre = (input.value || '').trim();
-        if (!nombre) { showWarning('Ingresa un nombre para el punto de control.'); return; }
-        if (/\s/.test(nombre)) { showWarning('El nombre no debe contener espacios. Usa guiones o guiones bajos.'); return; }
+        var actividad = (document.getElementById('nuevo-punto-actividad').value || '').trim();
+        var fechaRaw  = (document.getElementById('nuevo-punto-fecha').value  || '').trim();
+        var region    = (document.getElementById('nuevo-punto-region').value  || '').trim();
+        var tipo      = document.getElementById('nuevo-punto-tipo').value || 'PRESENCIAL';
+
+        if (!actividad) { showWarning('Selecciona el tipo de actividad.'); return; }
+        if (!fechaRaw)  { showWarning('Indica la fecha de la actividad.'); return; }
+        if (!region)    { showWarning('Selecciona la región.'); return; }
+
+        // Construir nombre: ACTIVIDAD_DD-MM-YYYY_REGION
+        var partes = fechaRaw.split('-');
+        var fechaFormato = partes[2] + '-' + partes[1] + '-' + partes[0];
+        var nombre = actividad + '_' + fechaFormato + '_' + region;
 
         google.script.run
           .withSuccessHandler(function(res) {
             if (res.success) {
-              input.value = '';
+              // Limpiar formulario
+              document.getElementById('nuevo-punto-actividad').value = '';
+              document.getElementById('nuevo-punto-fecha').value = '';
+              document.getElementById('nuevo-punto-region').value = '';
+              document.getElementById('nuevo-punto-tipo').value = 'PRESENCIAL';
+              document.getElementById('nuevo-punto-preview').classList.add('hidden');
               showSuccess(res.message);
               adminCargarPuntos();
             } else {
@@ -4012,7 +4388,7 @@
             }
           })
           .withFailureHandler(function() { showWarning('Error de conexión.'); })
-          .crearPuntoControl(nombre);
+          .crearPuntoControl(nombre, tipo);
       }
 
       function adminGuardarVentana(nombre, idSlug) {
@@ -4028,10 +4404,8 @@
           .guardarVentanaPuntoControl(nombre, apertura, cierre);
       }
 
-      function adminEliminarPunto(nombre) {
-        var idSlug = nombre.replace(/[^a-zA-Z0-9]/g, '_');
-        var btn = document.getElementById('btn-del-' + idSlug);
-        if (!btn) return;
+      function adminEliminarPunto(btnEl, nombre) {
+        var btn = btnEl;
 
         // Primera pulsación: pedir confirmación inline
         if (btn.dataset.confirmando !== 'true') {
@@ -6258,6 +6632,7 @@ divForm.classList.add('flex');
       // === FUNCIONES REGISTRO ASISTENCIA ===
       function loadAttendanceRecords() {
          switchView('attendance-records-view');
+         cargarEstadoAsambleaVirtual();
          const list = document.getElementById('attendance-list');
          const loader = document.getElementById('attendance-loader');
          const empty = document.getElementById('attendance-empty');
@@ -6279,7 +6654,7 @@ divForm.classList.add('flex');
                         tipoIcon = 'qr_code_scanner'; tipoColor = 'text-green-600'; tipoBg = 'bg-green-50 border-green-200';
                      } else if (tipoLower.includes('presencial')) {
                         tipoIcon = 'check_circle'; tipoColor = 'text-green-600'; tipoBg = 'bg-green-50 border-green-200';
-                     } else if (tipoLower.includes('online')) {
+                     } else if (tipoLower.includes('online') || tipoLower.includes('virtual')) {
                         tipoIcon = 'video_call'; tipoColor = 'text-blue-600'; tipoBg = 'bg-blue-50 border-blue-200';
                      } else {
                         tipoIcon = 'how_to_reg'; tipoColor = 'text-teal-600'; tipoBg = 'bg-teal-50 border-teal-200';
