@@ -7034,10 +7034,6 @@ function cerrarRegistroAhora(nombre) {
 }
 
 /**
- * Retorna la primera asamblea virtual activa en este momento.
- * Activa = tipo VIRTUAL + dentro de la ventana horaria (o sin ventana).
- */
-/**
  * Retorna TODAS las asambleas virtuales activas en este momento.
  * Activa = tipo VIRTUAL + dentro de la ventana horaria (o sin ventana).
  */
@@ -7126,12 +7122,38 @@ function registrarAsistenciaVirtual(rutInput, nombreControl) {
       sheetAsistencia.appendRow(['FECHA_HORA', 'RUT', 'NOMBRE', 'ASAMBLEA', 'TIPO_ASISTENCIA', 'GESTION', 'CODIGO_TEMP', 'NOTIF_CORREO']);
     }
 
+    // Extraer la fecha del nombre del control (formato TIPO_DD-MM-YYYY_REGION)
+    // Para verificar si el RUT ya registró en cualquier asamblea VIRTUAL del mismo día
+    var fechaHoy = Utilities.formatDate(new Date(), 'America/Santiago', 'dd/MM/yyyy');
+    var partesControl = nombreControl.split('_');
+    var fechaEvento = '';
+    for (var p = 0; p < partesControl.length; p++) {
+      if (/^\d{2}-\d{2}-\d{4}$/.test(partesControl[p])) {
+        var fp = partesControl[p].split('-');
+        fechaEvento = fp[0] + '/' + fp[1] + '/' + fp[2]; // DD/MM/YYYY
+        break;
+      }
+    }
+
     var dataAsistencia = sheetAsistencia.getDataRange().getDisplayValues();
     for (var i = 1; i < dataAsistencia.length; i++) {
       var row = dataAsistencia[i];
-      if (cleanRut(row[1]) === rutLimpio && row[3] === nombreControl) {
+      if (cleanRut(row[1]) !== rutLimpio) continue;
+
+      // Bloqueo exacto: mismo RUT, misma asamblea
+      if (row[3] === nombreControl) {
         return { success: false, yaRegistrado: true,
           message: 'Ya registraste tu asistencia en esta asamblea.' };
+      }
+
+      // Bloqueo por fecha del evento: mismo RUT, misma fecha, tipo VIRTUAL
+      // Evita doble registro desde otro dispositivo cuando hay múltiples asambleas el mismo día
+      if (fechaEvento && row[4] === 'VIRTUAL') {
+        var fechaRegistro = String(row[0]).split(' ')[0]; // DD/MM/YYYY desde FECHA_HORA
+        if (fechaRegistro === fechaEvento) {
+          return { success: false, yaRegistrado: true,
+            message: 'Ya registraste tu asistencia en el evento de hoy desde otro dispositivo.' };
+        }
       }
     }
 
