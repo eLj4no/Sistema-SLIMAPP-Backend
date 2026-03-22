@@ -1601,6 +1601,51 @@
         </div>
       </section>
 
+      <!-- VISTA: GESTIÓN ASISTENCIA QR (ADMIN) -->
+      <section id="admin-asistencia-qr-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4 h-[90vh]">
+        <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden flex-shrink-0">
+           <div class="absolute top-0 right-0 w-32 h-32 bg-teal-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
+           <button onclick="switchView('admin-panel-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><span class="material-icons-round">arrow_back</span></button>
+           <h2 class="text-lg font-bold z-10">Gestión Asistencia QR</h2>
+        </div>
+        <div class="flex-grow flex flex-col bg-slate-50/50 overflow-y-auto p-4 gap-4">
+
+           <!-- Crear nuevo punto -->
+           <div class="bg-white rounded-xl border border-slate-200 p-4">
+              <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                 <span class="material-icons-round text-teal-600 text-base">add_circle</span>
+                 Nuevo punto de control
+              </h3>
+              <div class="flex flex-col gap-2">
+                 <input id="nuevo-punto-nombre" type="text" placeholder="Ej: Asamblea_22-Marzo-2026_RM"
+                    class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-teal-400 bg-slate-50"/>
+                 <button onclick="adminCrearPunto()"
+                    class="w-full py-2.5 bg-teal-600 text-white text-sm font-bold rounded-xl hover:bg-teal-700 transition flex items-center justify-center gap-1">
+                    <span class="material-icons-round text-base">add</span> Crear punto de control
+                 </button>
+              </div>
+              <p class="text-[10px] text-slate-400 mt-2 ml-1">El nombre no debe tener espacios. Se usará directamente como parámetro en la URL del QR.</p>
+           </div>
+
+           <!-- Loader -->
+           <div id="admin-puntos-loader" class="hidden flex flex-col items-center py-6">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mb-2"></div>
+              <p class="text-xs text-slate-500">Cargando puntos de control...</p>
+           </div>
+
+           <!-- Lista de puntos -->
+           <div id="admin-puntos-lista" class="flex flex-col gap-3"></div>
+
+           <!-- Estado vacío -->
+           <div id="admin-puntos-vacio" class="hidden flex flex-col items-center py-10 text-slate-400">
+              <span class="material-icons-round text-4xl mb-2">qr_code_2</span>
+              <p class="text-sm font-semibold">Sin puntos de control</p>
+              <p class="text-xs">Crea el primero usando el formulario de arriba.</p>
+           </div>
+
+        </div>
+      </section>
+
       <!-- VISTA: PERMISO MÉDICO -->
       <section id="permission-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4 h-[90vh]">
         <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden flex-shrink-0">
@@ -1764,6 +1809,18 @@
            <h3 class="text-lg font-bold text-slate-800 mb-4">Herramientas Administrativas</h3>
            
            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+              <!-- Gestión Puntos de Control QR -->
+              <button onclick="abrirGestionAsistenciaQR()" class="glass-card p-4 flex items-center gap-4 hover:bg-white hover:border-teal-200 transition group">
+                 <div class="w-12 h-12 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center group-hover:scale-110 transition">
+                    <span class="material-icons-round">qr_code_scanner</span>
+                 </div>
+                 <div class="text-left flex-1">
+                    <h4 class="font-bold text-slate-700 text-sm">Asistencia QR</h4>
+                    <p class="text-xs text-slate-500">Gestionar puntos de control</p>
+                 </div>
+              </button>
+
               <!-- Generar Informe Préstamos -->
               <button onclick="generarInformePrestamos()" class="glass-card p-4 flex items-center gap-4 hover:bg-white hover:border-purple-200 transition group">
                  <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition">
@@ -3619,10 +3676,10 @@
           return;
         }
 
-        ['login-view','dashboard-view','logout-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view','calculator-view','contrato-colectivo-view','slim-quest-view','slim-quest-quiz-view','slim-quest-leaderboard-view'].forEach(id => document.getElementById(id).classList.add('hidden'));
+        ['login-view','dashboard-view','logout-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view','calculator-view','contrato-colectivo-view','slim-quest-view','slim-quest-quiz-view','slim-quest-leaderboard-view','admin-asistencia-qr-view'].forEach(id => document.getElementById(id).classList.add('hidden'));
         const view = document.getElementById(viewId);
         view.classList.remove('hidden');
-        if (['dashboard-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view','calculator-view','contrato-colectivo-view','slim-quest-view','slim-quest-quiz-view','slim-quest-leaderboard-view'].includes(viewId)) view.classList.add('flex');
+        if (['dashboard-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view','calculator-view','contrato-colectivo-view','slim-quest-view','slim-quest-quiz-view','slim-quest-leaderboard-view','admin-asistencia-qr-view'].includes(viewId)) view.classList.add('flex');
       }
 
       function handleLogout() {
@@ -3844,6 +3901,227 @@
           document.getElementById('recover-password-modal').classList.add('hidden');
           showWarning("Error: " + err);
         }).enviarContrasenaCorreo(rutInput);
+      }
+
+      // ==========================================
+      // GESTIÓN PUNTOS DE CONTROL QR (ADMIN)
+      // ==========================================
+
+      function abrirGestionAsistenciaQR() {
+        switchView('admin-asistencia-qr-view');
+        adminCargarPuntos();
+      }
+
+      function adminCargarPuntos() {
+        var loader = document.getElementById('admin-puntos-loader');
+        var lista  = document.getElementById('admin-puntos-lista');
+        var vacio  = document.getElementById('admin-puntos-vacio');
+        loader.classList.remove('hidden');
+        lista.innerHTML = '';
+        vacio.classList.add('hidden');
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            loader.classList.add('hidden');
+            if (!res.success) { showWarning('Error al cargar puntos de control.'); return; }
+            if (res.puntos.length === 0) {
+              vacio.classList.remove('hidden');
+              return;
+            }
+            res.puntos.forEach(function(p) {
+              lista.innerHTML += adminTarjetaPunto(p);
+            });
+          })
+          .withFailureHandler(function() {
+            loader.classList.add('hidden');
+            showWarning('Error de conexión al cargar puntos de control.');
+          })
+          .obtenerPuntosControl();
+      }
+
+      function calcularEstadoPunto(apertura, cierre) {
+        if (!apertura || !cierre) return { tipo: 'libre', label: 'Sin restriccion horaria', css: 'bg-slate-100 text-slate-500', icono: 'schedule' };
+        var ahora = new Date();
+        var hhmm = ('0' + ahora.getHours()).slice(-2) + ':' + ('0' + ahora.getMinutes()).slice(-2);
+        if (hhmm < apertura) return { tipo: 'pendiente', label: 'No ha abierto · abre ' + apertura, css: 'bg-amber-100 text-amber-700', icono: 'hourglass_top' };
+        if (hhmm > cierre)   return { tipo: 'cerrado',   label: 'Cerrado · cerro ' + cierre,        css: 'bg-red-100 text-red-700',    icono: 'lock' };
+        return { tipo: 'abierto', label: 'Abierto · cierra ' + cierre, css: 'bg-green-100 text-green-700', icono: 'lock_open' };
+      }
+
+      function adminTarjetaPunto(p) {
+        var nombre = p.nombre;
+        var idSlug = nombre.replace(/[^a-zA-Z0-9]/g, '_');
+        var apertura = p.horaApertura || '';
+        var cierre   = p.horaCierre   || '';
+        var estado = calcularEstadoPunto(apertura, cierre);
+        var estadoTag =
+          '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ' + estado.css + '">' +
+            '<span class="material-icons-round" style="font-size:11px;">' + estado.icono + '</span>' +
+            estado.label +
+          '</span>';
+        return '<div class="bg-white rounded-xl border border-slate-200 p-4 flex flex-col gap-3" id="card-' + idSlug + '">' +
+          '<div class="flex items-start justify-between gap-2">' +
+            '<div class="flex-1 min-w-0">' +
+              '<p class="text-sm font-bold text-slate-800 break-all">' + nombre + '</p>' +
+              estadoTag +
+            '</div>' +
+            '<button id="btn-del-' + idSlug + '" onclick="adminEliminarPunto(\'' + nombre.replace(/'/g, "\\'") + '\')" ' +
+              'class="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition flex-shrink-0">' +
+              '<span class="material-icons-round text-base">delete</span>' +
+            '</button>' +
+          '</div>' +
+          '<div class="grid grid-cols-2 gap-2">' +
+            '<div>' +
+              '<label class="block text-[10px] font-bold text-slate-500 mb-1">Apertura (HH:mm)</label>' +
+              '<input id="ap-' + idSlug + '" type="time" value="' + apertura + '" ' +
+                'class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-teal-400 bg-slate-50"/>' +
+            '</div>' +
+            '<div>' +
+              '<label class="block text-[10px] font-bold text-slate-500 mb-1">Cierre (HH:mm)</label>' +
+              '<input id="ci-' + idSlug + '" type="time" value="' + cierre + '" ' +
+                'class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-teal-400 bg-slate-50"/>' +
+            '</div>' +
+          '</div>' +
+          '<div class="flex gap-2">' +
+            '<button onclick="adminGuardarVentana(\'' + nombre.replace(/'/g, "\\'") + '\',\'' + idSlug + '\')" ' +
+              'class="flex-1 py-2 bg-teal-600 text-white text-xs font-bold rounded-xl hover:bg-teal-700 transition flex items-center justify-center gap-1">' +
+              '<span class="material-icons-round text-sm">save</span> Guardar horario' +
+            '</button>' +
+            '<button id="btn-cerrar-' + idSlug + '" onclick="adminCerrarAhora(\'' + nombre.replace(/'/g, "\\'") + '\')" ' +
+              'class="px-3 py-2 bg-orange-50 text-orange-600 text-xs font-bold rounded-xl border border-orange-200 hover:bg-orange-100 transition flex items-center gap-1">' +
+              '<span class="material-icons-round text-sm">lock_clock</span> Cerrar ahora' +
+            '</button>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function adminCrearPunto() {
+        var input = document.getElementById('nuevo-punto-nombre');
+        var nombre = (input.value || '').trim();
+        if (!nombre) { showWarning('Ingresa un nombre para el punto de control.'); return; }
+        if (/\s/.test(nombre)) { showWarning('El nombre no debe contener espacios. Usa guiones o guiones bajos.'); return; }
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res.success) {
+              input.value = '';
+              showSuccess(res.message);
+              adminCargarPuntos();
+            } else {
+              showWarning(res.message);
+            }
+          })
+          .withFailureHandler(function() { showWarning('Error de conexión.'); })
+          .crearPuntoControl(nombre);
+      }
+
+      function adminGuardarVentana(nombre, idSlug) {
+        var apertura = (document.getElementById('ap-' + idSlug).value || '').trim();
+        var cierre   = (document.getElementById('ci-' + idSlug).value  || '').trim();
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res.success) { showSuccess(res.message); adminCargarPuntos(); }
+            else { showWarning(res.message); }
+          })
+          .withFailureHandler(function() { showWarning('Error de conexión.'); })
+          .guardarVentanaPuntoControl(nombre, apertura, cierre);
+      }
+
+      function adminEliminarPunto(nombre) {
+        var idSlug = nombre.replace(/[^a-zA-Z0-9]/g, '_');
+        var btn = document.getElementById('btn-del-' + idSlug);
+        if (!btn) return;
+
+        // Primera pulsación: pedir confirmación inline
+        if (btn.dataset.confirmando !== 'true') {
+          btn.dataset.confirmando = 'true';
+          btn.innerHTML = '<span class="material-icons-round text-base">warning</span>';
+          btn.classList.remove('bg-red-50', 'text-red-500');
+          btn.classList.add('bg-red-500', 'text-white');
+          // Revertir automáticamente tras 4 segundos si no confirma
+          setTimeout(function() {
+            if (btn.dataset.confirmando === 'true') {
+              btn.dataset.confirmando = 'false';
+              btn.innerHTML = '<span class="material-icons-round text-base">delete</span>';
+              btn.classList.remove('bg-red-500', 'text-white');
+              btn.classList.add('bg-red-50', 'text-red-500');
+            }
+          }, 4000);
+          return;
+        }
+
+        // Segunda pulsación: ejecutar eliminación
+        btn.dataset.confirmando = 'false';
+        btn.innerHTML = '<span class="material-icons-round text-base animate-spin">autorenew</span>';
+        btn.disabled = true;
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res.success) { showSuccess(res.message); adminCargarPuntos(); }
+            else {
+              btn.disabled = false;
+              btn.innerHTML = '<span class="material-icons-round text-base">delete</span>';
+              btn.classList.remove('bg-red-500', 'text-white');
+              btn.classList.add('bg-red-50', 'text-red-500');
+              showWarning(res.message);
+            }
+          })
+          .withFailureHandler(function(err) {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons-round text-base">delete</span>';
+            btn.classList.remove('bg-red-500', 'text-white');
+            btn.classList.add('bg-red-50', 'text-red-500');
+            showWarning('Error de conexión: ' + (err.message || err));
+          })
+          .eliminarPuntoControl(nombre);
+      }
+
+      function adminCerrarAhora(nombre) {
+        var btnId = 'btn-cerrar-' + nombre.replace(/[^a-zA-Z0-9]/g, '_');
+        var btn = document.getElementById(btnId);
+        if (!btn) return;
+
+        // Primera pulsación: pedir confirmación inline en el propio botón
+        if (btn.dataset.confirmando !== 'true') {
+          btn.dataset.confirmando = 'true';
+          btn.innerHTML = '<span class="material-icons-round text-sm">warning</span> Confirmar cierre';
+          btn.classList.remove('bg-orange-50', 'text-orange-600', 'border-orange-200');
+          btn.classList.add('bg-red-500', 'text-white', 'border-red-500');
+          // Revertir automáticamente tras 4 segundos si no confirma
+          setTimeout(function() {
+            if (btn.dataset.confirmando === 'true') {
+              btn.dataset.confirmando = 'false';
+              btn.innerHTML = '<span class="material-icons-round text-sm">lock_clock</span> Cerrar ahora';
+              btn.classList.remove('bg-red-500', 'text-white', 'border-red-500');
+              btn.classList.add('bg-orange-50', 'text-orange-600', 'border-orange-200');
+            }
+          }, 4000);
+          return;
+        }
+
+        // Segunda pulsación: confirmar → ejecutar
+        btn.dataset.confirmando = 'false';
+        btn.innerHTML = '<span class="material-icons-round text-sm animate-spin">autorenew</span> Cerrando...';
+        btn.disabled = true;
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons-round text-sm">lock_clock</span> Cerrar ahora';
+            btn.classList.remove('bg-red-500', 'text-white', 'border-red-500');
+            btn.classList.add('bg-orange-50', 'text-orange-600', 'border-orange-200');
+            if (res.success) { showSuccess(res.message); adminCargarPuntos(); }
+            else { showWarning(res.message); }
+          })
+          .withFailureHandler(function(err) {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons-round text-sm">lock_clock</span> Cerrar ahora';
+            btn.classList.remove('bg-red-500', 'text-white', 'border-red-500');
+            btn.classList.add('bg-orange-50', 'text-orange-600', 'border-orange-200');
+            showWarning('Error al cerrar: ' + (err.message || err));
+          })
+          .cerrarRegistroAhora(nombre);
       }
 
       // === BADGES DE ESTADO DE MÓDULOS EN DASHBOARD ===
