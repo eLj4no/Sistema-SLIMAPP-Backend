@@ -6895,7 +6895,8 @@ function obtenerPuntosControl() {
       puntos.push({
         nombre:        nombre,
         horaApertura:  normalizarHoraHHmm(String(datos[i][4] || '').trim()),
-        horaCierre:    normalizarHoraHHmm(String(datos[i][5] || '').trim())
+        horaCierre:    normalizarHoraHHmm(String(datos[i][5] || '').trim()),
+        tipo:          String(datos[i][6] || 'PRESENCIAL').trim().toUpperCase() || 'PRESENCIAL'
       });
     }
     return { success: true, puntos: puntos };
@@ -6909,9 +6910,10 @@ function obtenerPuntosControl() {
  * Crea un nuevo punto de control en la hoja PUNTOS_CONTROL.
  * Genera automáticamente la fórmula de URL (col B) y el QR (col C).
  */
-function crearPuntoControl(nombre) {
+function crearPuntoControl(nombre, tipo) {
   try {
     nombre = String(nombre || '').trim();
+    tipo   = (String(tipo || '').trim().toUpperCase() === 'VIRTUAL') ? 'VIRTUAL' : 'PRESENCIAL';
     if (!nombre) return { success: false, message: 'El nombre no puede estar vacío.' };
 
     var ss = getSpreadsheet('ASISTENCIA');
@@ -6931,6 +6933,7 @@ function crearPuntoControl(nombre) {
     sheet.getRange(nuevaFila, 1).setValue(nombre);
     sheet.getRange(nuevaFila, 2).setFormula('=$D$1&"?action=checkin&control="&A' + nuevaFila);
     sheet.getRange(nuevaFila, 3).setFormula('=IMAGE("https://quickchart.io/qr?size=300&text="&ENCODEURL(B' + nuevaFila + '))');
+    sheet.getRange(nuevaFila, 7).setValue(tipo);
 
     return { success: true, message: 'Punto de control creado correctamente.' };
   } catch (e) {
@@ -7027,5 +7030,136 @@ function cerrarRegistroAhora(nombre) {
   } catch (e) {
     Logger.log('Error en cerrarRegistroAhora: ' + e.toString());
     return { success: false, message: e.toString() };
+  }
+}
+
+/**
+ * Retorna la primera asamblea virtual activa en este momento.
+ * Activa = tipo VIRTUAL + dentro de la ventana horaria (o sin ventana).
+ */
+/**
+ * Retorna TODAS las asambleas virtuales activas en este momento.
+ * Activa = tipo VIRTUAL + dentro de la ventana horaria (o sin ventana).
+ */
+function obtenerAsambleaVirtualActiva() {
+  try {
+    var ss = getSpreadsheet('ASISTENCIA');
+    var sheet = ss.getSheetByName(CONFIG.HOJAS.PUNTOS_CONTROL);
+    if (!sheet || sheet.getLastRow() < 2) {
+      return { success: true, activa: false, asambleas: [] };
+    }
+    var horaActual = Utilities.formatDate(new Date(), 'America/Santiago', 'HH:mm');
+    var datos = sheet.getDataRange().getDisplayValues();
+    var asambleas = [];
+    for (var i = 1; i < datos.length; i++) {
+      var nombre = String(datos[i][0] || '').trim();
+      if (!nombre) continue;
+      var tipo = String(datos[i][6] || '').trim().toUpperCase();
+      if (tipo !== 'VIRTUAL') continue;
+      var apertura = normalizarHoraHHmm(String(datos[i][4] || '').trim());
+      var cierre   = normalizarHoraHHmm(String(datos[i][5] || '').trim());
+      var activa = (!apertura || !cierre) ? true : (horaActual >= apertura && horaActual <= cierre);
+      if (activa) {
+        asambleas.push({ nombre: nombre, apertura: apertura, cierre: cierre });
+      }
+    }
+    return { success: true, activa: asambleas.length > 0, asambleas: asambleas };
+  } catch (e) {
+    Logger.log('Error en obtenerAsambleaVirtualActiva: ' + e.toString());
+    return { success: false, activa: false, asambleas: [] };
+  }
+}
+
+/**
+ * Registra asistencia virtual SIN lock.
+ * Para asambleas virtuales con alta concurrencia (hasta 1.400 usuarios).
+ * El localStorage del frontend actúa como primera barrera contra duplicados.
+ * appendRow es atómico en Sheets — seguro sin lock para este caso de uso.
+ */
+function registrarAsistenciaVirtual(rutInput, nombreControl) {
+  try {
+    var rutLimpio = cleanRut(rutInput);
+    if (!rutLimpio) return { success: false, message: 'RUT inválido.' };
+
+    // Validar usuario con caché (sin tocar el lock)
+    var usuario = obtenerUsuarioPorRut(rutInput);
+    if (!usuario.encontrado) {
+      return { success: false, message: 'RUT no encontrado en el sistema.' };
+    }
+
+    // Validar ventana horaria (reutiliza la misma lógica de registrarAsistencia)
+    try {
+      var ssAsistVentana = getSpreadsheet('ASISTENCIA');
+      var sheetPCtrl = ssAsistVentana.getSheetByName(CONFIG.HOJAS.PUNTOS_CONTROL);
+      if (sheetPCtrl && sheetPCtrl.getLastRow() > 1) {
+        var datosPC = sheetPCtrl.getDataRange().getDisplayValues();
+        for (var pc = 1; pc < datosPC.length; pc++) {
+          if (String(datosPC[pc][0]).trim() === nombreControl) {
+            var horaApertura = normalizarHoraHHmm(String(datosPC[pc][4] || '').trim());
+            var horaCierre   = normalizarHoraHHmm(String(datosPC[pc][5] || '').trim());
+            if (horaApertura && horaCierre) {
+              var horaActual = Utilities.formatDate(new Date(), 'America/Santiago', 'HH:mm');
+              if (horaActual < horaApertura) {
+                return { success: false, ventanaCerrada: true, tipoVentana: 'aun_no_abre',
+                  horaApertura: horaApertura, horaCierre: horaCierre,
+                  message: 'El registro aun no ha comenzado. Abre a las ' + horaApertura + ' hrs.' };
+              }
+              if (horaActual > horaCierre) {
+                return { success: false, ventanaCerrada: true, tipoVentana: 'ya_cerro',
+                  horaApertura: horaApertura, horaCierre: horaCierre,
+                  message: 'El registro ha cerrado. El periodo fue de ' + horaApertura + ' a ' + horaCierre + ' hrs.' };
+              }
+            }
+            break;
+          }
+        }
+      }
+    } catch (eVentana) {
+      Logger.log('Advertencia ventana horaria virtual: ' + eVentana.toString());
+    }
+
+    // Verificación de duplicado en Sheets (respaldo para multi-dispositivo)
+    var ssAsistencia = getSpreadsheet('ASISTENCIA');
+    var sheetAsistencia = ssAsistencia.getSheetByName(CONFIG.HOJAS.ASISTENCIA);
+    if (!sheetAsistencia) {
+      sheetAsistencia = ssAsistencia.insertSheet(CONFIG.HOJAS.ASISTENCIA);
+      sheetAsistencia.appendRow(['FECHA_HORA', 'RUT', 'NOMBRE', 'ASAMBLEA', 'TIPO_ASISTENCIA', 'GESTION', 'CODIGO_TEMP', 'NOTIF_CORREO']);
+    }
+
+    var dataAsistencia = sheetAsistencia.getDataRange().getDisplayValues();
+    for (var i = 1; i < dataAsistencia.length; i++) {
+      var row = dataAsistencia[i];
+      if (cleanRut(row[1]) === rutLimpio && row[3] === nombreControl) {
+        return { success: false, yaRegistrado: true,
+          message: 'Ya registraste tu asistencia en esta asamblea.' };
+      }
+    }
+
+    // Registro sin lock — appendRow es atómico
+    var fechaStr = Utilities.formatDate(new Date(), 'America/Santiago', 'dd/MM/yyyy HH:mm:ss');
+    sheetAsistencia.appendRow([
+      fechaStr,
+      usuario.rut,
+      usuario.nombre,
+      nombreControl,
+      'VIRTUAL',
+      'Sistema',
+      '',
+      ''
+    ]);
+
+    return {
+      success: true,
+      nombre: usuario.nombre,
+      rut: usuario.rut,
+      fecha: fechaStr,
+      mensajeCorreo: usuario.correo && usuario.correo.includes('@')
+        ? 'Recibirás una confirmación en tu correo a más tardar esta noche.'
+        : 'No tienes correo registrado. Puedes ver tu historial en el módulo Registro Asistencia.'
+    };
+
+  } catch (e) {
+    Logger.log('Error en registrarAsistenciaVirtual: ' + e.toString());
+    return { success: false, message: 'Error del servidor: ' + e.toString() };
   }
 }
