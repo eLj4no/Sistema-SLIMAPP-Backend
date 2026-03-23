@@ -4070,11 +4070,14 @@ function registrarAsistencia(rutInput, nombreControl) {
       var datosPC = sheetPCtrl.getDataRange().getDisplayValues();
       for (var pc = 1; pc < datosPC.length; pc++) {
         if (String(datosPC[pc][0]).trim() === nombreControl) {
-          var horaApertura = String(datosPC[pc][4] || '').trim();
-          var horaCierre   = String(datosPC[pc][5] || '').trim();
+          var horaApertura = normalizarHoraHHmm(String(datosPC[pc][4] || '').trim());
+          var horaCierre   = normalizarHoraHHmm(String(datosPC[pc][5] || '').trim());
           if (horaApertura && horaCierre) {
             var horaActual = Utilities.formatDate(new Date(), 'America/Santiago', 'HH:mm');
-            if (horaActual < horaApertura) {
+            var minActual   = parseInt(horaActual.split(':')[0], 10) * 60   + parseInt(horaActual.split(':')[1], 10);
+            var minApertura = parseInt(horaApertura.split(':')[0], 10) * 60 + parseInt(horaApertura.split(':')[1], 10);
+            var minCierre   = parseInt(horaCierre.split(':')[0], 10) * 60   + parseInt(horaCierre.split(':')[1], 10);
+            if (minActual < minApertura) {
               return {
                 success: false,
                 ventanaCerrada: true,
@@ -4084,7 +4087,7 @@ function registrarAsistencia(rutInput, nombreControl) {
                 message: 'El registro de asistencia aun no ha comenzado. El modulo abre a las ' + horaApertura + ' hrs.'
               };
             }
-            if (horaActual > horaCierre) {
+            if (minActual > minCierre) {
               return {
                 success: false,
                 ventanaCerrada: true,
