@@ -24,7 +24,7 @@ SLIMAPP/
 
 ## 🗄️ Arquitectura de Base de Datos
 
-El sistema utiliza **7 Google Spreadsheets independientes**, cada uno dedicado a un módulo.
+El sistema utiliza **8 Google Spreadsheets independientes**, cada uno dedicado a un módulo.
 
 | Clave CONFIG | ID Spreadsheet | Nombre hoja principal | Descripción |
 |---|---|---|---|
@@ -35,13 +35,18 @@ El sistema utiliza **7 Google Spreadsheets independientes**, cada uno dedicado a
 | `PERMISOS_MEDICOS` | `1VYfm7cOgL3mVfVoI8DubIm8WG2srzQw9a6DtIEs3UMM` | `BD_Permisos medicos` | Permisos médicos |
 | `CREDENCIALES` | `1HVyPxdYKuvIybeOCAPwAJaVHwlxEuOik4YW0XOXBE5o` | `IMPRESION` | Estado de credenciales sindicales |
 | `ASISTENCIA` | `1SRQ8Mlc6bBdb0mitAfn4I-EUAS4BOrZRbqS9YAmg3Sk` | `BD_ASISTENCIA` | Registro de asistencia a asambleas |
+| `GAMIFICACION` | `1SHDIhGv6XOc30Epm4vdusp3QGVD-pWzhIwzeD6iqbXQ` | `BD_GAMIFICACION` | Progreso y logros SLIM Quest |
 
 ### Hojas auxiliares
-- `CONFIG_JUSTIFICACIONES` — Configuración del switch de habilitación y fecha de evento
-- `Validación-Prestamos` — Hoja de validación manual de préstamos por directiva
-- `Registros-eliminados` — Respaldo de préstamos eliminados
-- `HISTORIAL_CREDENCIALES` — Log de cambios de estado de credenciales
-- `PUNTOS_CONTROL` — Registro de puntos de control QR habilitados
+
+| Hoja | Spreadsheet | Descripción |
+|---|---|---|
+| `CONFIG_JUSTIFICACIONES` | JUSTIFICACIONES | Switch de habilitación y fecha de evento/asamblea |
+| `Validación-Prestamos` | PRESTAMOS | Validación manual de préstamos por la directiva |
+| `Registros-eliminados` | PRESTAMOS | Respaldo de préstamos eliminados |
+| `HISTORIAL_CREDENCIALES` | CREDENCIALES | Log de cambios de estado de credenciales |
+| `PUNTOS_CONTROL` | ASISTENCIA | Registro de puntos de control QR habilitados |
+| `BANCO_PREGUNTAS` | GAMIFICACION | Banco de preguntas del quiz SLIM Quest |
 
 ### Estructura `BD_ASISTENCIA`
 
@@ -55,6 +60,23 @@ El sistema utiliza **7 Google Spreadsheets independientes**, cada uno dedicado a
 | F | `GESTION` | `Sistema`, nombre del dirigente o admin |
 | G | `CODIGO_TEMP` | Código temporal (uso interno) |
 | H | `NOTIF_CORREO` | Estado de notificación: vacío → `ENVIADO` o `SIN CORREO` |
+
+### Estructura `BD_GAMIFICACION`
+
+| Col | Campo | Descripción |
+|---|---|---|
+| A | `RUT` | RUT limpio del socio |
+| B | `NOMBRE` | Nombre del socio |
+| C | `XP_TOTAL` | Puntos de experiencia acumulados |
+| D | `GRADO` | Grado actual (Aspirante → Dirigente) |
+| E | `LOGROS` | Array JSON de logros desbloqueados |
+| F | `QUIZ_ULTIMO_DIA` | Fecha del último quiz completado |
+| G | `RACHA_ACTUAL` | Días consecutivos completando el quiz |
+| H | `ULTIMA_ACTIVIDAD` | Última fecha de actividad |
+| I | `QUIZ_ULTIMO_DIA` | (alias interno de control de racha) |
+| J | `RACHA_MAX` | Racha máxima histórica |
+| K | `ESTADO` | `ACTIVO` o `DESVINCULADO` |
+| L | `QUIZZES_COMPLETADOS` | Contador total de quizzes completados |
 
 ### Carpetas Google Drive
 
@@ -75,98 +97,126 @@ El sistema utiliza **7 Google Spreadsheets independientes**, cada uno dedicado a
 | `SOCIO` | Acceso a sus propios módulos personales |
 | `DIRIGENTE` | Puede gestionar trámites a nombre de socios + módulo Gestión |
 | `ADMIN` | Acceso completo + Panel Admin + configuración de switches |
+| `TESTING` | Acceso restringido: solo `Mis Datos` y `SLIM Quest` |
 
 ---
 
 ## 📦 Módulos del Sistema
 
 ### 1. 👤 Mis Datos
-- Visualización de datos personales del socio
-- Edición de: región, correo, teléfono, banco, tipo de cuenta, número de cuenta
-- Visualización del estado de vinculación (`ACTIVO` / `DESVINCULADO`)
-- Visualización del estado de credencial sindical con badge de color
-- Visualización del estado en negociación colectiva
+- Visualización y edición de datos personales del socio (correo, teléfono, banco, tipo de cuenta, número de cuenta)
+- Badge de estado de credencial (VIGENTE / VENCIDA / PENDIENTE / REVOCADA)
+- Validación de RUT en tiempo real mediante módulo 11
+- Integración con `CacheService` (TTL 10 min) para optimizar consultas
 
-### 2. 📋 Justificaciones
-- Formulario de envío de justificación de inasistencia
-- Adjunto de archivo (PDF, imagen) hasta 15 MB
-- Validación de restricción por evento (`Fecha_Evento` en CONFIG) o por mes (fallback)
-- Código de asamblea en formato `YYYY_MM_DD` (modo evento) o `YYYY_MM` (modo mes)
-- Historial de justificaciones del socio con estado de revisión
-- Switch de habilitación/deshabilitación por admin
+### 2. 📝 Justificaciones de Inasistencia
+- Envío de justificación de inasistencia a asamblea con adjunto de documento (JPG, PNG, PDF — máx. 15 MB)
+- Lógica de habilitación dual: switch manual en hoja `CONFIG_JUSTIFICACIONES` + restricción por `Fecha_Evento` (genera código `YYYY_MM_DD` automático)
+- Historial de justificaciones del socio con estados y enlace a documento
+- Switch controlado por admin desde Panel Admin
+- Notificaciones automáticas por correo (socio + representante legal) vía `verificarCambiosJustificaciones`
 
 ### 3. ⚖️ Apelaciones de Multas
-- Formulario de apelación con motivo, comprobante de pago y liquidación de sueldo
-- Opción de adjuntar comprobante de devolución posterior
-- Historial de apelaciones con estado y enlace a archivos
-- Posibilidad de anular apelaciones en estado `PENDIENTE`
+- Envío de apelación de multa con comprobante de pago y liquidación de sueldo (JPG, PNG, PDF — máx. 15 MB)
+- Seguimiento de estado: Pendiente → En revisión → Aprobada / Rechazada
+- Comprobante de devolución generado por la directiva y subido a Drive (enlace entregado al socio)
+- Procesamiento en background con `procesarPermisosComprobantesDevolucion` (guard de tiempo de ejecución, tracking por fila, distinción error permanente vs. transitorio)
+- Historial de apelaciones con acceso a documentos adjuntos
 
 ### 4. 💰 Préstamos
-- Formulario de solicitud con monto (hasta UF 10), cuotas (hasta 10) y medio de pago
-- Simulador de cuotas según monto y cantidad seleccionada
-- Historial de préstamos con estado y detalle de cuotas
-- Edición de préstamos en estado `PENDIENTE` (monto, cuotas, medio de pago)
-- Eliminación de préstamos en estado `PENDIENTE`
-- Notificaciones automáticas al cambiar el estado (trigger diario)
+- Solicitud de préstamo (educacional / emergencia / especial) con formulario completo
+- Validación manual por directiva en hoja `Validación-Prestamos`
+- Cambio automático a `Pagado` al cumplirse la fecha de término (`verificarCambiosPrestamos`)
+- Generación y envío de informe Excel de préstamos solicitados por correo al admin
+- Switch de habilitación controlado por admin
+- Notificaciones automáticas de cambios de estado al socio
 
 ### 5. 🏥 Permisos Médicos
-- Formulario de solicitud de permiso médico (con o sin goce de sueldo)
-- Adjunto de certificado médico
-- Historial de permisos con estado
-- Posibilidad de anular permisos en estado `PENDIENTE`
+- Tres tipos de permiso con goce de remuneración:
+  - Media jornada (examen médico)
+  - 1 día completo (atención fuera de ciudad — requiere especificar ciudad y centro médico)
+  - 3 días hábiles (accidente o enfermedad grave de familiar directo)
+- Adjunto de documento médico opcional durante la solicitud (máx. 15 MB)
+- Notificación al representante legal con columna `NOTIFICADO_REP_LEGAL` y retry cada 30 min (`reintentarNotificacionRepLegal`)
+- Notificación al socio con columna `NOTIFICADO_SOCIO` y retry cada 30 min (`reintentarNotificacionSocio`)
+- Switch de habilitación controlado por admin
 
-### 6. 📱 Registro Asistencia (QR)
-- Visualización del historial personal de asistencias a asambleas
-- Muestra: fecha/hora, asamblea, tipo de asistencia, registrado por
-- Compatible con registros de tipo QR, PRESENCIAL y VIRTUAL
-- Notificación por correo enviada automáticamente a las 20:00 hrs del día del registro
+### 6. 📋 Contrato Colectivo
+- Visualización del Contrato Colectivo vigente (Sindicato SLIM N°3 — ISS, vigencia hasta diciembre 2029)
+- Navegación mediante acordeón de 7 capítulos
+- Control de scroll en apertura de sección
+- Switch de habilitación controlado por admin
 
-### 7. 🪪 Estado Credencial
-- Visualización del estado actual de la credencial sindical
-- Badge con colores según estado: `DISPONIBLE`, `ENTREGADO`, `SOLICITADO`, `NO VIGENTE`, `DATOS INCORRECTOS`, `REIMPRIMIR`
-- Información detallada del significado de cada estado
-- Notificación automática semanal al detectar cambios (trigger dominical)
+### 7. 🧮 Calculadora de Horas Extraordinarias
+- Calculadora oficial basada en fórmula DT: `(Base ÷ 30 × 30) ÷ (h/sem × 4) × 1.5`
+- Dos perfiles de cargo: Limpieza y Guardias de Seguridad
+- Valores remuneracionales actualizados para 2026
+- Switch de habilitación controlado por admin
 
-### 8. 👨‍💼 Gestión de Socios (DIRIGENTE / ADMIN)
-- Panel para gestionar trámites a nombre de socios
-- **Tabs disponibles:** Préstamos, Justificaciones, Apelaciones, Permisos Médicos
-- Búsqueda de socios por RUT con validación de rol (DIRIGENTE solo puede gestionar SOCIOs)
-- **ConsultaID:** consulta del ID de credencial y código QR de un socio
-  - Muestra: RUT, nombre, cargo, estado, rol, ID credencial, imagen QR
-  - Restricción: DIRIGENTE no puede consultar datos de otros DIRIGENTES ni ADMINs
-- **Registro manual de asistencia:** ingreso de asistencia PRESENCIAL o VIRTUAL a nombre de un socio
+### 8. 🎮 SLIM Quest _(beta)_
+- Sistema de gamificación para socios con 6 grados de progresión:
 
-### 9. ⚙️ Panel Admin (ADMIN)
-- Switch de habilitación del módulo de justificaciones
-- Configuración de `Fecha_Evento` para asambleas (genera código `YYYY_MM_DD` automático)
-- Generación de informe de préstamos solicitados (Excel adjunto por correo)
+| Grado | XP Requerido | Icono |
+|---|---|---|
+| Aspirante | 0 – 1.500 | 🌱 |
+| Aprendiz | 1.501 – 4.500 | ⚙️ |
+| Trabajador | 4.501 – 10.000 | 🔩 |
+| Defensor | 10.001 – 18.000 | 🛡️ |
+| Negociador | 18.001 – 30.000 | ⚖️ |
+| Dirigente | 30.001+ | 🏆 |
+
+- Quiz diario de preguntas sobre derechos laborales y contrato colectivo (3 niveles: BASICO / INTERMEDIO / AVANZADO)
+- Sistema de rachas con bonos de XP en hitos: 3, 7, 14, 21, 30, 60, 100 días consecutivos
+- Nivel Secreto (`DIRIGENTE`): acceso exclusivo para socios en grado máximo
+- Leaderboard con top 10 de socios más activos
+- Logros desbloqueables almacenados en JSON por socio
+- Sincronización automática de socios desde `BD_SLIMAPP` vía trigger diario a la 1:00 AM
+- Switch de habilitación controlado por admin (bypass para ADMIN)
+
+### 9. ⚙️ Panel Admin _(solo ADMIN)_
+- Switch de habilitación/deshabilitación de todos los módulos con switch:
+  - Justificaciones, Préstamos, Permisos Médicos, Contrato Colectivo, Calculadora HE, SLIM Quest, Registro Asistencia
+- Badges de estado en tiempo real para cada módulo (cargados vía `obtenerEstadosSwitchDashboard`)
+- Configuración de `Fecha_Evento` para asambleas (genera código `YYYY_MM_DD`)
+- Generación y envío de informe de préstamos solicitados (Excel adjunto por correo)
+- Herramientas de mantenimiento y corrección de permisos en Drive
 - Configuración de triggers (`configurarTriggers`)
-- Herramientas de mantenimiento y corrección de permisos Drive
 
-### 10. 📲 Sistema QR — Vinculación (`QR_Access.html`)
-- Página independiente para **vincular el dispositivo personal** del socio
+### 10. 🪪 Consulta ID / Credencial _(ADMIN / DIRIGENTE)_
+- Búsqueda de socio por RUT con visualización de estado de credencial
+- Badge de estado: VIGENTE, VENCIDA, PENDIENTE o REVOCADA
+- Historial de cambios de credencial
+- Verificación semanal automática de cambios (`verificarCambiosCredenciales`, domingos 8 AM)
+
+### 11. 👥 Gestión de Socios _(DIRIGENTE / ADMIN)_
+- Registro de asistencia manual (PRESENCIAL / VIRTUAL) a nombre de socios
+- Búsqueda de socio por RUT para trámites dirigidos
+- Gestión integral de trámites a nombre de socios (justificaciones, apelaciones, permisos médicos)
+
+### 12. 📲 Sistema QR — Vinculación Personal (`QR_Access.html`)
+- Página independiente para vincular el dispositivo personal del socio
 - Parámetro `action=register` + `rut=...`: vincula el RUT al `localStorage` del dispositivo
 - Vista por defecto (sin parámetros): muestra estado del dispositivo (vinculado / sin vincular)
-- Parámetro `action=checkin` + `asamblea=...`: redirige al flujo de registro en punto de control (requiere vinculación previa)
+- Parámetro `action=checkin` + `asamblea=...`: redirige al flujo de registro en punto de control
 
-### 11. 🏁 Sistema QR — Punto de Control (`QR_Asistencia.html`)
+### 13. 🏁 Sistema QR — Punto de Control (`QR_Asistencia.html`)
 - Página independiente activada por parámetro `control=NOMBRE_PUNTO` en la URL
 - Lee el RUT vinculado en el `localStorage` del dispositivo
 - Llama a `registrarAsistencia(rut, control)` en el backend
-- Valida que el dispositivo esté vinculado y que no exista registro duplicado
+- Valida vinculación previa y evita registros duplicados
 - Muestra resultado: éxito con datos del socio, advertencia si ya fue registrado, o error descriptivo
-- Mensaje informativo sobre envío de confirmación por correo (delegado al trigger de las 20:00)
+- Notificación por correo delegada al trigger de las 20:00
 
 ---
 
-## 🚀 Routing `doGet(e)`
+## 🔀 Routing `doGet(e)`
 
 La función `doGet` enruta las peticiones GET a tres destinos distintos:
 
 | Condición | Archivo servido | Uso |
 |---|---|---|
 | Parámetro `control` presente **o** `action=checkin` | `QR_Asistencia.html` | Registro en punto de control QR |
-| Parámetro `action`, `rut` o `asamblea` presentes | `QR_Access.html` | Vinculación QR personal del socio |
+| Parámetros `action`, `rut` o `asamblea` presentes | `QR_Access.html` | Vinculación QR personal del socio |
 | Sin parámetros GET | `Index.html` | Aplicación principal |
 
 **URL base del Web App:**
@@ -180,7 +230,7 @@ https://script.google.com/a/~/macros/s/AKfycbzrmy_GgdzMpOLfycvxxUPHU6iyuL9Jv6As_
 
 Toda subida de archivos pasa por la función centralizada `subirArchivoConPermisos`, que:
 
-1. Valida tamaño (máximo 15 MB)
+1. Valida tamaño (máximo **15 MB**)
 2. Crea el archivo en la carpeta correspondiente con nombre estandarizado (`PREFIJO-UUID-RUT`)
 3. Configura el archivo como privado (`PRIVATE`)
 4. Otorga acceso de lectura **silencioso** (sin email de notificación de Drive) a los correos involucrados mediante **3 intentos con fallback**:
@@ -193,45 +243,34 @@ La función `validarCorreosParaPermisos` prepara la lista de correos a los que s
 
 ---
 
-## 📬 Sistema de Notificaciones por Correo
+## 🔔 Sistema de Notificaciones por Correo
 
-Todos los correos se envían con la función `enviarCorreoEstilizado`, que genera HTML responsivo con el diseño institucional del sindicato.
+Todos los correos de notificación utilizan `enviarCorreoEstilizado()` con diseño HTML responsivo, tema de color por módulo y tabla de detalles del trámite. Los correos se envían vía `MailApp` con `name: "Sindicato SLIM N°3"`.
 
-### Colores por módulo
-| Módulo | Color | Hex |
+### Flujo de notificación por módulo
+
+| Módulo | Destinatario | Trigger |
 |---|---|---|
-| Justificaciones | Naranja | `#ea580c` |
-| Apelaciones (socio) | Azul institucional | `#1d4ed8` |
-| Permisos Médicos | Verde | `#10b981` |
-| Gestión de Dirigente | Gris/Azul | `#475569` |
-| Préstamos | Azul | `#2563eb` |
-| Credenciales | Variable por estado | — |
-| Asistencia QR | Verde | `#10b981` |
+| Justificaciones | Socio + Rep. Legal | `verificarCambiosJustificaciones` (cada 8 h) |
+| Apelaciones | Socio + Rep. Legal | `verificarCambiosApelaciones` (cada 8 h) |
+| Préstamos | Socio | `procesarValidacionPrestamos` / `verificarCambiosPrestamos` (diario 8 AM) |
+| Permisos Médicos — Rep. Legal | Rep. Legal | Inmediato + retry cada 30 min (`reintentarNotificacionRepLegal`) |
+| Permisos Médicos — Socio | Socio | Inmediato + retry cada 30 min (`reintentarNotificacionSocio`) |
+| Credenciales | Socio | `verificarCambiosCredenciales` (domingos 8 AM) |
+| Asistencia | Socio | `verificarNotificacionesAsistencia` (diario 20:00) |
+| SLIM Quest (subida de grado) | Socio | Inmediato al completar quiz |
 
-### Notificaciones de Asistencia
+**Correo representante legal:** `juancarlos.pacheco@cl.issworld.com`
 
-El envío de correo de confirmación de asistencia está **desacoplado del registro**. El flujo es:
-
-1. `registrarAsistencia()` escribe la fila en `BD_ASISTENCIA` con columna H vacía y retorna inmediatamente
-2. El trigger diario de las 20:00 ejecuta `verificarNotificacionesAsistencia()`
-3. La función busca filas con columna H vacía, obtiene el correo del socio desde `BD_SLIMAPP`, envía el correo y marca la columna H como `ENVIADO` o `SIN CORREO`
-
-### Lógica de envío en gestión de dirigente
-
-Cuando un **DIRIGENTE o ADMIN** realiza un trámite a nombre de un socio, el sistema envía:
-
-1. **Correo al dirigente** — asunto "Respaldo Gestión [Módulo]", con todos los detalles del trámite y enlace al archivo
-2. **Copia al socio** (si tiene correo válido registrado) — mismo contenido con mensaje personalizado indicando que fue gestionado por un dirigente
-
-Si el socio **no tiene correo registrado**, solo se envía al dirigente y el sistema continúa sin error.
+**Centinela `SIN_CORREO`:** registros sin correo válido reciben este valor permanente en su columna de notificación para evitar reintentos infinitos.
 
 ---
 
 ## ⚡ Triggers Automáticos
 
-Configurados mediante `configurarTriggers()` (ejecutar manualmente una sola vez).
+Configurados mediante `configurarTriggers()` (ejecutar manualmente una sola vez desde el editor de Apps Script).
 
-> ⚠️ **Advertencia:** esta función **elimina todos los triggers existentes** antes de recrearlos. Verificar que los schedules del código coincidan con los de producción antes de ejecutar.
+> ⚠️ **Advertencia:** esta función **elimina todos los triggers existentes** antes de recrearlos. Verificar que los schedules del código coincidan con los de producción antes de ejecutar. Los triggers personalizados (como `sincronizarSociosGamificacion`) deben añadirse manualmente desde la interfaz de Apps Script o mediante `configurarTriggerGamificacion()`.
 
 | Función | Frecuencia | Descripción |
 |---|---|---|
@@ -242,12 +281,34 @@ Configurados mediante `configurarTriggers()` (ejecutar manualmente una sola vez)
 | `procesarPermisosComprobantesDevolucion` | Cada 1 hora | Otorga permisos a comprobantes de devolución subidos |
 | `verificarCambiosCredenciales` | Domingos 8 AM | Detecta cambios de estado en credenciales y notifica |
 | `verificarNotificacionesAsistencia` | Diario 20:00 | Envía correos de confirmación de asistencias pendientes |
+| `sincronizarSociosGamificacion` | Diario 1:00 AM | Sincroniza socios nuevos/actualizados con SLIM Quest |
+| `reintentarNotificacionRepLegal` | Cada 30 min | Reintenta notificaciones fallidas al Rep. Legal (Permisos Médicos) |
+| `reintentarNotificacionSocio` | Cada 30 min | Reintenta notificaciones fallidas al socio (Permisos Médicos) |
+
+---
+
+## 🔧 Switches de Módulos (PropertiesService)
+
+Los módulos habilitables/deshabilitables utilizan `PropertiesService.getScriptProperties()` para persistencia. El valor por defecto (clave ausente) es siempre **habilitado**.
+
+| Clave PropertiesService | Módulo | Función getter | Función toggle |
+|---|---|---|---|
+| `prestamos_habilitado` | Préstamos | `obtenerEstadoSwitchPrestamos()` | `toggleSwitchPrestamos(estado)` |
+| `contrato_colectivo_habilitado` | Contrato Colectivo | `obtenerEstadoSwitchContratoColectivo()` | `toggleSwitchContratoColectivo(estado)` |
+| `slimquest_habilitado` | SLIM Quest | `obtenerEstadoSwitchSlimQuest()` | `toggleSwitchSlimQuest(estado)` |
+| `calculadora_habilitada` | Calculadora HE | `obtenerEstadoSwitchCalculadora()` | `toggleSwitchCalculadora(estado)` |
+| `permisos_medicos_habilitado` | Permisos Médicos | `obtenerEstadoSwitchPermisosMedicos()` | `toggleSwitchPermisosMedicos(estado)` |
+| `asistencia_habilitada` | Registro Asistencia | `obtenerEstadoSwitchAsistencia()` | `toggleSwitchAsistencia(estado)` |
+| _(hoja CONFIG_JUSTIFICACIONES)_ | Justificaciones | `obtenerEstadoSwitchJustificaciones()` | Desde Panel Admin |
+
+La función `obtenerEstadosSwitchDashboard()` retorna el estado de todos los módulos en una sola llamada para mostrar badges en el dashboard del admin.
 
 ---
 
 ## 🛠️ Funciones Principales del Backend (`Code.gs`)
 
 ### Autenticación y Usuarios
+
 | Función | Descripción |
 |---|---|
 | `validarUsuario(rut, password)` | Login con RUT e ID credencial |
@@ -259,146 +320,170 @@ Configurados mediante `configurarTriggers()` (ejecutar manualmente una sola vez)
 | `verificarRolUsuario(rut, roles)` | Validación de permisos por rol |
 
 ### Justificaciones
+
 | Función | Descripción |
 |---|---|
 | `enviarJustificacion(...)` | Crea registro, sube archivo, envía correos |
-| `validarJustificacionMesActual(rut)` | Valida restricción por evento o por mes |
 | `obtenerHistorialJustificaciones(rut)` | Historial del socio |
-| `obtenerEstadoSwitchJustificaciones()` | Lee CONFIG: habilitado + fecha evento |
-| `toggleSwitchJustificaciones(estado, fecha)` | Actualiza switch (ADMIN) |
-| `verificarCambiosJustificaciones()` | Trigger: detecta cambios y envía notificaciones |
+| `verificarCambiosJustificaciones()` | Trigger: detecta cambios y notifica |
+| `obtenerEstadoSwitchJustificaciones()` | Lee estado de hoja `CONFIG_JUSTIFICACIONES` |
 
 ### Apelaciones
+
 | Función | Descripción |
 |---|---|
-| `enviarApelacion(...)` | Crea registro con archivos adjuntos |
+| `enviarApelacion(...)` | Crea registro, sube archivos, envía correos |
 | `obtenerHistorialApelaciones(rut)` | Historial del socio |
-| `anularApelacion(id, rut)` | Anula apelación en estado PENDIENTE |
 | `verificarCambiosApelaciones()` | Trigger: detecta cambios y notifica |
+| `procesarPermisosComprobantesDevolucion()` | Trigger: otorga permisos a comprobantes subidos |
 
 ### Préstamos
+
 | Función | Descripción |
 |---|---|
-| `solicitarPrestamo(...)` | Crea solicitud de préstamo |
+| `enviarSolicitudPrestamo(...)` | Crea solicitud en hoja de préstamos |
 | `obtenerHistorialPrestamos(rut)` | Historial del socio |
-| `editarPrestamo(...)` | Edita préstamo en estado PENDIENTE |
-| `eliminarPrestamo(id, rut)` | Elimina préstamo en estado PENDIENTE |
-| `procesarValidacionPrestamos()` | Trigger: sincroniza validaciones |
-| `verificarCambiosPrestamos()` | Trigger: detecta cambios y notifica |
+| `procesarValidacionPrestamos()` | Trigger: sincroniza validaciones, notifica cambios |
+| `verificarCambiosPrestamos()` | Trigger: marca préstamos vencidos como `Pagado` |
+| `generarInformePrestamos(correo)` | Genera Excel y lo envía por correo |
 
 ### Permisos Médicos
-| Función | Descripción |
-|---|---|
-| `enviarPermisoMedico(...)` | Crea registro, sube certificado, envía correos |
-| `obtenerHistorialPermisosMedicos(rut)` | Historial del socio |
-| `anularPermisoMedico(id, rut)` | Anula permiso en estado PENDIENTE |
 
-### Asistencia QR
 | Función | Descripción |
 |---|---|
-| `registrarAsistencia(rutInput, nombreControl)` | Registro optimizado con caché + lock reducido |
-| `obtenerHistorialAsistencia(rut)` | Historial de asistencias del socio |
-| `verificarNotificacionesAsistencia()` | Trigger 20:00: envía correos a registros con columna H vacía |
-| `validarDispositivoQR(rut)` | Valida que el RUT pertenece a un socio activo (vinculación) |
+| `enviarPermisoMedico(...)` | Crea solicitud con adjunto opcional |
+| `obtenerHistorialPermisosMedicos(rut)` | Historial del socio |
+| `reintentarNotificacionRepLegal()` | Trigger: reintenta notificaciones fallidas al Rep. Legal |
+| `reintentarNotificacionSocio()` | Trigger: reintenta notificaciones fallidas al socio |
+
+### Asistencia
+
+| Función | Descripción |
+|---|---|
+| `registrarAsistencia(rut, control)` | Registra asistencia QR en `BD_ASISTENCIA` |
+| `registrarAsistenciaManual(rut, tipo, asamblea, gestorRut)` | Registro PRESENCIAL o VIRTUAL por dirigente/admin |
+| `obtenerHistorialAsistencia(rut)` | Historial del socio |
+| `verificarNotificacionesAsistencia()` | Trigger: envía correos de confirmación pendientes |
+| `obtenerPuntosControl()` | Lista de puntos de control habilitados |
 
 ### Credenciales
-| Función | Descripción |
-|---|---|
-| `obtenerEstadoCredencial(rut)` | Lee estado desde hoja IMPRESION |
-| `verificarCambiosCredenciales()` | Trigger dominical: detecta cambios y notifica |
 
-### Utilidades y Admin
 | Función | Descripción |
 |---|---|
-| `generarLinksRegistroYQR()` | Genera links de registro y QR para usuarios sin ellos |
-| `configurarTriggers()` | Configura los 7 triggers del sistema |
-| `enviarCorreoEstilizado(...)` | Función centralizada de envío con plantilla HTML |
-| `subirArchivoConPermisos(...)` | Sube archivo a Drive con permisos silenciosos (3 intentos) |
-| `validarCorreosParaPermisos(...)` | Prepara lista de correos para permisos de archivo |
-| `corregirPermisosJustificacionesExistentes()` | Herramienta de corrección masiva de permisos (manual) |
-| `formatRutServer(rut)` | Formatea RUT con puntos y guión |
-| `cleanRut(rut)` | Limpia RUT a solo dígitos + DV |
+| `buscarSocioPorRut(rut)` | Búsqueda para Consulta ID |
+| `verificarCambiosCredenciales()` | Trigger: detecta cambios de estado y notifica al socio |
+| `enviarCorreoEstadoCredencial(correo, nombre, estadoNuevo)` | Correo HTML de cambio de credencial |
+
+### SLIM Quest — Gamificación
+
+| Función | Descripción |
+|---|---|
+| `getProgresoSocio(rut)` | Progreso completo del socio (XP, grado, logros, racha) |
+| `guardarXP(rut, cantidad, motivo)` | Acumula XP al socio con LockService |
+| `otorgarLogro(rut, codigo, nombre, icono)` | Desbloquea logro al socio |
+| `completarQuiz(rut, xpGanado, correctas)` | Procesa resultado de quiz (racha, bonos, nivel) |
+| `obtenerPreguntasQuiz(rut, cantidad)` | Obtiene preguntas ponderadas según grado |
+| `obtenerPreguntasSecreto(rut, cantidad)` | Preguntas exclusivas para grado Dirigente |
+| `getLeaderboard(rut)` | Top 10 socios por XP |
+| `sincronizarSociosGamificacion()` | Sincroniza socios desde `BD_SLIMAPP` |
+| `inicializarSocioGamificacion_(rut)` | Crea registro inicial de socio en gamificación |
+
+### Auxiliares y Configuración
+
+| Función | Descripción |
+|---|---|
+| `doGet(e)` | Router principal de la Web App |
+| `cleanRut(rut)` | Limpia RUT (elimina puntos, guión, mayúsculas) |
 | `esCorreoValido(correo)` | Valida formato de correo electrónico |
-| `generarCodigoAsamblea(fecha)` | Genera código `YYYY_MM` desde fecha |
-| `generarCodigoAsambleaEvento(fecha)` | Genera código `YYYY_MM_DD` desde fecha de evento |
+| `enviarCorreoEstilizado(...)` | Genera y envía correo HTML con diseño corporativo |
+| `subirArchivoConPermisos(...)` | Sube archivo a Drive con permisos otorgados (3 intentos) |
+| `validarCorreosParaPermisos(...)` | Prepara lista de correos para otorgar acceso |
+| `getSheet(ssKey, sheetKey)` | Obtiene hoja de cálculo por clave de CONFIG |
+| `getSpreadsheet(ssKey)` | Obtiene spreadsheet por clave de CONFIG |
+| `configurarTriggers()` | Configura todos los triggers automáticos |
+| `configurarTriggerGamificacion()` | Configura trigger diario de sincronización SLIM Quest |
+| `obtenerEstadosSwitchDashboard()` | Estado de todos los módulos en una llamada |
 
 ---
 
-## ⚡ Optimización de Concurrencia — `registrarAsistencia()`
+## 🔑 Notas Técnicas Importantes
 
-La función de registro QR fue optimizada para soportar alta concurrencia simultánea:
+### Manejo de fechas
+- Siempre anclar strings de fecha al mediodía (`T12:00:00`) para evitar desfases UTC → Santiago (UTC-3).
+- Usar `getValues()` en lugar de `getDisplayValues()` para columnas de fecha (evita inversión día/mes en formato US).
+- Usar `setNumberFormat('@STRING@')` para prevenir que Sheets convierta texto a Date automáticamente.
 
-| Aspecto | Antes | Después |
-|---|---|---|
-| Búsqueda de usuario | Dentro del lock (lee BD_SLIMAPP en cada llamada) | Fuera del lock con `CacheService` (TTL 10 min) |
-| Envío de correo | Dentro del lock (~7-10 seg bloqueado) | Delegado al trigger de las 20:00 |
-| Tiempo de lock estimado | 7-10 segundos | 1.5-2 segundos |
-| Capacidad concurrente estimada | 3-4 usuarios simultáneos | ~15-20 usuarios simultáneos |
+### Concurrencia
+- `LockService` (nivel script) en operaciones críticas. Mantener secciones críticas cortas (~1.5–2 s).
+- Operaciones no críticas (como envío de correos) se mueven fuera del lock.
+- `CacheService` con TTL de 10 minutos para búsquedas de usuario (`user_RUT`).
 
----
+### Template literals
+- Evitar backticks `` ` `` en Apps Script — usar concatenación con `+` para prevenir errores de string no cerrado.
 
-## 🎨 Tecnologías
+### Formularios y archivos
+- Eliminar `capture="environment"` de inputs de archivo en producción (causaría que móviles abran cámara en lugar de selector de archivos).
+- Fórmulas `=IMAGE()` en Sheets: usar `getFormulas()` en lugar de `getValues()` o `getDisplayValues()`.
 
-### Frontend
-- **HTML5 + CSS3** en archivos únicos por vista
-- **TailwindCSS** via CDN
-- **JavaScript** Vanilla (sin frameworks)
-- **SweetAlert2** para modales y alertas
-- **Google Fonts:** Inter
-- **Material Icons Round**
-- **Diseño:** Glassmorphism, gradientes, dark header, paneles con efecto cristal
+### Web App URL
+- La URL debe usar el formato `/a/~/macros/s/` para deployments de Google Workspace.
+- `ScriptApp.getService().getUrl()` no retorna este formato confiablemente.
 
-### Backend
-- **Google Apps Script** (V8 runtime)
-- **Google Sheets** como base de datos (7 spreadsheets)
-- **Google Drive** para almacenamiento de archivos
-- **Drive API Avanzada** habilitada (servicio Drive v2 para permisos silenciosos)
-- **MailApp / GmailApp** para envío de correos HTML estilizados
-- **CacheService** para caché de usuarios (TTL 10 minutos)
-- **LockService** para control de concurrencia (timeout 30 segundos)
-- **QuickChart API** (`quickchart.io/qr`) para generación de códigos QR
+### Scripts embebidos en Sheets
+- Scripts dentro de un archivo Sheets deben usar `getActiveSpreadsheet()` y literales de string, sin referencias al objeto `CONFIG` del proyecto backend.
+
+### Sentinel `SIN_CORREO`
+- Registros sin correo válido reciben este valor en columnas de notificación para evitar reintentos infinitos.
+
+### `appendRow`
+- Siempre escribe después de la última fila con datos, independiente del tipo de registro. Seguro para datos mixtos.
 
 ---
 
-## ⚠️ Consideraciones Técnicas Importantes
+## 🔐 Seguridad y Control de Acceso
 
-### Zona horaria
-Las fechas sin componente de hora (ej: `"2026-02-25"`) se interpretan como medianoche UTC, lo que puede generar desfase de 1 día en Chile (UTC-3/UTC-4). La solución establecida es anclar a mediodía: `new Date(fecha + 'T12:00:00')`.
+- Validación de rol en todas las funciones sensibles mediante `verificarRolUsuario(rut, rolesPermitidos)`.
+- Socios desvinculados (`ESTADO = DESVINCULADO`) solo pueden acceder a **Mis Datos** (excepto ADMIN).
+- Perfil `TESTING`: acceso exclusivo a **Mis Datos** y **SLIM Quest**.
+- El acceso QR requiere vinculación previa del dispositivo vía `QR_Access.html`.
+- Los archivos subidos a Drive se configuran como **privados** con permisos silenciosos solo para los involucrados.
 
-### Coerción de tipos en Google Sheets
-Google Sheets convierte automáticamente ciertas cadenas de texto a fechas (ej: `"2026-02"`). Para evitarlo se usa `setNumberFormat('@STRING@')` en columnas sensibles (como `MES_APELACION`) y `getDisplayValues()` en lugar de `getValues()` cuando se lee texto formateado.
+---
 
-### Template literals en Apps Script
-Los backticks (`` ` ``) pueden generar errores de cadena no cerrada en ciertos contextos de deployment. Para HTML complejo se prefiere concatenación con `+`.
+## 🎨 Stack Frontend
 
-### Función `configurarTriggers()`
-**Elimina todos los triggers existentes** antes de recrearlos. Nunca ejecutar sin revisar que la función refleje los schedules de producción correctos.
+| Tecnología | Uso |
+|---|---|
+| **TailwindCSS** (CDN) | Framework CSS para todo el diseño |
+| **Material Icons Round** (CDN) | Iconografía del sistema |
+| **SweetAlert** | Modales de alerta y confirmación |
+| **QuickChart API** | Generación de QR (`https://quickchart.io/qr?size=300&text={url}`) |
+| **SLIMSound Engine** | Motor de sonidos (Web Audio API) integrado en el frontend |
+| **Google Apps Script `google.script.run`** | Comunicación asíncrona frontend → backend |
 
-### Función `subirArchivoConPermisos()`
-Es compartida por Justificaciones, Apelaciones y Permisos Médicos. Cualquier modificación afecta los tres módulos simultáneamente.
+---
 
-### `obtenerUsuarioPorRut()`
-Utiliza `CacheService` con TTL de 10 minutos. Si se actualizan datos de un usuario en la hoja, el caché se invalida automáticamente en ese plazo. Para forzar invalidación inmediata: `cache.remove('user_' + rutLimpio)`.
+## 🏛️ Directiva Sindicato SLIM N°3
 
-### `verificarCambiosCredenciales()` — Primera ejecución
-En la primera ejecución solo inicializa el estado anterior (columna J) sin enviar notificaciones. Comportamiento esperado y documentado.
+| Cargo | Nombre |
+|---|---|
+| Presidente | Carlos Orellana G. |
+| Tesorero | Franco Collao V. |
+| Secretario | Carlos Pacheco M. |
+| Directora | Felicita Anartes C. |
+| Directora | Sofía Leonardini C. |
 
-### `localStorage` y deployments múltiples
-`localStorage` no se comparte entre distintos deployments de Apps Script. Los archivos `QR_Access.html` y `QR_Asistencia.html` **deben estar integrados en el mismo deployment** que la aplicación principal para que la vinculación del dispositivo funcione correctamente.
-
-### `appendRow` y orden de registros
-`appendRow` siempre escribe después de la última fila con datos, independiente del tipo de registro. Esto es seguro para datos mixtos (QR, PRESENCIAL, VIRTUAL) en `BD_ASISTENCIA`.
-
-### Fórmulas con `=IMAGE()` en Sheets
-`getValues()` y `getDisplayValues()` retornan vacío para celdas con fórmulas `=IMAGE(...)`. Usar `getFormulas()` para leer el contenido de estas celdas.
+**Oficina:** Ahumada 312, Of. 323, Santiago
 
 ---
 
 ## 👨‍💻 Desarrollo
 
 **Organización:** Sindicato SLIM N°3
+**Desarrollador:** Alejandro Peñailillo G. — DUOC UC, Técnico Analista Programador
 **Repositorio:** `Daroce12/SLIMAPP`
 **Rama principal:** `main`
+**Plataforma:** Google Apps Script + Google Workspace
 
 ---
 
