@@ -3073,30 +3073,46 @@ function verificarCambiosApelaciones() {
       
       if (estadoActual !== estadoNotif) {
         if (correo && correo.includes("@")) {
-          let color = "#ea580c";
-          let titulo = "Actualización de Apelación";
-          
-          if (estadoActual.includes("Aceptado")) { 
-            color = "#15803d"; 
-            titulo = "Apelación Aceptada"; 
-          } else if (estadoActual.includes("Rechazado")) { 
-            color = "#b91c1c"; 
-            titulo = "Apelación Rechazada"; 
+          let color = "#374151";
+          let titulo = "Actualizacion de Apelacion";
+          let mensajeEstado = "El estado de tu apelacion ha sido actualizado.";
+
+          if (estadoActual === "Enviado" || estadoActual === "Pendiente") {
+            color = "#b45309";
+            titulo = "Apelacion Recibida";
+            mensajeEstado = "Tu apelacion ha sido registrada y se encuentra en espera de revision por la directiva.";
+          } else if (estadoActual === "En revision") {
+            color = "#1d4ed8";
+            titulo = "Apelacion en Revision";
+            mensajeEstado = "Tu apelacion esta siendo revisada activamente por la directiva del sindicato.";
+          } else if (estadoActual === "Aceptado-Obs") {
+            color = "#0369a1";
+            titulo = "Apelacion Aceptada con Observaciones";
+            mensajeEstado = "Tu apelacion ha sido aceptada por la directiva, pero incluye observaciones importantes. Revisa el detalle a continuacion.";
+          } else if (estadoActual.includes("Aceptado")) {
+            color = "#15803d";
+            titulo = "Apelacion Aceptada";
+            mensajeEstado = "Tu apelacion ha sido aceptada por la directiva. Pronto recibiras mas informacion.";
+          } else if (estadoActual.includes("Rechazado")) {
+            color = "#b91c1c";
+            titulo = "Apelacion Rechazada";
+            mensajeEstado = "Tu apelacion fue revisada por la directiva y ha sido rechazada. Revisa la observacion para mas detalles.";
           } else if (estadoActual === "Pagado") {
             color = "#065f46";
-            titulo = "Devolución de Multa Procesada";
+            titulo = "Devolucion de Multa Procesada";
+            mensajeEstado = "La devolucion de tu multa ha sido procesada exitosamente. Puedes revisar el comprobante de pago a continuacion.";
           }
-          
+
           // Extraer año y mes desde el string "yyyy-MM" (seguro porque getDisplayValues devuelve texto)
           const partesMes = mesApel.split("-");
           const añoMes = parseInt(partesMes[0]);
           const numMes = parseInt(partesMes[1]) - 1; // 0-indexed para el constructor de Date
           const fechaMes = new Date(añoMes, numMes, 15, 12, 0, 0); // Anclado al mediodía local
           const nombreMes = fechaMes.toLocaleString('es-CL', { month: 'long', year: 'numeric' });
-          
-          // Construir enlace comprobante de devolución si existe y el estado es Pagado
+
+          // Construir boton comprobante de devolucion si existe y el estado es Pagado
           const linkDevolucion = (estadoActual === "Pagado" && urlDevolucion && String(urlDevolucion).includes("http"))
-            ? `<a href="${urlDevolucion}" style="color: #065f46; text-decoration: none; font-weight: bold;">Ver Comprobante de Devolución</a>`
+            ? "<a href=\"" + urlDevolucion + "\" style=\"display:inline-block;background-color:#065f46;color:#ffffff;text-decoration:none;font-weight:bold;padding:10px 22px;border-radius:6px;font-size:14px;\">Ver Comprobante de Pago</a>"
             : "";
 
           const datosCorreoApelacion = {
@@ -3104,19 +3120,19 @@ function verificarCambiosApelaciones() {
             "MES APELADO": nombreMes.toUpperCase(),
             "MOTIVO": tipoMotivo,
             "NUEVO ESTADO": estadoActual,
-            "OBSERVACIÓN": obs || "Sin observaciones"
+            "OBSERVACION": obs || "Sin observaciones"
           };
 
           if (estadoActual === "Pagado" && linkDevolucion) {
-            datosCorreoApelacion["COMPROBANTE DEVOLUCIÓN"] = linkDevolucion;
+            datosCorreoApelacion["COMPROBANTE DE PAGO"] = linkDevolucion;
           }
 
           enviarCorreoEstilizado(
-            correo, 
-            titulo + " - Sindicato SLIM n°3", 
-            titulo, 
-            `Hola ${nombre}, el estado de tu apelación ha cambiado.`, 
-            datosCorreoApelacion, 
+            correo,
+            titulo + " - Sindicato SLIM n" + "\u00b0" + "3",
+            titulo,
+            "Hola <strong>" + nombre + "</strong>, " + mensajeEstado,
+            datosCorreoApelacion,
             color
           );
         }
