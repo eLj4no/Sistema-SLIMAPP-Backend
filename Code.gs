@@ -3286,8 +3286,39 @@ function procesarPermisosComprobantesDevolucion() {
           sheet.getRange(i + 1, COL.PERMISO_DEVOLUCION + 1).setValue("ERROR_PERMANENTE");
           console.error("❌ Fila " + (i + 1) + " marcada como ERROR_PERMANENTE (" + correoUsuario + ")");
           procesados++;
+        } else {
+          // Error transitorio: verificar si el usuario ya tiene acceso real antes de reintentar
+          try {
+            var viewersFinal = file.getViewers();
+            var yaConAcceso = viewersFinal.some(function(v) {
+              return v.getEmail().toLowerCase() === correoUsuario.toLowerCase();
+            });
+            if (yaConAcceso) {
+              sheet.getRange(i + 1, COL.PERMISO_DEVOLUCION + 1).setValue("OK");
+              console.log("✅ Fila " + (i + 1) + ": acceso real confirmado post-intentos. Marcado OK para " + correoUsuario);
+              procesados++;
+            } else {
+              // Sin acceso confirmado: registrar intento fallido acumulado
+              var intentosPrevios = String(permisoDevolucion).startsWith("REINTENTO_") 
+                ? parseInt(String(permisoDevolucion).replace("REINTENTO_", "")) || 0
+                : 0;
+              intentosPrevios++;
+              if (intentosPrevios >= 5) {
+                sheet.getRange(i + 1, COL.PERMISO_DEVOLUCION + 1).setValue("ERROR_PERMANENTE");
+                console.error("❌ Fila " + (i + 1) + ": 5 reintentos fallidos. Marcado ERROR_PERMANENTE para " + correoUsuario);
+                procesados++;
+              } else {
+                sheet.getRange(i + 1, COL.PERMISO_DEVOLUCION + 1).setValue("REINTENTO_" + intentosPrevios);
+                console.warn("⚠️ Fila " + (i + 1) + ": intento " + intentosPrevios + "/5 fallido para " + correoUsuario + ". Reintentará próxima hora.");
+                erroresTransitorios++;
+              }
+            }
+          } catch (verifErr) {
+            console.warn("⚠️ No se pudo verificar acceso para " + correoUsuario + ": " + verifErr.toString());
+            erroresTransitorios++;
+          }
         }
-        // Error transitorio (Service error: Drive, etc.) → se deja vacío para reintentar en próxima ejecución
+        // Fin registro resultado
 
       } catch (fileErr) {
         var fileErrStr = fileErr.toString();
