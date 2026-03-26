@@ -128,7 +128,8 @@ const CONFIG = {
       NOMBRE_DIRIGENTE: 14,
       CORREO_DIRIGENTE: 15,
       URL_COMPROBANTE_DEVOLUCION: 16,
-      PERMISO_DEVOLUCION: 17
+      PERMISO_DEVOLUCION: 17,
+      LOG_PERMISOS: 18
     },
     PRESTAMOS: {
       ID: 0,
@@ -3145,6 +3146,18 @@ function verificarCambiosApelaciones() {
   }
 }
 
+function appendLogPermisoDevolucion(sheet, fila, correo, resultado, colLog) {
+  var timestamp = Utilities.formatDate(new Date(), "America/Santiago", "dd/MM/yyyy HH:mm");
+  var nuevaLinea = timestamp + " | " + correo + " | " + resultado;
+  try {
+    var logActual = String(sheet.getRange(fila, colLog).getValue() || "");
+    var logActualizado = logActual ? (logActual + "\n" + nuevaLinea) : nuevaLinea;
+    sheet.getRange(fila, colLog).setValue(logActualizado);
+  } catch (logErr) {
+    console.warn("⚠️ No se pudo escribir log fila " + fila + ": " + logErr.toString());
+  }
+}
+
 function procesarPermisosComprobantesDevolucion() {
   var tiempoInicio = new Date().getTime();
   var LIMITE_MS = 25 * 60 * 1000; // 25 minutos de guarda (límite Apps Script = 30 min)
@@ -3207,6 +3220,7 @@ function procesarPermisosComprobantesDevolucion() {
 
         if (hasAccess) {
           sheet.getRange(i + 1, COL.PERMISO_DEVOLUCION + 1).setValue("OK");
+          appendLogPermisoDevolucion(sheet, i + 1, correoUsuario, "YA_TENIA_ACCESO -> OK", COL.LOG_PERMISOS + 1);
           console.log("✅ Fila " + (i + 1) + ": " + correoUsuario + " ya tenía acceso. Marcado OK.");
           procesados++;
           continue;
@@ -3280,10 +3294,12 @@ function procesarPermisosComprobantesDevolucion() {
         // ── REGISTRAR RESULTADO EN LA HOJA ──
         if (permisoOtorgado) {
           sheet.getRange(i + 1, COL.PERMISO_DEVOLUCION + 1).setValue("OK");
+          appendLogPermisoDevolucion(sheet, i + 1, correoUsuario, "PERMISO_OTORGADO -> OK", COL.LOG_PERMISOS + 1);
           console.log("✅ Fila " + (i + 1) + " marcada como OK");
           procesados++;
         } else if (errorPermanente) {
           sheet.getRange(i + 1, COL.PERMISO_DEVOLUCION + 1).setValue("ERROR_PERMANENTE");
+          appendLogPermisoDevolucion(sheet, i + 1, correoUsuario, "ERROR_PERMANENTE (Drive rechaza correo)", COL.LOG_PERMISOS + 1);
           console.error("❌ Fila " + (i + 1) + " marcada como ERROR_PERMANENTE (" + correoUsuario + ")");
           procesados++;
         } else {
@@ -3295,6 +3311,7 @@ function procesarPermisosComprobantesDevolucion() {
             });
             if (yaConAcceso) {
               sheet.getRange(i + 1, COL.PERMISO_DEVOLUCION + 1).setValue("OK");
+              appendLogPermisoDevolucion(sheet, i + 1, correoUsuario, "ACCESO_VERIFICADO_POST_INTENTO -> OK", COL.LOG_PERMISOS + 1);
               console.log("✅ Fila " + (i + 1) + ": acceso real confirmado post-intentos. Marcado OK para " + correoUsuario);
               procesados++;
             } else {
@@ -3305,14 +3322,17 @@ function procesarPermisosComprobantesDevolucion() {
               intentosPrevios++;
               if (intentosPrevios >= 5) {
                 sheet.getRange(i + 1, COL.PERMISO_DEVOLUCION + 1).setValue("ERROR_PERMANENTE");
+                appendLogPermisoDevolucion(sheet, i + 1, correoUsuario, "MAX_REINTENTOS (5/5) -> ERROR_PERMANENTE", COL.LOG_PERMISOS + 1);
                 console.error("❌ Fila " + (i + 1) + ": 5 reintentos fallidos. Marcado ERROR_PERMANENTE para " + correoUsuario);
                 procesados++;
               } else {
                 sheet.getRange(i + 1, COL.PERMISO_DEVOLUCION + 1).setValue("REINTENTO_" + intentosPrevios);
+                appendLogPermisoDevolucion(sheet, i + 1, correoUsuario, "REINTENTO_" + intentosPrevios + "/5 (error transitorio Drive)", COL.LOG_PERMISOS + 1);
                 console.warn("⚠️ Fila " + (i + 1) + ": intento " + intentosPrevios + "/5 fallido para " + correoUsuario + ". Reintentará próxima hora.");
                 erroresTransitorios++;
               }
             }
+
           } catch (verifErr) {
             console.warn("⚠️ No se pudo verificar acceso para " + correoUsuario + ": " + verifErr.toString());
             erroresTransitorios++;
@@ -5019,10 +5039,10 @@ function configurarTriggers() {
     .atHour(8)
     .create();
   
-  // Verificar cambios en credenciales — cada domingo a las 8 AM
+  // Verificar cambios en credenciales — diario a las 8 AM
   ScriptApp.newTrigger('verificarCambiosCredenciales')
     .timeBased()
-    .onWeekDay(ScriptApp.WeekDay.SUNDAY)
+    .everyDays(1)
     .atHour(8)
     .create();
 
@@ -5045,7 +5065,7 @@ Logger.log("Total de triggers activos: " + ScriptApp.getProjectTriggers().length
       "procesarValidacionPrestamos (diario 8 AM)",
       "procesarPermisosComprobantesDevolucion (cada 1 hora)",
       "verificarCambiosPrestamos (diario 8 AM)",
-      "verificarCambiosCredenciales (domingos 8 AM)",
+      "verificarCambiosCredenciales (diario 8 AM)",
       "verificarNotificacionesAsistencia (diario 20:00)"
     ]
   };
@@ -5764,7 +5784,7 @@ function obtenerEstadoCredencialPorRut(rutInput) {
 
 /**
  * Trigger semanal: detecta cambios de estado en credenciales y envía notificaciones
- * Se ejecuta automáticamente cada domingo a las 8am (configurar en configurarTriggers)
+ * Se ejecuta automáticamente cada día a las 8am (configurar en configurarTriggers)
  */
 function verificarCambiosCredenciales() {
   const ESTADOS_CON_NOTIFICACION = ["ENTREGADO", "DISPONIBLE", "SOLICITADO", "NO VIGENTE", "DATOS INCORRECTOS", "REIMPRIMIR"];
