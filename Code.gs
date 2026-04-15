@@ -4822,6 +4822,130 @@ function generarInformeAdministrador() {
   }
 }
 
+/**
+ * Devuelve lista liviana de socios (RUT, NOMBRE, ROL) para el buscador de Cambio de Rol
+ */
+function obtenerListaSociosParaRol() {
+  try {
+    var sheet = getSheet('USUARIOS', 'USUARIOS');
+    var data = sheet.getDataRange().getValues();
+    var COL = CONFIG.COLUMNAS.USUARIOS;
+    var socios = [];
+
+    for (var i = 1; i < data.length; i++) {
+      var rut = String(data[i][COL.RUT] || '').trim();
+      var nombre = String(data[i][COL.NOMBRE] || '').trim();
+      var rol = String(data[i][COL.ROL] || 'SOCIO').trim().toUpperCase();
+      var estado = String(data[i][COL.ESTADO] || '').trim().toUpperCase();
+      if (!rut || !nombre) continue;
+      socios.push({ rut: formatRutServer(rut), nombre: nombre, rol: rol, estado: estado });
+    }
+
+    return { success: true, socios: socios };
+  } catch (e) {
+    return { success: false, message: e.toString() };
+  }
+}
+
+/**
+ * Cambia el rol de un usuario en BD_SLIMAPP y envía correo de notificación
+ */
+function cambiarRolUsuario(rutTarget, nuevoRol, rutAdmin) {
+  try {
+    var rolesValidos = ['SOCIO', 'DIRIGENTE', 'ADMIN', 'TESTING'];
+    if (rolesValidos.indexOf(nuevoRol) === -1) {
+      return { success: false, message: 'Rol no válido.' };
+    }
+
+    var adminData = obtenerUsuarioPorRut(rutAdmin);
+    if (!adminData || String(adminData.rol || '').toUpperCase() !== 'ADMIN') {
+      return { success: false, message: 'No tienes permisos para realizar esta acción.' };
+    }
+
+    var rutLimpio = cleanRut(rutTarget);
+    var sheet = getSheet('USUARIOS', 'USUARIOS');
+    var data = sheet.getDataRange().getValues();
+    var COL = CONFIG.COLUMNAS.USUARIOS;
+
+    var filaEncontrada = -1;
+    var datosUsuario = null;
+
+    for (var i = 1; i < data.length; i++) {
+      if (cleanRut(String(data[i][COL.RUT])) === rutLimpio) {
+        filaEncontrada = i + 1;
+        datosUsuario = {
+          nombre: String(data[i][COL.NOMBRE] || '').trim(),
+          correo: String(data[i][COL.CORREO] || '').trim(),
+          rolAnterior: String(data[i][COL.ROL] || 'SOCIO').trim().toUpperCase()
+        };
+        break;
+      }
+    }
+
+    if (filaEncontrada === -1) {
+      return { success: false, message: 'Usuario no encontrado en la base de datos.' };
+    }
+
+    if (datosUsuario.rolAnterior === nuevoRol) {
+      return { success: false, message: 'El usuario ya tiene el rol ' + nuevoRol + '.' };
+    }
+
+    // Actualizar columna ROL (índice COL.ROL, base 0 → columna en Sheets = COL.ROL + 1)
+    sheet.getRange(filaEncontrada, COL.ROL + 1).setValue(nuevoRol);
+
+    // Enviar correo si tiene correo válido
+    if (esCorreoValido(datosUsuario.correo)) {
+      var LABELS_ROL = {
+        'SOCIO':     'Socio',
+        'DIRIGENTE': 'Dirigente',
+        'ADMIN':     'Administrador',
+        'TESTING':   'Testing'
+      };
+      var DESC_ROL = {
+        'SOCIO':     'Tendrás acceso a tus módulos personales: Mis Datos, Justificaciones, Apelaciones, Préstamos, Permiso Médico, Calculadora HE, Registro Asistencia y SLIM Quest.',
+        'DIRIGENTE': 'Tendrás acceso a todos los módulos del sistema más la Gestión de Socios, Panel de Dirigentes y Consulta ID, lo que te permite apoyar a otros socios en sus trámites.',
+        'ADMIN':     'Tendrás acceso completo al sistema, incluyendo el Panel de Administración, configuración de módulos, generación de informes y todas las herramientas administrativas.',
+        'TESTING':   'Tu acceso queda restringido a Mis Datos y SLIM Quest. Este perfil es de uso especial y de evaluación del sistema.'
+      };
+      var ICONOS_ROL = {
+        'SOCIO': '👤', 'DIRIGENTE': '🏛️', 'ADMIN': '⚙️', 'TESTING': '🔬'
+      };
+
+      var labelNuevo = LABELS_ROL[nuevoRol] || nuevoRol;
+      var labelAnterior = LABELS_ROL[datosUsuario.rolAnterior] || datosUsuario.rolAnterior;
+      var descNuevo = DESC_ROL[nuevoRol] || '';
+      var iconoNuevo = ICONOS_ROL[nuevoRol] || '👤';
+      var fechaFormato = Utilities.formatDate(new Date(), 'America/Santiago', 'dd/MM/yyyy HH:mm');
+
+      var datosCorreo = {
+        'FECHA CAMBIO':   fechaFormato,
+        'RUT':            formatRutServer(rutLimpio),
+        'NOMBRE':         datosUsuario.nombre,
+        'ROL ANTERIOR':   labelAnterior,
+        'NUEVO ROL':      iconoNuevo + '  ' + labelNuevo,
+        'FACULTADES':     descNuevo,
+        'GESTIONADO POR': adminData.nombre
+      };
+
+      enviarCorreoEstilizado(
+        datosUsuario.correo,
+        'Cambio de Rol en SLIMAPP - Sindicato SLIM N\u00b03',
+        'Tu rol ha sido actualizado',
+        'Hola <strong>' + datosUsuario.nombre + '</strong>, te informamos que tu rol dentro del sistema <strong>SLIMAPP</strong> ha sido actualizado. A continuaci\u00f3n encontrar\u00e1s los detalles del cambio y las facultades de tu nuevo perfil:',
+        datosCorreo,
+        '#1d4ed8'
+      );
+    }
+
+    Logger.log('✅ Rol cambiado: ' + rutLimpio + ' → ' + nuevoRol + ' (por ' + rutAdmin + ')');
+    return { success: true };
+
+  } catch (e) {
+    Logger.log('❌ Error en cambiarRolUsuario: ' + e.toString());
+    return { success: false, message: 'Error interno: ' + e.toString() };
+  }
+}
+
 // ==========================================
 // FUNCIONES AUXILIARES
 // ==========================================
