@@ -772,6 +772,7 @@
             </div>
             <span class="material-icons-round text-slate-400 group-hover:text-indigo-500 transition">open_in_new</span>
           </button>
+
         </div>
       </section>
 
@@ -2673,14 +2674,14 @@
                  </div>
               </button>
 
-              <!-- Cambio de Rol (Próximamente) -->
-              <button onclick="showConstruction('Cambio de Rol')" class="glass-card p-4 flex items-center gap-4 hover:bg-white hover:border-blue-200 transition group opacity-70">
+              <!-- Cambio de Rol -->
+              <button id="btn-admin-cambio-rol" onclick="abrirCambioRol()" class="glass-card p-4 flex items-center gap-4 hover:bg-white hover:border-blue-200 transition group">
                  <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition">
-                    <span class="material-icons-round">swap_horiz</span>
+                    <span class="material-icons-round">manage_accounts</span>
                  </div>
                  <div class="text-left flex-1">
                     <h4 class="font-bold text-slate-700 text-sm">Cambio de Rol</h4>
-                    <p class="text-xs text-slate-500">Próximamente</p>
+                    <p class="text-xs text-slate-500">Gestionar roles de usuario</p>
                  </div>
               </button>
            </div>
@@ -3387,6 +3388,107 @@
                 </button>
              </div>
          </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- MODAL CAMBIO DE ROL                                          -->
+      <!-- ============================================================ -->
+      <div id="cambio-rol-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl flex flex-col fade-in-up" style="max-height:90vh;">
+          
+          <!-- Header -->
+          <div class="bg-gradient-to-r from-blue-800 to-blue-600 text-white p-5 rounded-t-2xl flex items-center gap-3 flex-shrink-0">
+            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+              <span class="material-icons-round text-xl">manage_accounts</span>
+            </div>
+            <div>
+              <h3 class="text-base font-bold">Cambio de Rol de Usuario</h3>
+              <p class="text-xs text-blue-200">Solo visible para Administrador</p>
+            </div>
+            <button onclick="cerrarCambioRol()" class="ml-auto w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition">
+              <span class="material-icons-round text-lg">close</span>
+            </button>
+          </div>
+
+          <div class="overflow-y-auto flex-grow p-5 space-y-4">
+
+            <!-- Buscador -->
+            <div id="cambio-rol-paso-busqueda">
+              <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Buscar socio por nombre</label>
+              <div class="relative">
+                <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+                <input id="cambio-rol-search-input" type="text" oninput="buscarSociosCambioRol(this.value)" placeholder="Ej: Juan López García..."
+                  class="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-slate-200 focus:border-blue-400 focus:outline-none text-sm text-slate-700 bg-slate-50 transition" />
+              </div>
+              <!-- Lista de resultados -->
+              <div id="cambio-rol-resultados" class="mt-2 space-y-1 max-h-48 overflow-y-auto hidden"></div>
+            </div>
+
+            <!-- Tarjeta del socio seleccionado -->
+            <div id="cambio-rol-socio-card" class="hidden bg-slate-50 border-2 border-blue-200 rounded-xl p-4">
+              <div class="flex items-center gap-3 mb-3">
+                <div class="w-11 h-11 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-base flex-shrink-0" id="cambio-rol-avatar"></div>
+                <div class="min-w-0">
+                  <p id="cambio-rol-nombre" class="font-bold text-slate-800 text-sm leading-tight truncate"></p>
+                  <p id="cambio-rol-rut" class="text-xs text-slate-500"></p>
+                </div>
+                <button onclick="resetCambioRol()" class="ml-auto text-slate-400 hover:text-red-500 transition flex-shrink-0">
+                  <span class="material-icons-round text-lg">close</span>
+                </button>
+              </div>
+
+              <!-- Rol actual -->
+              <div class="mb-3">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Rol actual</p>
+                <div id="cambio-rol-actual-badge" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold"></div>
+                <p id="cambio-rol-actual-desc" class="text-xs text-slate-500 mt-1 leading-relaxed"></p>
+              </div>
+
+              <div class="border-t border-slate-200 pt-3">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">Asignar nuevo rol</p>
+                <div id="cambio-rol-opciones" class="grid grid-cols-2 gap-2"></div>
+              </div>
+
+              <!-- Vista previa del nuevo rol -->
+              <div id="cambio-rol-preview" class="hidden mt-3 border-t border-slate-200 pt-3">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Facultades del nuevo rol</p>
+                <div id="cambio-rol-preview-content" class="text-xs text-slate-600 leading-relaxed bg-white rounded-lg p-3 border border-slate-200"></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Footer con botones -->
+          <div class="flex-shrink-0 p-4 bg-slate-50 border-t border-slate-200 rounded-b-2xl flex gap-3">
+            <button onclick="cerrarCambioRol()" class="flex-1 py-2.5 rounded-xl border-2 border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-100 transition">
+              Cancelar
+            </button>
+            <button id="btn-confirmar-cambio-rol" onclick="confirmarCambioRol()" disabled
+              class="flex-1 py-2.5 rounded-xl text-white font-bold text-sm transition shadow-lg disabled:opacity-40 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700">
+              <span class="material-icons-round text-sm align-middle mr-1">check_circle</span>Confirmar Cambio
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de confirmación final cambio de rol -->
+      <div id="cambio-rol-confirm-modal" class="hidden fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center fade-in-up">
+          <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span class="material-icons-round text-3xl">swap_horiz</span>
+          </div>
+          <h3 class="text-lg font-bold text-slate-800 mb-2">¿Confirmar cambio de rol?</h3>
+          <p id="cambio-rol-confirm-texto" class="text-sm text-slate-600 mb-5 leading-relaxed"></p>
+          <div class="flex gap-3">
+            <button onclick="document.getElementById('cambio-rol-confirm-modal').classList.add('hidden')" class="flex-1 py-2.5 rounded-xl border-2 border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50 transition">
+              Cancelar
+            </button>
+            <button id="btn-ejecutar-cambio-rol" onclick="ejecutarCambioRol()"
+              class="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 shadow-lg transition">
+              Sí, cambiar
+            </button>
+          </div>
+        </div>
       </div>
 
       <div id="warning-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
@@ -4415,10 +4517,12 @@
       }
       
       // ========== BOTÓN PANEL ADMIN + SWITCH ==========
-      if (esAdmin) {
-        btnAdmin.classList.remove('hidden'); 
+      if (esAdmin || esDirigente) {
+        btnAdmin.classList.remove('hidden');
         btnAdmin.classList.add('flex');
-        
+      }
+
+      if (esAdmin) {        
         switchContainer.classList.remove('hidden');
         switchContainer.classList.add('flex');
         
@@ -7721,6 +7825,221 @@ divForm.classList.add('flex');
                }
             }
          }).obtenerHistorialAsistencia(currentRut);
+      }
+
+      // === CAMBIO DE ROL ===
+      var cambioRolSocioSeleccionado = null;
+      var cambioRolNuevoRol = null;
+      var cambioRolListaSocios = [];
+
+      var ROLES_INFO = {
+        'SOCIO': {
+          label: 'Socio',
+          icon: 'person',
+          color: 'bg-slate-100 text-slate-700',
+          desc: 'Acceso a sus módulos personales: Mis Datos, Justificaciones, Apelaciones, Préstamos, Permiso Médico, Calculadora HE, Registro Asistencia y SLIM Quest.'
+        },
+        'DIRIGENTE': {
+          label: 'Dirigente',
+          icon: 'groups',
+          color: 'bg-indigo-100 text-indigo-700',
+          desc: 'Todos los accesos de Socio + Gestión de Socios (trámites a nombre de socios), Panel Admin (funciones de dirigente), Consulta ID y módulo Dirigentes.'
+        },
+        'ADMIN': {
+          label: 'Administrador',
+          icon: 'admin_panel_settings',
+          color: 'bg-slate-800 text-white',
+          desc: 'Acceso completo al sistema: Panel Admin con switches de módulos, configuración de triggers, informes, Cambio de Rol, Consulta ID y todas las funciones del sistema.'
+        },
+        'TESTING': {
+          label: 'Testing',
+          icon: 'science',
+          color: 'bg-amber-100 text-amber-700',
+          desc: 'Acceso restringido exclusivamente a Mis Datos y SLIM Quest. Perfil de prueba para evaluar el sistema sin acceso a módulos operativos.'
+        }
+      };
+
+      function abrirCambioRol() {
+        resetCambioRol();
+        cambioRolListaSocios = [];
+        document.getElementById('cambio-rol-search-input').value = '';
+        document.getElementById('cambio-rol-resultados').classList.add('hidden');
+        document.getElementById('cambio-rol-resultados').innerHTML = '';
+        document.getElementById('cambio-rol-modal').classList.remove('hidden');
+        setTimeout(function() { document.getElementById('cambio-rol-search-input').focus(); }, 200);
+
+        if (cambioRolListaSocios.length === 0) {
+          google.script.run.withSuccessHandler(function(res) {
+            if (res && res.success) {
+              cambioRolListaSocios = res.socios;
+            }
+          }).obtenerListaSociosParaRol();
+        }
+      }
+
+      function cerrarCambioRol() {
+        document.getElementById('cambio-rol-modal').classList.add('hidden');
+        document.getElementById('cambio-rol-confirm-modal').classList.add('hidden');
+        resetCambioRol();
+      }
+
+      function resetCambioRol() {
+        cambioRolSocioSeleccionado = null;
+        cambioRolNuevoRol = null;
+        document.getElementById('cambio-rol-socio-card').classList.add('hidden');
+        document.getElementById('cambio-rol-preview').classList.add('hidden');
+        document.getElementById('cambio-rol-paso-busqueda').classList.remove('hidden');
+        document.getElementById('btn-confirmar-cambio-rol').disabled = true;
+      }
+
+      function buscarSociosCambioRol(query) {
+        var resultadosEl = document.getElementById('cambio-rol-resultados');
+        query = (query || '').trim().toUpperCase();
+
+        if (query.length < 2) {
+          resultadosEl.classList.add('hidden');
+          resultadosEl.innerHTML = '';
+          return;
+        }
+
+        if (cambioRolListaSocios.length === 0) {
+          resultadosEl.classList.remove('hidden');
+          resultadosEl.innerHTML = '<p class="text-xs text-slate-400 p-2 text-center">Cargando socios...</p>';
+          return;
+        }
+
+        var palabras = query.split(/\s+/).filter(function(p) { return p.length > 0; });
+        var filtrados = cambioRolListaSocios.filter(function(s) {
+          var nombre = (s.nombre || '').toUpperCase();
+          return palabras.every(function(p) { return nombre.indexOf(p) !== -1; });
+        }).slice(0, 8);
+
+        if (filtrados.length === 0) {
+          resultadosEl.classList.remove('hidden');
+          resultadosEl.innerHTML = '<p class="text-xs text-slate-400 p-2 text-center">Sin resultados</p>';
+          return;
+        }
+
+        resultadosEl.classList.remove('hidden');
+        var html = '';
+        filtrados.forEach(function(s, idx) {
+          var rolInfo = ROLES_INFO[s.rol] || ROLES_INFO['SOCIO'];
+          html += '<button class="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 border border-transparent hover:border-blue-200 transition flex items-center gap-2" ' +
+            'onclick="seleccionarSocioCambioRol(' + idx + ')">' +
+            '<span class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">' +
+            '<span class="material-icons-round text-slate-500 text-sm">' + rolInfo.icon + '</span></span>' +
+            '<div class="min-w-0"><p class="text-sm font-bold text-slate-700 truncate">' + s.nombre + '</p>' +
+            '<p class="text-[10px] text-slate-400">' + s.rut + ' · ' + rolInfo.label + '</p></div>' +
+            '</button>';
+          // guardar idx apuntando al socio filtrado (necesitamos guardarlo en data)
+          resultadosEl._filtrados = filtrados;
+        });
+        resultadosEl.innerHTML = html;
+        resultadosEl._filtrados = filtrados;
+      }
+
+      function seleccionarSocioCambioRol(idx) {
+        var resultadosEl = document.getElementById('cambio-rol-resultados');
+        var socio = resultadosEl._filtrados ? resultadosEl._filtrados[idx] : null;
+        if (!socio) return;
+
+        cambioRolSocioSeleccionado = socio;
+        cambioRolNuevoRol = null;
+
+        // Ocultar buscador y resultados
+        document.getElementById('cambio-rol-paso-busqueda').classList.add('hidden');
+        resultadosEl.classList.add('hidden');
+
+        // Llenar tarjeta del socio
+        var iniciales = socio.nombre.split(' ').slice(0, 2).map(function(p) { return p[0]; }).join('');
+        document.getElementById('cambio-rol-avatar').textContent = iniciales;
+        document.getElementById('cambio-rol-nombre').textContent = socio.nombre;
+        document.getElementById('cambio-rol-rut').textContent = 'RUT: ' + socio.rut;
+
+        // Badge rol actual
+        var rolActual = ROLES_INFO[socio.rol] || ROLES_INFO['SOCIO'];
+        document.getElementById('cambio-rol-actual-badge').className = 'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold ' + rolActual.color;
+        document.getElementById('cambio-rol-actual-badge').innerHTML =
+          '<span class="material-icons-round text-sm">' + rolActual.icon + '</span>' + rolActual.label;
+        document.getElementById('cambio-rol-actual-desc').textContent = rolActual.desc;
+
+        // Opciones de nuevo rol (excluyendo el actual)
+        var opcionesEl = document.getElementById('cambio-rol-opciones');
+        var opcionesHTML = '';
+        Object.keys(ROLES_INFO).forEach(function(rol) {
+          if (rol === socio.rol) return;
+          var info = ROLES_INFO[rol];
+          opcionesHTML += '<button id="btn-rol-opcion-' + rol + '" onclick="elegirNuevoRol(\'' + rol + '\')" ' +
+            'class="flex items-center gap-2 p-2.5 rounded-xl border-2 border-slate-200 hover:border-blue-400 transition text-left">' +
+            '<span class="material-icons-round text-slate-500 text-base">' + info.icon + '</span>' +
+            '<span class="text-sm font-bold text-slate-700">' + info.label + '</span></button>';
+        });
+        opcionesEl.innerHTML = opcionesHTML;
+
+        document.getElementById('cambio-rol-socio-card').classList.remove('hidden');
+        document.getElementById('btn-confirmar-cambio-rol').disabled = true;
+      }
+
+      function elegirNuevoRol(rol) {
+        cambioRolNuevoRol = rol;
+
+        // Resaltar opción seleccionada
+        var roles = ['SOCIO', 'DIRIGENTE', 'ADMIN', 'TESTING'];
+        roles.forEach(function(r) {
+          var btn = document.getElementById('btn-rol-opcion-' + r);
+          if (btn) btn.className = 'flex items-center gap-2 p-2.5 rounded-xl border-2 border-slate-200 hover:border-blue-400 transition text-left';
+        });
+        var btnSel = document.getElementById('btn-rol-opcion-' + rol);
+        if (btnSel) btnSel.className = 'flex items-center gap-2 p-2.5 rounded-xl border-2 border-blue-500 bg-blue-50 transition text-left';
+
+        // Preview de facultades
+        var info = ROLES_INFO[rol];
+        document.getElementById('cambio-rol-preview-content').innerHTML =
+          '<div class="flex items-start gap-2">' +
+          '<span class="material-icons-round text-blue-500 text-base flex-shrink-0 mt-0.5">' + info.icon + '</span>' +
+          '<p>' + info.desc + '</p></div>';
+        document.getElementById('cambio-rol-preview').classList.remove('hidden');
+
+        document.getElementById('btn-confirmar-cambio-rol').disabled = false;
+      }
+
+      function confirmarCambioRol() {
+        if (!cambioRolSocioSeleccionado || !cambioRolNuevoRol) return;
+        var rolActualLabel = (ROLES_INFO[cambioRolSocioSeleccionado.rol] || {}).label || cambioRolSocioSeleccionado.rol;
+        var nuevoLabel = (ROLES_INFO[cambioRolNuevoRol] || {}).label || cambioRolNuevoRol;
+        document.getElementById('cambio-rol-confirm-texto').innerHTML =
+          'El usuario <strong>' + cambioRolSocioSeleccionado.nombre + '</strong> pasará del rol ' +
+          '<strong>' + rolActualLabel + '</strong> al rol <strong>' + nuevoLabel + '</strong>.<br><br>' +
+          'Se le notificará por correo electrónico con las instrucciones correspondientes.';
+        document.getElementById('cambio-rol-confirm-modal').classList.remove('hidden');
+      }
+
+      function ejecutarCambioRol() {
+        var btn = document.getElementById('btn-ejecutar-cambio-rol');
+        var oldHtml = btn.innerHTML;
+        btn.innerHTML = '<div class="flex items-center justify-center gap-2"><div class="btn-spinner"></div><span>Procesando...</span></div>';
+        btn.disabled = true;
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+            document.getElementById('cambio-rol-confirm-modal').classList.add('hidden');
+            document.getElementById('cambio-rol-modal').classList.add('hidden');
+            if (res.success) {
+              SLIMSound.play('success');
+              showSuccess('Rol actualizado correctamente. Se ha notificado al usuario por correo.');
+              resetCambioRol();
+            } else {
+              showWarning(res.message || 'Error al cambiar el rol.');
+            }
+          })
+          .withFailureHandler(function() {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+            showWarning('Error de conexión. Intenta nuevamente.');
+          })
+          .cambiarRolUsuario(cambioRolSocioSeleccionado.rut, cambioRolNuevoRol, currentRut);
       }
 
       // === FUNCIONES PANEL ADMIN ===
