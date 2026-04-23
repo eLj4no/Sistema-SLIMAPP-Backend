@@ -56,7 +56,7 @@ Hoja principal: `BD_SLIMAPP` · Hojas auxiliares: `IDENTIFICADOR`, `ENVIADOS`, `
 | 4 | E | `CARGO` | Cargo del trabajador (ej. `GUARDIA DE SEGURIDAD`) |
 | 5 | F | `CORREO` | Correo electrónico personal |
 | 6 | G | `SITE` | Sitio o lugar de trabajo |
-| 7 | H | `REGION` | Región del país (ej. `11. VIII Region del Biobío`) |
+| 7 | H | `REGION` | Región del país (ej. `07. RM Region Metropolitana - Santiago.`) |
 | 8 | I | `SEXO` | Sexo del socio |
 | 9 | J | `ESTADO` | `ACTIVO` / `DESVINCULADO` |
 | 10 | K | `DETALLE DESVINCULACION` | Motivo de desvinculación si aplica |
@@ -95,22 +95,29 @@ Hojas: `BD_JUSTIFICACIONES`, `CONFIG_JUSTIFICACIONES`, `Resp_Justificaciones`
 | 1 | B | `FECHA` | Fecha y hora de envío de la solicitud |
 | 2 | C | `RUT` | RUT del socio |
 | 3 | D | `NOMBRE` | Nombre completo del socio |
-| 4 | E | `REGION` | Región del socio |
-| 5 | F | `MOTIVO` | Tipo de motivo (ej. `Fuerza Mayor`, `Licencia Médica`) |
+| 4 | E | `REGION` | Región del socio al momento del envío |
+| 5 | F | `MOTIVO` | Tipo de motivo (ej. `Turno Laboral en ISS`, `Licencia Médica`, `Fuerza Mayor`) |
 | 6 | G | `ARGUMENTO` | Texto libre con el argumento del socio |
 | 7 | H | `RESPALDO` | URL del documento de respaldo en Google Drive |
-| 8 | I | `ESTADO` | Estado actual: `Enviado` / `Aceptado` / `Rechazado` |
+| 8 | I | `ESTADO` | Estado actual: `Enviado` / `Aceptado` / `Aceptado/Obs` / `Rechazado` |
 | 9 | J | `OBSERVACION` | Observación del dirigente al gestionar |
 | 10 | K | `NOTIFICACION` | Estado notificación al socio: `Enviado` / `SIN_CORREO` |
-| 11 | L | `ASAMBLEA` | Código de asamblea (formato `YYYY_MM_DD`) |
+| 11 | L | `ASAMBLEA` | Código de actividad — formato nuevo: `YYYY-MM-DD_Nombre Actividad` (ej. `2026-04-26_Asamblea Ordinaria - 07. RM Region Metropolitana - Santiago.`) |
 | 12 | M | `Gestion` | `Socio` / `Dirigente` |
 | 13 | N | `Dirigente` | Nombre del dirigente gestor (si aplica) |
 | 14 | O | `Correo Dirigente` | Correo del dirigente gestor (si aplica) |
 
-**Hoja `CONFIG_JUSTIFICACIONES`** — Configuración del módulo:
-- `Habilitado` (Boolean): Switch de activación del módulo
-- `Fecha Límite` (ISO 8601): Fecha tope para enviar justificaciones
-- `Fecha_Evento` (Date): Fecha de la asamblea/evento (genera código `YYYY_MM_DD`)
+**Hoja `CONFIG_JUSTIFICACIONES`** — Configuración multi-región del módulo (estructura actualizada v2):
+
+| Col | Campo | Descripción |
+|---|---|---|
+| A | `REGION` | Nombre exacto de la región (debe coincidir con `BD_SLIMAPP.REGION`) |
+| B | `Habilitado` | Boolean — si el módulo está activo para esa región |
+| C | `Fecha Limite` | ISO 8601 — fecha y hora tope para enviar justificaciones |
+| D | `Fecha_Evento` | Fecha de la asamblea/evento (`YYYY-MM-DD`) |
+| E | `Nombre_Actividad` | Nombre descriptivo (ej. `Asamblea Ordinaria - 07. RM Region Metropolitana - Santiago.`) |
+
+> ⚠️ **Nota de migración:** La primera ejecución de `obtenerEstadoSwitchJustificaciones()` detecta automáticamente si la hoja tiene la estructura antigua (3 columnas) y la migra al nuevo formato de 5 columnas preservando los datos existentes.
 
 ---
 
@@ -126,25 +133,21 @@ Hojas: `BD_APELACIONES`, `MASIVAS`, `Resp_Apelaciones`
 | 3 | D | `Nombre` | Nombre completo del socio |
 | 4 | E | `Correo` | Correo del socio |
 | 5 | F | `Mes Apelación` | Mes al que corresponde la multa apelada |
-| 6 | G | `Tipo Motivo` | Tipo de motivo (ej. `Fuerza Mayor`) |
+| 6 | G | `Tipo Motivo` | Tipo de motivo (ej. `Turno Laboral en ISS`, `Fuerza Mayor`) |
 | 7 | H | `Detalle Motivo` | Descripción libre del motivo |
 | 8 | I | `URL Comprobante` | URL del comprobante en Drive |
 | 9 | J | `URL Liquidación` | URL de la liquidación de sueldo en Drive |
-| 10 | K | `Estado` | Estado actual: `Solicitado` / `En Revisión` / `Aceptado` / `Rechazado` / `Aceptado-Obs` / `Pagado` |
+| 10 | K | `Estado` | Estado: `Solicitado` / `En Revisión` / `Aceptado` / `Rechazado` / `Aceptado-Obs` / `Pagado` |
 | 11 | L | `Observación` | Observación pública del dirigente |
 | 12 | M | `Notificado` | Estado de notificación al socio |
 | 13 | N | `Gestión` | `Socio` / `Dirigente` |
 | 14 | O | `Nombre Dirigente` | Nombre del dirigente gestor |
 | 15 | P | `Correo Dirigente` | Correo del dirigente gestor |
 | 16 | Q | `URL Comprobante Devolución` | URL del comprobante de devolución de multa |
-| 17 | R | `PERMISO_DEVOLUCION` | Estado del permiso Drive para comprobante: `OK` / `REINTENTO_N` |
+| 17 | R | `PERMISO_DEVOLUCION` | Estado del permiso Drive: `OK` / `REINTENTO_N` |
 | 18 | S | `LOG_PERMISOS` | Log de intentos de otorgamiento de permisos Drive |
 | 19 | T | `Observacion Interna` | Nota interna visible solo para dirigentes/admin |
 | 20 | U | `SEMANA` | Semana de gestión asignada |
-
-**Hoja `MASIVAS`** — Apelaciones masivas procesadas directamente (RUT, NOMBRE, VALOR, DESCRIPCION, LISTADO, ESTADO, COMPROBANTE)
-
-**Hoja `Resp_Apelaciones`** — Formulario de respaldo heredado (10 columnas: Marca temporal, RUT, NOMBRE, REGIÓN, MES ASAMBLEA, DIRIGENTE, DESCARGOS, LIQUIDACIÓN DE SUELDO, RESPALDO, MOTIVO DE AYUDA)
 
 ---
 
@@ -171,15 +174,9 @@ Hojas: `BD_PRESTAMOS`, `Validación-Prestamos`, `Registros-eliminados`
 | 14 | O | `Informe` | Marca de procesamiento: `OK` cuando fue procesado |
 | 15 | P | `Observacion` | Observación adicional del dirigente |
 
-**Hoja `Validación-Prestamos`** — Validación manual por la directiva (ID, Fecha, RUT, Nombre, Validación [`ACEPTADO`/`RECHAZADO`], Observacion, Nombre Informe)
-
-**Hoja `Registros-eliminados`** — Respaldo de préstamos eliminados (mismas 15 columnas de BD_PRESTAMOS sin `Observacion`)
-
 ---
 
 ### 🗂️ PERMISOS MÉDICOS — `BD_Permisos medicos`
-
-Hoja única: `BD_Permisos medicos`
 
 | # | Col | Campo | Descripción |
 |---|---|---|---|
@@ -188,23 +185,17 @@ Hoja única: `BD_Permisos medicos`
 | 2 | C | `Rut` | RUT del socio |
 | 3 | D | `Nombre` | Nombre completo del socio |
 | 4 | E | `Correo` | Correo del socio |
-| 5 | F | `Tipo Permiso` | Descripción completa del tipo de permiso seleccionado |
+| 5 | F | `Tipo Permiso` | Descripción completa del tipo de permiso |
 | 6 | G | `Fecha Inicio Permiso` | Fecha de inicio del permiso |
 | 7 | H | `Motivo/Detalle` | Descripción libre del motivo |
 | 8 | I | `URL Documento Respaldo` | URL del documento en Drive (o `Sin documento`) |
-| 9 | J | `Estado` | Estado: `Solicitado` / `Solicitado con Documento` / `Documento Adjuntado` / `Aceptado` / `Rechazado` |
-| 10 | K | `Fecha Subida Documento` | Fecha en que se adjuntó el documento (puede ser posterior) |
+| 9 | J | `Estado` | `Solicitado` / `Solicitado con Documento` / `Documento Adjuntado` / `Aceptado` / `Rechazado` |
+| 10 | K | `Fecha Subida Documento` | Fecha en que se adjuntó el documento |
 | 11 | L | `Notificado Rep. Legal` | Boolean — si se notificó al representante legal |
 | 12 | M | `Gestión` | `Socio` / `Dirigente` |
 | 13 | N | `Nombre Dirigente` | Nombre del dirigente gestor |
 | 14 | O | `Correo Dirigente` | Correo del dirigente gestor |
 | 15 | P | `NOTIFICADO_SOCIO` | Boolean — si se notificó al socio |
-
-**Tipos de permiso disponibles:**
-- Media jornada (Examen médico — CON GOCE DE REMUNERACIÓN)
-- Jornada completa (Enfermedad grave hijo menor — CON GOCE)
-- 1 día completo (Cláusula Trigésimo Segunda)
-- Y otros definidos en el contrato colectivo
 
 ---
 
@@ -216,32 +207,20 @@ Hojas: `BD_ASISTENCIA`, `PUNTOS_CONTROL`
 |---|---|---|---|
 | 0 | A | `FECHA_HORA` | Fecha y hora del registro (`dd/MM/yyyy HH:mm:ss`) |
 | 1 | B | `RUT` | RUT del socio |
-| 2 | C | `NOMBRE` | Nombre completo del socio |
-| 3 | D | `ASAMBLEA` | Nombre del punto de control / asamblea |
-| 4 | E | `TIPO_ASISTENCIA` | `Asistencia QR` / `PRESENCIAL` / `VIRTUAL` |
-| 5 | F | `GESTION` | `Sistema` / nombre del dirigente o admin |
-| 6 | G | `CODIGO_TEMP` | Código temporal (uso interno para prevenir duplicados) |
-| 7 | H | `NOTIF_CORREO` | Estado de notificación: vacío → `ENVIADO` o `SIN_CORREO` |
+| 2 | C | `NOMBRE` | Nombre del socio |
+| 3 | D | `ASAMBLEA` | Nombre del punto de control |
+| 4 | E | `TIPO_ASISTENCIA` | `QR` / `VIRTUAL` / `PRESENCIAL` |
+| 5 | F | `GESTION` | `Socio` / `Dirigente` / `Sistema` |
+| 6 | G | `CODIGO_TEMP` | Código temporal usado en el registro |
+| 7 | H | `NOTIF_CORREO` | `ENVIADO` / `SIN CORREO` / vacío |
 
-**Hoja `PUNTOS_CONTROL`** — Registro de puntos de control QR habilitados:
-
-| # | Col | Campo | Descripción |
-|---|---|---|---|
-| 0 | A | `NOMBRE_PUNTO` | Nombre del punto de control (patrón: `TIPO_DD-MM-YYYY_CODIGO-REGION`) |
-| 1 | B | `URL control` | URL de la página QR del punto de control |
-| 2 | C | `QR_CODE` | Imagen QR generada |
-| 3 | D | `(URL Web App)` | URL base del deployment |
-| 4 | E | `HORA_APERTURA` | Hora de apertura del punto de control |
-| 5 | F | `HORA_CIERRE` | Hora de cierre del punto de control |
-| 6 | G | `TIPO` | Tipo de punto de control |
+**Hoja `PUNTOS_CONTROL`** — Puntos de control QR activos (NOMBRE, LINK, QR, CODIGO_TEMP, HORA_APERTURA, HORA_CIERRE, TIPO)
 
 ---
 
-### 🗂️ CREDENCIALES — `IMPRESION`
+### 🗂️ CREDENCIALES — `BD_CREDENCIALES` (hoja `IMPRESION`)
 
-Hojas: `IMPRESION`, `HISTORIAL_CREDENCIALES`
-
-La hoja `IMPRESION` maneja el estado de credenciales sindicales físicas. Las columnas A–K incluyen:
+Las columnas A–K incluyen:
 - `RUT` (A), `ID CREDENCIAL` (B), `ESTADO` (C), `NOMBRE BD` (D), `NOMBRE FORMULARIO` (E)
 - `CORREO` (F), `ESTADO CREDENCIAL` (G), `REGION` (H), `OBSERVACION` (I)
 - `ESTADO ANTERIOR` (J) — usado por `verificarCambiosCredenciales` para detectar cambios
@@ -271,16 +250,6 @@ Hojas: `BD_GAMIFICACION`, `BANCO_PREGUNTAS`
 | 9 | J | `RACHA_MAX` | Racha máxima histórica |
 | 10 | K | `ESTADO` | `ACTIVO` / `DESVINCULADO` |
 | 11 | L | `QUIZZES_COMPLETADOS` | Contador total de quizzes completados |
-
----
-
-### 🗂️ DESVINCULADOS_CENTRALIZADOS _(no integrado al código aún)_
-
-Hojas: `Hoja 1`, `REACTIVADOS`
-
-**Hoja `Hoja 1`** — Registro centralizado de socios desvinculados (RUT, VALIDACION DE RUT, NOMBRE, ESTADO, DESCRIPCION)
-
-**Hoja `REACTIVADOS`** — Socios reactivados tras desvinculación (RUT, VALIDACION DE RUT, NOMBRE, ESTADO, DESCRIPCION, OBSERVACION)
 
 ---
 
@@ -323,9 +292,9 @@ Hojas: `Hoja 1`, `REACTIVADOS`
 
 Los módulos se cargan en el dashboard en este orden:
 
-1. **👤 Mis Datos** — Datos personales, banco, credencial
+1. **👤 Mis Datos** — Datos personales, banco, credencial, región
 2. **📜 Contrato Colectivo** — Acordeón de 7 capítulos
-3. **📝 Justificaciones** — Justificaciones de inasistencia a asambleas
+3. **📝 Justificaciones** — Justificaciones de inasistencia a asambleas por región
 4. **⚖️ Apelaciones** — Apelaciones de multas por inasistencia
 5. **💰 Préstamos** — Solicitud de préstamos sindicales
 6. **🏥 Permiso Médico** — Permisos médicos laborales
@@ -334,121 +303,72 @@ Los módulos se cargan en el dashboard en este orden:
 9. **🎮 SLIM Quest** — Gamificación sindical
 
 ### Módulos adicionales (sin switch en dashboard):
-- **⚙️ Panel Admin** — Solo ADMIN: switches, triggers, informes
+- **⚙️ Panel Admin** — Solo ADMIN: switches, triggers, configuración regional justificaciones
 - **🪪 Consulta ID / Credencial** — ADMIN/DIRIGENTE: estado de credencial por RUT
 - **👥 Gestión de Socios** — DIRIGENTE/ADMIN: trámites a nombre de socios
 - **🔗 Dirigentes** — Links a secciones restringidas de Google Sites
 
 ---
 
-### Detalle de módulos principales
+## 🌍 Sistema de Justificaciones por Región (v2)
 
-#### 1. 👤 Mis Datos
-- Edición de correo, teléfono, banco (wizard 3 pasos), tipo y número de cuenta
-- Badge de estado de credencial (VIGENTE / VENCIDA / PENDIENTE / REVOCADA)
-- Validación RUT en tiempo real (Módulo 11)
-- CacheService TTL 10 min para consultas frecuentes
+A partir del merge `Justificaciones-por-region` (23-04-2026), el módulo de justificaciones opera con una arquitectura **multi-región**. Cada región puede tener su propia actividad configurada de forma independiente.
 
-#### 2. 📜 Contrato Colectivo
-- Visualización completa (Sindicato SLIM N°3 — ISS, vigencia hasta febrero 2026 prorrogado)
-- Acordeón de 7 capítulos con scroll automático
-- Cards de la directiva (Presidente en ancho completo)
-- Switch de habilitación admin
+### Flujo del administrador
 
-#### 3. 📝 Justificaciones
-- Tipos: Fuerza Mayor, Licencia Médica, y otros
-- Adjunto de documento obligatorio para ciertos tipos (JPG, PNG, PDF — máx. 15 MB)
-- Restricción por evento activo (`Fecha_Evento` → código `YYYY_MM_DD`)
-- Notificación al representante legal con retry cada 30 min
-- Switch + badge en dashboard
+1. El switch global de justificaciones en Panel Admin activa el modal de configuración.
+2. El admin selecciona: **tipo de asamblea** (Ordinaria / Extraordinaria) + **región** → el sistema genera automáticamente el nombre de la actividad.
+3. Completa: fecha del evento, fecha límite de envío y hora límite.
+4. Cada región tiene su fila independiente en `CONFIG_JUSTIFICACIONES`.
+5. El admin puede eliminar regiones individualmente o deshabilitar todas con un clic.
+6. El switch visual refleja si hay al menos una región activa.
 
-#### 4. ⚖️ Apelaciones
-- Adjunto de comprobante y liquidación de sueldo
-- Estados: Solicitado → En Revisión → Aceptado / Aceptado-Obs / Rechazado / Pagado
-- Emails de estado con colores específicos por estado
-- Retry de permisos Drive con contador `REINTENTO_N` (máx. 5 intentos)
-- Columna `LOG_PERMISOS` (col S, índice 18) para auditoría
-- Switch + badge en dashboard
+### Flujo del socio
 
-#### 5. 💰 Préstamos
-- Dos opciones (A/B) por tipo de préstamo
-- Montos y cuotas según antigüedad y CC 2026
-- Confirmación en modal HTML nativo (sin `Swal.fire().then()`)
-- Validación de préstamos por directiva en hoja `Validación-Prestamos`
-- Switch + badge en dashboard
+1. Al ingresar a Justificaciones → pestaña Nueva, el sistema consulta la región del socio.
+2. Si no hay actividad configurada para su región → modal de bloqueo informativo.
+3. Si hay actividad activa → banner naranja muestra nombre de la actividad, fecha del evento y plazo.
+4. Si ya tiene una justificación enviada/aceptada para esa actividad → modal redirige al historial.
+5. Al enviar → modal de carga con aviso de conexión estable.
+6. Campo `ASAMBLEA` en la BD: `YYYY-MM-DD_Nombre Actividad` (ej. `2026-04-26_Asamblea Ordinaria - 07. RM Region Metropolitana - Santiago.`).
 
-#### 6. 🏥 Permiso Médico
-- Adjunto opcional al momento de la solicitud
-- Tipo especial: `1 día completo` (Cláusula Trigésimo Segunda)
-- 3 eventos de notificación según estado del documento
-- Retry para `NOTIFICADO_REP_LEGAL` y `NOTIFICADO_SOCIO`
-- Switch + badge en dashboard
+### Regiones disponibles (listado oficial)
 
-#### 7. 🧮 Calculadora HE
-- Fórmula DT: `FHE = 1.5 / ((NHC/NDC) × 30)`
-- Turnos 5×2 → factor `0.00795455`; Turnos 4×4 y 7×7 → factor `0.00833333`
-- Perfiles: Limpieza y Guardias de Seguridad
-- Nota de Asignación Familiar en sección guardias
-- Switch de habilitación admin
+```
+01. XV. Region de Arica y Parinacota - Arica
+02. I Region de Tarapacá - Iquique
+03. II. Region de Antofagasta - Antofagasta
+04. III Region de Atacama - Copiapó
+05. IV Region de Coquimbo - La Serena
+06. V Region de Valparaíso - Valparaíso.
+07. RM Region Metropolitana - Santiago.
+08. VI Region del Lib. Gral. Bdo. O'Higgins - Rancagua.
+09. VII Region del Maule - Talca.
+10. XVI Region del Ñuble - Chillán
+11. VIII Region del Biobío - Concepción.
+12. IX Region de Araucanía - Temuco
+13. XIV Region de Los Ríos - Valdivia
+14. X Region de los Lagos - Puerto Montt.
+15. XI. Region de Aysén del General Carlos Ibáñez del Campo - Coyhaique
+16. XII Region de Magallanes y la Antártica Chilena - Punta Arenas.
+```
 
-#### 8. 📋 Registro Asistencia
-- Panel virtual + flujo QR con puntos de control
-- Patrón nombre punto: `TIPO_DD-MM-YYYY_CODIGO-REGION`
-- Prevención de duplicados: localStorage + validación backend
-- Trigger de notificación por correo delegado a las 20:00
-- `LockService`: búsqueda de usuario fuera del lock
-- Switch + badge en dashboard
-
-#### 9. 🎮 SLIM Quest
-- 6 grados de progresión:
-
-| Grado | XP Requerido | Icono |
-|---|---|---|
-| Aspirante | 0 – 1.500 | 🌱 |
-| Aprendiz | 1.501 – 4.500 | ⚙️ |
-| Trabajador | 4.501 – 10.000 | 🔩 |
-| Defensor | 10.001 – 18.000 | 🛡️ |
-| Negociador | 18.001 – 30.000 | ⚖️ |
-| Dirigente | 30.001+ | 🏆 |
-
-- Quiz diario (3 niveles: BASICO / INTERMEDIO / AVANZADO)
-- Sistema de rachas con bonos en hitos: 3, 7, 14, 21, 30, 60, 100 días consecutivos
-- Nivel Secreto `DIRIGENTE`: preguntas exclusivas
-- Leaderboard top 10 (formato nombre: `JUAN LOPEZ G.`)
-- Logros en JSON por socio
-- Sincronización automática desde `BD_SLIMAPP` — trigger diario 1:00 AM
-- Motor de sonidos `SLIMSound` (Web Audio API, 17 tipos, mute persistido en localStorage)
-- Switch + badge en dashboard (bypass para ADMIN)
+> ⚠️ El valor de región en `BD_SLIMAPP` debe coincidir **exactamente** con los valores de esta lista para que la validación funcione correctamente.
 
 ---
 
-## ⏰ Triggers Automáticos
+## ⚙️ Switches de Módulos
 
-| Función | Frecuencia | Descripción |
+| Módulo | Clave PropertiesService | Notas |
 |---|---|---|
-| `verificarCambiosCredenciales` | Diario 8:00 AM | Detecta cambios en `BD_CREDENCIALES` y notifica socios |
-| `sincronizarSociosGamificacion` | Diario 1:00 AM | Sincroniza socios nuevos/desvinculados a BD_GAMIFICACION |
-| `reintentarNotificacionRepLegal` | Cada 30 min | Retry de notificaciones pendientes a Rep. Legal |
-| `reintentarNotificacionSocio` | Cada 30 min | Retry de notificaciones pendientes al socio |
-| `procesarValidacionPrestamos` | Periódico | Lee `Validación-Prestamos` y notifica resultados |
-| `enviarNotificacionAsistencia` | Diario 20:00 | Envía correos de confirmación de asistencia pendientes |
-
----
-
-## 🔧 Switches de Módulos
-
-Todos los switches se almacenan en `PropertiesService` con la convención de nombre `{modulo}_habilitado`.
-
-| Módulo | Clave PropertiesService |
-|---|---|
-| Justificaciones | `justificaciones_habilitado` |
-| Apelaciones | `apelaciones_habilitado` |
-| Préstamos | `prestamos_habilitado` |
-| Permisos Médicos | `permisos_medicos_habilitado` |
-| Contrato Colectivo | `contrato_colectivo_habilitado` |
-| Calculadora HE | `calculadora_he_habilitado` |
-| Registro Asistencia | `registro_asistencia_habilitado` |
-| SLIM Quest | `slimquest_habilitado` |
+| Justificaciones | Multi-región en `CONFIG_JUSTIFICACIONES` | Hoja Google Sheets — arquitectura v2 |
+| Apelaciones | `apelaciones_habilitado` | PropertiesService |
+| Préstamos | `prestamos_habilitado` | PropertiesService |
+| Permisos Médicos | `permisos_medicos_habilitado` | PropertiesService |
+| Contrato Colectivo | `contrato_colectivo_habilitado` | PropertiesService |
+| Calculadora HE | `calculadora_habilitada` | PropertiesService |
+| Registro Asistencia | `asistencia_habilitada` | PropertiesService |
+| SLIM Quest | `slimquest_habilitado` | PropertiesService |
 
 El estado de todos los switches se carga en una sola llamada mediante `obtenerEstadosSwitchDashboard()`.
 
@@ -460,7 +380,7 @@ El estado de todos los switches se carga en una sola llamada mediante `obtenerEs
 |---|---|
 | **TailwindCSS** (CDN) | Framework CSS para todo el diseño |
 | **Material Icons Round** (CDN) | Iconografía del sistema |
-| **SweetAlert** | Modales de alerta y confirmación |
+| **SweetAlert2** | Modales de alerta (sin uso de `.then()` — modales HTML nativos) |
 | **QuickChart API** | Generación de QR (`https://quickchart.io/qr?size=300&text={url}`) |
 | **SLIMSound Engine** | Motor de sonidos (Web Audio API) integrado en el frontend |
 | **`google.script.run`** | Comunicación asíncrona frontend → backend |
@@ -483,20 +403,30 @@ El estado de todos los switches se carga en una sola llamada mediante `obtenerEs
 
 | Función | Descripción |
 |---|---|
-| `obtenerConfigJustificaciones()` | Lee switch, fecha límite y código de asamblea |
-| `enviarJustificacion(datos)` | Registra nueva justificación en `BD_JUSTIFICACIONES` |
-| `obtenerJustificacionesSocio(rut)` | Historial de justificaciones del socio |
-| `gestionarJustificacion(id, estado, obs, rutGestor)` | Acepta o rechaza justificación (DIRIGENTE/ADMIN) |
-| `reintentarNotificacionRepLegal()` | Trigger: reintentos de notificación pendientes |
+| `obtenerEstadoSwitchJustificaciones()` | Lee configuraciones multi-región desde `CONFIG_JUSTIFICACIONES`. Auto-migra formato antiguo. Caché `justif_switch_state_v2` (2 min TTL). |
+| `actualizarSwitchJustificaciones(estado, fechaLimite, fechaEvento, region, nombreActividad)` | Crea o actualiza la configuración de una región específica. Sin región: deshabilita todas. |
+| `obtenerInfoActividadPorRegion(rut)` | Retorna la actividad activa para la región del socio. Diferencia: `sinRegion`, `regionNoConfigurada`, `vencido`, `habilitado`. |
+| `verificarJustificacionActividad(rut)` | Verifica si el socio ya tiene justificación enviada/aceptada para la actividad activa de su región. |
+| `eliminarConfigRegionJustificaciones(region)` | Elimina la fila de configuración de una región específica. Solo ADMIN. |
+| `verificarDisponibilidadJustificaciones(rut?)` | Valida disponibilidad por región del socio. Sin RUT: verificación global. |
+| `validarJustificacionMesActual(rut)` | Valida duplicados usando código `YYYY-MM-DD_NombreActividad` para modo evento. |
+| `enviarJustificacion(rutGestor, tipo, motivo, archivoData, rutBeneficiario)` | Registra nueva justificación. Guarda campo `ASAMBLEA` como `fechaEvento_nombreActividad`. |
+| `obtenerHistorialJustificaciones(rut)` | Historial de justificaciones del socio. |
+| `eliminarJustificacion(id)` | Elimina justificación en estado `Enviado`. |
+| `gestionarJustificacion(id, estado, obs, rutGestor)` | Acepta o rechaza justificación (DIRIGENTE/ADMIN). |
+| `verificarCambiosJustificaciones()` | Trigger (cada 8 hrs): detecta cambios de estado y notifica al socio. |
 
 ### Apelaciones
 
 | Función | Descripción |
 |---|---|
-| `enviarApelacion(datos)` | Registra nueva apelación con archivos adjuntos |
-| `obtenerApelacionesSocio(rut)` | Historial de apelaciones del socio |
+| `enviarApelacion(rutGestor, mes, tipo, detalle, comprobante, liquidacion, rutBeneficiario)` | Registra nueva apelación con archivos adjuntos |
+| `obtenerHistorialApelaciones(rut)` | Historial de apelaciones del socio |
+| `eliminarApelacion(id)` | Elimina apelación en estado `Enviado` o `Rechazado` |
 | `gestionarApelacion(id, estado, obs, rutGestor)` | Cambia estado y notifica al socio |
 | `adjuntarComprobanteDevolucion(id, archivoData)` | Adjunta comprobante de devolución de multa |
+| `verificarCambiosApelaciones()` | Trigger (cada 8 hrs): notifica cambios de estado |
+| `procesarPermisosComprobantesDevolucion()` | Trigger (cada 1 hr): otorga permisos Drive pendientes |
 
 ### Préstamos
 
@@ -504,8 +434,11 @@ El estado de todos los switches se carga en una sola llamada mediante `obtenerEs
 |---|---|
 | `obtenerOpcionesPrestamoSocio(rut)` | Calcula montos disponibles según antigüedad |
 | `solicitarPrestamo(datos)` | Registra nueva solicitud de préstamo |
-| `obtenerPrestamosSocio(rut)` | Historial de préstamos del socio |
-| `procesarValidacionPrestamos()` | Trigger: procesa validaciones de la directiva |
+| `obtenerHistorialPrestamos(rut)` | Historial de préstamos del socio |
+| `eliminarSolicitud(id)` | Elimina préstamo en estado `Solicitado` |
+| `modificarSolicitudPrestamo(id, cuotas, medio)` | Modifica cuotas y medio de pago |
+| `procesarValidacionPrestamos()` | Trigger (diario 8 AM): procesa validaciones de la directiva |
+| `verificarCambiosPrestamos()` | Trigger (diario 8 AM): notifica cambios de estado |
 
 ### Permisos Médicos
 
@@ -513,26 +446,31 @@ El estado de todos los switches se carga en una sola llamada mediante `obtenerEs
 |---|---|
 | `solicitarPermisoMedico(datos)` | Registra nueva solicitud de permiso médico |
 | `adjuntarDocumentoPermiso(id, archivoData)` | Adjunta documento posterior a la solicitud |
-| `obtenerPermisosMedicosSocio(rut)` | Historial de permisos del socio |
+| `obtenerHistorialPermisosMedicos(rut)` | Historial de permisos del socio |
+| `eliminarPermisoMedico(id)` | Anula permiso en estado `Solicitado` |
 | `gestionarPermisoMedico(id, estado, obs, rutGestor)` | Gestiona el permiso (DIRIGENTE/ADMIN) |
 
 ### Asistencia
 
 | Función | Descripción |
 |---|---|
-| `registrarAsistenciaQR(rut, codigoTemporal)` | Registro de asistencia vía QR |
-| `registrarAsistenciaManual(rut, tipo, asamblea, rutGestor)` | Registro presencial/virtual manual |
-| `obtenerAsistenciasSocio(rut)` | Historial de asistencias del socio |
-| `obtenerPuntosControl()` | Lista de puntos de control activos |
-| `crearPuntoControl(nombre, horaApertura, horaCierre)` | Crea nuevo punto de control QR |
+| `registrarAsistencia(rut, nombreControl, codigoTemporal)` | Registro de asistencia vía QR |
+| `registrarAsistenciaVirtual(rut, nombreControl)` | Registro virtual (sin código temporal, con lock) |
+| `obtenerHistorialAsistencia(rut)` | Historial de asistencias del socio |
+| `obtenerAsambleaVirtualActiva()` | Retorna puntos virtuales dentro de su ventana horaria |
+| `obtenerPuntosControl()` | Lista de puntos de control activos con estado |
+| `crearPuntoControl(nombre, tipo)` | Crea nuevo punto de control QR o virtual |
+| `eliminarPuntoControl(nombre)` | Elimina punto de control |
+| `guardarVentanaPuntoControl(nombre, apertura, cierre)` | Configura ventana horaria de registro |
+| `verificarNotificacionesAsistencia()` | Trigger (diario 20:00): envía notificaciones pendientes |
 
 ### Credenciales
 
 | Función | Descripción |
 |---|---|
 | `obtenerEstadoCredencialPorRut(rut)` | Estado de credencial del socio |
-| `verificarCambiosCredenciales()` | Trigger: detecta cambios y notifica |
-| `consultarIDSocio(rut)` | Consulta completa de credencial (DIRIGENTE/ADMIN) |
+| `verificarCambiosCredenciales()` | Trigger (diario 8 AM): detecta cambios y notifica |
+| `consultarIdCredencialBackend(rutConsultante, rutBuscado)` | Consulta completa de credencial (DIRIGENTE/ADMIN) |
 
 ### SLIM Quest
 
@@ -542,9 +480,8 @@ El estado de todos los switches se carga en una sola llamada mediante `obtenerEs
 | `desbloquearLogro(rut, nombre, descripcion, icono)` | Desbloquea logro al socio |
 | `completarQuiz(rut, xpGanado, correctas)` | Procesa resultado del quiz (racha, bonos, nivel) |
 | `obtenerPreguntasQuiz(rut, cantidad)` | Preguntas ponderadas según grado |
-| `obtenerPreguntasSecreto(rut, cantidad)` | Preguntas exclusivas para grado Dirigente |
 | `getLeaderboard(rut)` | Top 10 socios por XP |
-| `sincronizarSociosGamificacion()` | Sincroniza socios desde `BD_SLIMAPP` |
+| `sincronizarSociosGamificacion()` | Sincroniza socios desde `BD_SLIMAPP` (trigger diario 1 AM) |
 
 ### Auxiliares y Configuración
 
@@ -557,48 +494,71 @@ El estado de todos los switches se carga en una sola llamada mediante `obtenerEs
 | `validarCorreosParaPermisos(...)` | Prepara lista de correos para acceso Drive |
 | `getSheet(ssKey, sheetKey)` | Obtiene hoja por clave de CONFIG |
 | `getSpreadsheet(ssKey)` | Obtiene spreadsheet por clave de CONFIG |
+| `obtenerUsuarioPorRut(rut)` | Obtiene datos de socio con CacheService (TTL 10 min) |
 | `obtenerEstadosSwitchDashboard()` | Estado de todos los módulos en una sola llamada |
-| `configurarTriggers()` | Configura todos los triggers automáticos |
+| `configurarTriggers()` | Configura todos los triggers automáticos (ejecutar manualmente UNA vez) |
 | `generarLinksRegistroYQR()` | Genera links y QR de registro para todos los socios |
 | `verificarRolUsuario(rut, rolesPermitidos)` | Valida permisos de rol en funciones sensibles |
+| `generarCodigoAsamblea(fecha)` | Genera código `YYYY_MM` para modo mes (fallback) |
+| `generarCodigoAsambleaEvento(fechaEvento)` | Genera código `YYYY_MM_DD` para compatibilidad legacy |
+
+---
+
+## 🔁 Triggers Automáticos
+
+| Función | Frecuencia | Descripción |
+|---|---|---|
+| `verificarCambiosJustificaciones` | Cada 8 horas | Detecta cambios de estado y notifica socios |
+| `verificarCambiosApelaciones` | Cada 8 horas | Detecta cambios de estado y notifica socios |
+| `procesarValidacionPrestamos` | Diario 8 AM | Procesa validaciones de préstamos de la directiva |
+| `procesarPermisosComprobantesDevolucion` | Cada 1 hora | Otorga permisos Drive a comprobantes de devolución |
+| `verificarCambiosPrestamos` | Diario 8 AM | Notifica cambios de estado en préstamos |
+| `verificarCambiosCredenciales` | Diario 8 AM | Detecta cambios de credencial y notifica socios |
+| `verificarNotificacionesAsistencia` | Diario 20:00 | Envía correos de confirmación de asistencia |
+| `sincronizarSociosGamificacion` | Diario 1 AM | Sincroniza nuevos socios a BD_GAMIFICACION |
+
+> ⚠️ Ejecutar `configurarTriggers()` manualmente desde el editor de Apps Script para activar todos los triggers. Esta función elimina duplicados antes de recrearlos.
 
 ---
 
 ## 🔑 Notas Técnicas Importantes
 
 ### Manejo de fechas
-- Siempre anclar strings de fecha al mediodía (`T12:00:00`) para evitar desfases UTC → Santiago (UTC-3).
+- Siempre anclar strings de fecha al mediodía (`T12:00:00`) para evitar desfases UTC → Santiago (UTC-3/UTC-4).
 - Usar `getValues()` para columnas de fecha (evita inversión día/mes en formato US de `getDisplayValues()`).
-- Usar `setNumberFormat('@STRING@')` para prevenir que Sheets convierta texto a Date automáticamente.
-- Strings como `"2026-02-25"` se interpretan como medianoche UTC → usar `'T12:00:00'` al construir Date.
+- Strings como `"2026-02-25"` se interpretan como medianoche UTC → usar `'T12:00:00'` al construir `Date`.
+- El campo `ASAMBLEA` en `BD_JUSTIFICACIONES` usa el formato `YYYY-MM-DD_Nombre Actividad` desde v2.
 
 ### Concurrencia y performance
 - Usar `getUserLock()` para operaciones iniciadas por el usuario (evita conflicto con triggers que usan `getScriptLock()`).
-- `getScriptLock()` en triggers puede retener el lock hasta 60 s, bloqueando envíos simultáneos.
-- `CacheService` TTL 10 min para búsquedas de usuario (`user_RUT`).
-- Búsqueda de usuario fuera del lock crítico en operaciones de asistencia.
+- `getScriptLock()` en triggers puede retener el lock hasta 60 s — no usar en funciones de usuario.
+- `CacheService` TTL 10 min para búsquedas de usuario (`user_RUT`); TTL 2 min para estado del switch de justificaciones (`justif_switch_state_v2`).
 - `SpreadsheetApp.flush()` antes de `getDataRange().getValues()` en funciones de validación para evitar race conditions.
+- `appendRow` es atómico y siempre escribe tras la última fila con datos — seguro para alta concurrencia.
 
 ### Restricciones de Google Apps Script
-- Evitar backticks `` ` `` (template literals) — usar concatenación con `+` para prevenir errores de string no cerrado.
-- `Swal.fire().then()` es poco confiable en iframes sandboxed de GAS — usar modales HTML nativos con handlers separados.
+- **Sin template literals** (backticks `` ` ``) en `Code.gs` — usar concatenación con `+`.
+- `Swal.fire().then()` no confiable en iframes sandboxed — usar modales HTML nativos con funciones separadas.
 - `innerHTML +=` en loops destruye referencias DOM — pasar `this` en handlers `onclick`.
-- `appendRow` es atómico y siempre escribe tras la última fila con datos.
+- `confirm()` nativo del navegador muestra la URL del script — usar modales HTML propios.
 - `ScriptApp.getService().getUrl()` no retorna el formato `/a/~/macros/s/` de forma confiable.
 
 ### Archivos y Drive
 - Eliminar `capture="environment"` de inputs de archivo (fuerza cámara en móvil, impide seleccionar PDF).
 - `Drive.Permissions.insert` falla intermitentemente — usar 3 intentos con `Utilities.sleep()`.
-- Fórmulas `=IMAGE()` en Sheets: usar `getFormulas()` en lugar de `getValues()`.
+- Fórmulas `=IMAGE()` en Sheets: usar `getFormulas()` en lugar de `getValues()` o `getDisplayValues()`.
 
 ### Columnas y estructura
-- Los índices de columna se usan directamente en el código (no los nombres de cabecera).
-- Renombrar cabeceras no rompe el código, pero insertar/eliminar columnas sí.
-- Sentinel `SIN_CORREO`: registros sin correo válido reciben este valor en columnas de notificación.
+- Los índices de columna se referencian numéricamente en `CONFIG.COLUMNAS.*` — renombrar cabeceras no rompe el código, pero insertar/eliminar columnas sí.
+- Sentinel `SIN_CORREO`: registros sin correo válido reciben este valor en columnas de notificación para evitar reintentos.
+- La hoja `CONFIG_JUSTIFICACIONES` usa la clave `justif_switch_state_v2` en CacheService — al modificar la estructura de la hoja, invalidar manualmente la caché.
 
-### Patrones de navegación
+### Patrones de navegación y UI
 - `navAction` usa cadenas `if/else if` (no `switch/case`) — importante al agregar nuevos módulos.
-- Visibilidad de switches debe establecerse dentro del branch `navAction`, no en login/`setupDashboard`.
+- Visibilidad de switches se establece dentro del branch `navAction`, no en login ni en `setupDashboard`.
+- `add flex` junto a `remove hidden` en `applyRolePermissions` para centrado correcto de tarjetas.
+- Overlay global `global-processing-overlay` (z-index 90) bloquea toda interacción durante operaciones de eliminar/guardar.
+- Modal `justif-upload-info-modal` y `appeal-upload-info-modal` informan al usuario sobre tiempos de carga y conexión estable.
 
 ---
 
@@ -622,7 +582,7 @@ El estado de todos los switches se carga en una sola llamada mediante `obtenerEs
 
 **Organización:** Sindicato SLIM N°3
 **Desarrollador:** Alejandro Peñailillo G. — DUOC UC, Técnico Analista Programador
-**Repositorio:** `Daroce12/SLIMAPP`
+**Repositorio:** `eLj4n0/Sistema-SLIMAPP-Backend`
 **Rama principal:** `main`
 **Plataforma:** Google Apps Script + Google Workspace
 
