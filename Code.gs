@@ -1765,7 +1765,7 @@ function obtenerEstadosSwitchDashboard() {
     var slimquest     = (props.getProperty('slimquest_habilitado')         !== 'false');
     var calculadora   = (props.getProperty('calculadora_habilitada')       !== 'false');
 
-    // Justificaciones usa lógica de fecha; reutilizamos la función existente
+    // Justificaciones: habilitado si hay al menos una región configurada y activa
     var justificaciones = false;
     try {
       var resJ = obtenerEstadoSwitchJustificaciones();
@@ -2037,7 +2037,7 @@ function toggleSwitchCalculadora(estado) {
 function obtenerEstadoSwitchJustificaciones() {
   try {
     var cache = CacheService.getScriptCache();
-    var cached = cache.get('justif_switch_state');
+    var cached = cache.get('justif_switch_state_v2');
     if (cached) {
       try {
         return JSON.parse(cached);
@@ -2047,95 +2047,155 @@ function obtenerEstadoSwitchJustificaciones() {
     }
 
     const ss = getSpreadsheet('JUSTIFICACIONES');
-    let sheetConfig = ss.getSheetByName(CONFIG.HOJAS.CONFIG_JUSTIFICACIONES);
-    
+    var sheetConfig = ss.getSheetByName(CONFIG.HOJAS.CONFIG_JUSTIFICACIONES);
+
+    // Migración: si la hoja no existe o tiene estructura antigua (col A = TRUE/FALSE en lugar de región)
     if (!sheetConfig) {
       sheetConfig = ss.insertSheet(CONFIG.HOJAS.CONFIG_JUSTIFICACIONES);
-      sheetConfig.appendRow(["Habilitado", "Fecha Límite"]);
-      sheetConfig.appendRow([false, ""]);
+      sheetConfig.appendRow(["REGION", "Habilitado", "Fecha Limite", "Fecha_Evento", "Nombre_Actividad"]);
+    } else {
+      // Verificar si está en formato antiguo (primera celda es boolean, no string de región)
+      var primeraFila = sheetConfig.getRange(1, 1, 1, 1).getValue();
+      var primeraFilaStr = String(primeraFila).trim().toUpperCase();
+      if (primeraFilaStr === "HABILITADO" || primeraFilaStr === "TRUE" || primeraFilaStr === "FALSE") {
+        // Hoja en formato antiguo — migrar
+        var datosAntiguos = sheetConfig.getDataRange().getValues();
+        var filaAntiguaConfig = datosAntiguos.length > 1 ? datosAntiguos[1] : null;
+        sheetConfig.clearContents();
+        sheetConfig.appendRow(["REGION", "Habilitado", "Fecha Limite", "Fecha_Evento", "Nombre_Actividad"]);
+        if (filaAntiguaConfig) {
+          var habAnt = filaAntiguaConfig[0] === true || String(filaAntiguaConfig[0]).toLowerCase() === "true";
+          var fLimAnt = filaAntiguaConfig[1] ? filaAntiguaConfig[1] : "";
+          var fEvAnt  = filaAntiguaConfig[2] ? filaAntiguaConfig[2] : "";
+          if (habAnt) {
+            sheetConfig.appendRow(["13. Región Metropolitana de Santiago", true, fLimAnt, fEvAnt, "Asamblea General"]);
+          }
+        }
+        Logger.log("✅ CONFIG_JUSTIFICACIONES migrado a formato multi-región");
+      }
     }
-    
-    const data = sheetConfig.getRange(2, 1, 1, 3).getValues();
-    const habilitado = data[0][0] === true || data[0][0] === "TRUE" || data[0][0] === "true";
-    const fechaLimiteValue = data[0][1];
-    const fechaEventoRaw = data[0][2];
-    const fechaEvento = (fechaEventoRaw && String(fechaEventoRaw).trim() !== "") 
-      ? (fechaEventoRaw instanceof Date 
-          ? Utilities.formatDate(fechaEventoRaw, Session.getScriptTimeZone(), "yyyy-MM-dd")
-          : String(fechaEventoRaw).trim())
-      : null;
-    
-    if (habilitado && fechaLimiteValue) {
-      // Convertir ambas fechas a UTC para comparación justa
-      const ahora = new Date();
-      const limite = new Date(fechaLimiteValue);
-      
-      // Log para debug (puedes comentar después)
-      Logger.log("Fecha actual (UTC): " + ahora.toISOString());
-      Logger.log("Fecha límite (UTC): " + limite.toISOString());
-      Logger.log("Fecha actual > Fecha límite: " + (ahora > limite));
-      
-      if (ahora > limite) {
-        // Ya pasó la fecha límite, deshabilitar automáticamente
-        sheetConfig.getRange(2, 1).setValue(false);
-        var resultado = { 
-        habilitado: habilitado, 
+
+    var lastRow = sheetConfig.getLastRow();
+    if (lastRow < 2) {
+      return { habilitado: false, fechaLimite: "", fechaEvento: null, configuraciones: [] };
+    }
+
+    var data = sheetConfig.getRange(2, 1, lastRow - 1, 5).getValues();
+    var configuraciones = [];
+    var ahora = new Date();
+
+    for (var i = 0; i < data.length; i++) {
+      var region     = String(data[i][0] || "").trim();
+      var habilitado = (data[i][1] === true || String(data[i][1]).toLowerCase() === "true");
+      var fechaLimiteRaw = data[i][2];
+      var fechaEventoRaw = data[i][3];
+      var nombreActividad = String(data[i][4] || "Asamblea").trim();
+
+      if (!region) continue;
+
+      var fechaLimiteValue = fechaLimiteRaw ? (fechaLimiteRaw instanceof Date ? fechaLimiteRaw.toISOString() : String(fechaLimiteRaw).trim()) : "";
+      var fechaEvento = (fechaEventoRaw && String(fechaEventoRaw).trim() !== "")
+        ? (fechaEventoRaw instanceof Date
+            ? Utilities.formatDate(fechaEventoRaw, Session.getScriptTimeZone(), "yyyy-MM-dd")
+            : String(fechaEventoRaw).trim())
+        : null;
+
+      // Auto-deshabilitar si venció la fecha límite
+      if (habilitado && fechaLimiteValue) {
+        var limite = new Date(fechaLimiteValue);
+        if (ahora > limite) {
+          sheetConfig.getRange(i + 2, 2).setValue(false);
+          habilitado = false;
+          Logger.log("⏰ Región " + region + " deshabilitada automáticamente por vencimiento de plazo");
+        }
+      }
+
+      configuraciones.push({
+        region: region,
+        habilitado: habilitado,
         fechaLimite: fechaLimiteValue,
-        fechaEvento: fechaEvento
-      };
-      
-      // ✅ Guardar en caché por 5 minutos
-      try {
-        cache.put('justif_switch_state', JSON.stringify(resultado), 300);
-      } catch (e) {
-        Logger.log('Error caching switch state: ' + e);
-      }
-      
-      return resultado;
-      }
+        fechaEvento: fechaEvento,
+        nombreActividad: nombreActividad
+      });
     }
-    
-    return { 
-      habilitado: habilitado, 
-      fechaLimite: fechaLimiteValue,
-      fechaEvento: fechaEvento
+
+    // Compatibilidad: retornar también si hay alguna config habilitada globalmente
+    var algunaHabilitada = configuraciones.some(function(c) { return c.habilitado; });
+    var resultado = {
+      habilitado: algunaHabilitada,
+      configuraciones: configuraciones
     };
-    
+
+    try {
+      cache.put('justif_switch_state_v2', JSON.stringify(resultado), 120);
+    } catch (e) {
+      Logger.log('Error caching: ' + e);
+    }
+
+    return resultado;
+
   } catch (e) {
-    Logger.error("Error en obtenerEstadoSwitchJustificaciones: " + e.toString());
-    return { 
-      habilitado: false, 
-      fechaLimite: "", 
-      error: e.toString() 
-    };
+    Logger.log('Error en obtenerEstadoSwitchJustificaciones: ' + e.toString());
+    return { habilitado: false, fechaLimite: "", fechaEvento: null, configuraciones: [] };
   }
 }
 
 /**
  * Actualizar estado del switch de justificaciones
  */
-function actualizarSwitchJustificaciones(nuevoEstado, fechaLimite, fechaEvento) {
+function actualizarSwitchJustificaciones(nuevoEstado, fechaLimite, fechaEvento, region, nombreActividad) {
   var lock = LockService.getScriptLock();
-  if (lock.tryLock(30000)) { // ✅ Aumentado a 30 segundos para alta concurrencia
+  if (lock.tryLock(30000)) {
     try {
+      // Invalidar caché
+      try { CacheService.getScriptCache().remove('justif_switch_state_v2'); } catch(e) {}
+
       const ss = getSpreadsheet('JUSTIFICACIONES');
-      let sheetConfig = ss.getSheetByName(CONFIG.HOJAS.CONFIG_JUSTIFICACIONES);
-      
+      var sheetConfig = ss.getSheetByName(CONFIG.HOJAS.CONFIG_JUSTIFICACIONES);
+
       if (!sheetConfig) {
         sheetConfig = ss.insertSheet(CONFIG.HOJAS.CONFIG_JUSTIFICACIONES);
-        sheetConfig.appendRow(["Habilitado", "Fecha Límite", "Fecha_Evento"]);
-        sheetConfig.appendRow([false, "", ""]);
+        sheetConfig.appendRow(["REGION", "Habilitado", "Fecha Limite", "Fecha_Evento", "Nombre_Actividad"]);
       }
-      
-      sheetConfig.getRange(2, 1).setValue(nuevoEstado);
-      if (fechaLimite) {
-        sheetConfig.getRange(2, 2).setValue(fechaLimite);
+
+      // Si nuevoEstado = false sin región específica → deshabilitar TODAS
+      if (!nuevoEstado && !region) {
+        var lastRow = sheetConfig.getLastRow();
+        if (lastRow >= 2) {
+          sheetConfig.getRange(2, 2, lastRow - 1, 1).setValue(false);
+        }
+        return { success: true, message: "Todas las configuraciones deshabilitadas." };
       }
-      const valorEvento = (fechaEvento && String(fechaEvento).trim() !== "") ? String(fechaEvento).trim() : "";
-      sheetConfig.getRange(2, 3).setValue(valorEvento);
-      
-      return { success: true, message: "Estado actualizado correctamente." };
-      
+
+      var regionTarget = region ? String(region).trim() : "13. Región Metropolitana de Santiago";
+      var nombreAct = (nombreActividad && String(nombreActividad).trim() !== "") ? String(nombreActividad).trim() : "Asamblea General";
+      var valorEvento = (fechaEvento && String(fechaEvento).trim() !== "") ? String(fechaEvento).trim() : "";
+
+      // Buscar si ya existe una fila para esta región
+      var lastRow = sheetConfig.getLastRow();
+      var filaExistente = -1;
+      if (lastRow >= 2) {
+        var dataActual = sheetConfig.getRange(2, 1, lastRow - 1, 1).getValues();
+        for (var i = 0; i < dataActual.length; i++) {
+          if (String(dataActual[i][0]).trim() === regionTarget) {
+            filaExistente = i + 2; // Fila real en la hoja
+            break;
+          }
+        }
+      }
+
+      if (filaExistente > 0) {
+        // Actualizar fila existente
+        sheetConfig.getRange(filaExistente, 1, 1, 5).setValues([
+          [regionTarget, nuevoEstado, fechaLimite || "", valorEvento, nombreAct]
+        ]);
+      } else {
+        // Agregar nueva fila
+        sheetConfig.appendRow([regionTarget, nuevoEstado, fechaLimite || "", valorEvento, nombreAct]);
+      }
+
+      return { success: true, message: "Configuración actualizada para " + regionTarget };
+
     } catch (e) {
       return { success: false, message: "Error: " + e.toString() };
     } finally {
@@ -2146,16 +2206,198 @@ function actualizarSwitchJustificaciones(nuevoEstado, fechaLimite, fechaEvento) 
   }
 }
 
-function verificarDisponibilidadJustificaciones() {
-  const estadoSwitch = obtenerEstadoSwitchJustificaciones();
-  
-  if (!estadoSwitch.habilitado) {
-    return { 
-      habilitado: false, 
-      mensaje: "Módulo de justificaciones temporalmente deshabilitado.\nConsulte con la directiva." 
+/**
+ * Obtiene la información de actividad configurada para la región del usuario.
+ * Retorna el estado habilitado, fecha límite, fecha evento y nombre de actividad
+ * correspondientes a la región del socio, o un objeto indicando sin configuración.
+ * @param {string} rut - RUT del socio
+ * @returns {Object}
+ */
+function obtenerInfoActividadPorRegion(rut) {
+  try {
+    // Obtener región del usuario
+    var usuario = obtenerUsuarioPorRut(rut);
+    if (!usuario.encontrado) {
+      return { habilitado: false, sinConfiguracion: true, mensaje: "Usuario no encontrado." };
+    }
+
+    var regionUsuario = String(usuario.region || "").trim();
+    if (!regionUsuario) {
+      return { habilitado: false, sinRegion: true, mensaje: "No tienes una región asignada en el sistema. Por favor actualiza tu región en Mis Datos." };
+    }
+
+    var estadoSwitch = obtenerEstadoSwitchJustificaciones();
+    var configuraciones = estadoSwitch.configuraciones || [];
+
+    if (configuraciones.length === 0) {
+      return {
+        habilitado: false,
+        sinConfiguracion: true,
+        regionUsuario: regionUsuario,
+        mensaje: "El módulo de justificaciones no está activo en este momento. Consulta con tu delegado sindical."
+      };
+    }
+
+    // Buscar configuración exacta para la región del usuario
+    var configRegion = null;
+    for (var i = 0; i < configuraciones.length; i++) {
+      if (configuraciones[i].region === regionUsuario) {
+        configRegion = configuraciones[i];
+        break;
+      }
+    }
+
+    if (!configRegion) {
+      // Hay otras regiones configuradas pero no la del usuario
+      return {
+        habilitado: false,
+        regionNoConfigurada: true,
+        regionUsuario: regionUsuario,
+        mensaje: "No hay una actividad programada para tu región (" + regionUsuario + ") en este momento.\n\nSi crees que se trata de un error, comunícate con tu delegado sindical o verifica que tu región esté correctamente registrada en Mis Datos."
+      };
+    }
+
+    if (!configRegion.habilitado) {
+      return {
+        habilitado: false,
+        vencido: true,
+        regionUsuario: regionUsuario,
+        nombreActividad: configRegion.nombreActividad,
+        fechaEvento: configRegion.fechaEvento,
+        mensaje: "El plazo para justificaciones de la actividad \"" + configRegion.nombreActividad + "\" ha vencido para tu región."
+      };
+    }
+
+    return {
+      habilitado: true,
+      regionUsuario: regionUsuario,
+      nombreActividad: configRegion.nombreActividad,
+      fechaLimite: configRegion.fechaLimite,
+      fechaEvento: configRegion.fechaEvento
+    };
+
+  } catch (e) {
+    Logger.log("Error en obtenerInfoActividadPorRegion: " + e.toString());
+    return { habilitado: false, sinConfiguracion: true, mensaje: "Error al verificar configuración: " + e.message };
+  }
+}
+
+/**
+ * Verifica si el usuario ya tiene una justificación enviada o aceptada
+ * para la actividad activa de su región.
+ * @param {string} rut
+ * @returns {Object} { tieneJustificacion: bool, estado, codigoActividad, mensaje }
+ */
+function verificarJustificacionActividad(rut) {
+  try {
+    var infoActividad = obtenerInfoActividadPorRegion(rut);
+
+    if (!infoActividad.habilitado) {
+      return { tieneJustificacion: false, sinActividad: true };
+    }
+
+    var codigoActividad = null;
+    if (infoActividad.fechaEvento && infoActividad.nombreActividad) {
+      codigoActividad = infoActividad.fechaEvento + "_" + infoActividad.nombreActividad;
+    } else if (infoActividad.fechaEvento) {
+      codigoActividad = generarCodigoAsambleaEvento(infoActividad.fechaEvento);
+    }
+
+    if (!codigoActividad) {
+      return { tieneJustificacion: false };
+    }
+
+    SpreadsheetApp.flush();
+    var sheet = getSheet('JUSTIFICACIONES', 'JUSTIFICACIONES');
+    var data = sheet.getDataRange().getValues();
+    var COL = CONFIG.COLUMNAS.JUSTIFICACIONES;
+    var rutLimpio = cleanRut(rut);
+
+    for (var i = 1; i < data.length; i++) {
+      var filaRut = cleanRut(String(data[i][COL.RUT]));
+      var filaAsamblea = String(data[i][COL.ASAMBLEA] || "").trim();
+      var filaEstado = String(data[i][COL.ESTADO] || "").trim();
+
+      if (filaRut === rutLimpio && filaAsamblea === codigoActividad) {
+        if (filaEstado !== "Rechazado") {
+          return {
+            tieneJustificacion: true,
+            estado: filaEstado,
+            codigoActividad: codigoActividad,
+            nombreActividad: infoActividad.nombreActividad,
+            idJustificacion: String(data[i][COL.ID])
+          };
+        }
+      }
+    }
+
+    return { tieneJustificacion: false, codigoActividad: codigoActividad };
+
+  } catch (e) {
+    Logger.log("Error en verificarJustificacionActividad: " + e.toString());
+    return { tieneJustificacion: false, error: e.toString() };
+  }
+}
+
+/**
+ * Elimina la configuración de justificaciones para una región específica.
+ * Solo ADMIN puede llamar esta función.
+ * @param {string} region - Nombre exacto de la región a eliminar
+ * @returns {Object}
+ */
+function eliminarConfigRegionJustificaciones(region) {
+  try {
+    if (!region || String(region).trim() === "") {
+      return { success: false, message: "Debe indicar una región." };
+    }
+    var regionTarget = String(region).trim();
+
+    // Invalidar caché
+    try { CacheService.getScriptCache().remove('justif_switch_state_v2'); } catch(e) {}
+
+    var ss = getSpreadsheet('JUSTIFICACIONES');
+    var sheetConfig = ss.getSheetByName(CONFIG.HOJAS.CONFIG_JUSTIFICACIONES);
+    if (!sheetConfig) return { success: false, message: "Hoja de configuración no encontrada." };
+
+    var lastRow = sheetConfig.getLastRow();
+    if (lastRow < 2) return { success: false, message: "No hay configuraciones registradas." };
+
+    var data = sheetConfig.getRange(2, 1, lastRow - 1, 1).getValues();
+    for (var i = 0; i < data.length; i++) {
+      if (String(data[i][0]).trim() === regionTarget) {
+        sheetConfig.deleteRow(i + 2);
+        return { success: true, message: "Configuración de \"" + regionTarget + "\" eliminada." };
+      }
+    }
+
+    return { success: false, message: "No se encontró configuración para esa región." };
+
+  } catch (e) {
+    return { success: false, message: "Error: " + e.toString() };
+  }
+}
+
+function verificarDisponibilidadJustificaciones(rut) {
+  // Si se proporciona RUT, usar verificación por región
+  if (rut) {
+    var infoActividad = obtenerInfoActividadPorRegion(rut);
+    return {
+      habilitado: infoActividad.habilitado,
+      mensaje: infoActividad.habilitado ? "" : (infoActividad.mensaje || "Módulo deshabilitado para tu región."),
+      regionNoConfigurada: infoActividad.regionNoConfigurada || false,
+      sinRegion: infoActividad.sinRegion || false,
+      vencido: infoActividad.vencido || false
     };
   }
-  
+
+  // Fallback sin RUT: revisar si hay alguna config habilitada globalmente
+  var estadoSwitch = obtenerEstadoSwitchJustificaciones();
+  if (!estadoSwitch.habilitado) {
+    return {
+      habilitado: false,
+      mensaje: "Módulo de justificaciones temporalmente deshabilitado.\nConsulte con la directiva."
+    };
+  }
   return { habilitado: true };
 }
 
@@ -2174,12 +2416,18 @@ function validarJustificacionMesActual(rut) {
     const COL = CONFIG.COLUMNAS.JUSTIFICACIONES;
     const hoy = new Date();
     
-    // Obtener configuración del evento activo
-    const configSwitch = obtenerEstadoSwitchJustificaciones();
-    const fechaEvento = configSwitch.fechaEvento || null;
-    const codigoEventoActivo = fechaEvento ? generarCodigoAsambleaEvento(fechaEvento) : null;
-    
-    Logger.log(`✅ Validando justificación | Evento: ${codigoEventoActivo || 'Sin evento (modo mes)'}`);
+    // Obtener configuración del evento activo según la región del usuario
+    var infoActividad = obtenerInfoActividadPorRegion(rut);
+    var fechaEvento = (infoActividad.habilitado && infoActividad.fechaEvento) ? infoActividad.fechaEvento : null;
+    // Nuevo formato de código: "YYYY-MM-DD_Nombre Actividad"
+    var codigoEventoActivo = null;
+    if (fechaEvento && infoActividad.nombreActividad) {
+      codigoEventoActivo = fechaEvento + "_" + infoActividad.nombreActividad;
+    } else if (fechaEvento) {
+      codigoEventoActivo = generarCodigoAsambleaEvento(fechaEvento);
+    }
+
+    Logger.log("Validando justificacion | Region: " + (infoActividad.regionUsuario || "?") + " | Evento: " + (codigoEventoActivo || "Sin evento (modo mes)"));
     
     // ========================
     // MODO A: Validación por evento específico
@@ -2331,9 +2579,10 @@ function validarJustificacionMesActual(rut) {
 function enviarJustificacion(rutGestor, tipo, motivo, archivoData, rutBeneficiario) {
   var CARPETA_ID = CONFIG.CARPETAS.JUSTIFICACIONES;
   
-  // Verificar disponibilidad del módulo
-  var disp = verificarDisponibilidadJustificaciones();
-  if (!disp.habilitado) return { success: false, message: disp.mensaje };
+  // Verificar disponibilidad del módulo (verificación por región del usuario)
+  var rutParaVerif = rutBeneficiario ? rutBeneficiario : rutGestor;
+  var disp = verificarDisponibilidadJustificaciones(rutParaVerif);
+  if (!disp.habilitado) return { success: false, message: disp.mensaje || "Módulo de justificaciones no disponible para tu región." };
   
   var lock = LockService.getScriptLock();
   if (lock.tryLock(30000)) {
@@ -2409,10 +2658,14 @@ function enviarJustificacion(rutGestor, tipo, motivo, archivoData, rutBeneficiar
       // ========== CREAR REGISTRO EN LA BASE DE DATOS ==========
       var fechaHoy = new Date();
       var estado = "Enviado";
-      var configActiva = obtenerEstadoSwitchJustificaciones();
-      var codigoAsamblea = configActiva.fechaEvento 
-        ? generarCodigoAsambleaEvento(configActiva.fechaEvento) 
-        : generarCodigoAsamblea(fechaHoy);
+      var infoActividadParaRegistro = obtenerInfoActividadPorRegion(beneficiario.rut);
+      var codigoAsamblea;
+      if (infoActividadParaRegistro.habilitado && infoActividadParaRegistro.fechaEvento) {
+        var nombreActParaRegistro = infoActividadParaRegistro.nombreActividad || "Asamblea";
+        codigoAsamblea = infoActividadParaRegistro.fechaEvento + "_" + nombreActParaRegistro;
+      } else {
+        codigoAsamblea = generarCodigoAsamblea(fechaHoy);
+      }
       
       var gestion = "Socio";
       var nomDirigente = "";

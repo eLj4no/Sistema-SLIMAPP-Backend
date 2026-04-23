@@ -1708,6 +1708,16 @@
            <div id="justif-form-content" class="flex-col h-full p-4 overflow-y-auto flex">
               <h3 class="text-xl font-bold text-slate-800 mb-1">Nueva Justificación</h3>
               <p class="text-xs text-slate-500 mb-4">Adjunte el comprobante necesario.</p>
+              <!-- Banner de actividad activa por región -->
+               <div id="justif-actividad-banner" class="hidden mt-3 p-3 bg-orange-50 border border-orange-200 rounded-xl">
+                  <div class="flex items-start gap-2">
+                     <span class="material-icons-round text-orange-500 text-base mt-0.5">event</span>
+                     <div>
+                        <p id="justif-banner-nombre" class="text-xs font-bold text-orange-700"></p>
+                        <p id="justif-banner-detalle" class="text-xs text-orange-600 mt-0.5"></p>
+                     </div>
+                  </div>
+               </div>
 
               <div class="space-y-4">
                  <div id="justif-admin-field" class="hidden bg-indigo-50 p-4 rounded-xl border border-indigo-100 mb-2">
@@ -2573,35 +2583,87 @@
          </div>
       </div>
 
-      <!-- Modal Fecha Límite Justificaciones (ADMIN) -->
+      <!-- Modal Configuración Regional Justificaciones (ADMIN) -->
       <div id="justif-deadline-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 fade-in-up">
-            <h3 class="text-lg font-bold text-slate-800 mb-4">Establecer Fecha Límite</h3>
-            <p class="text-sm text-slate-600 mb-4">Ingrese hasta qué fecha y hora estará habilitado el módulo de justificaciones.</p>
-            
-            <div class="space-y-4">
-               <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Fecha</label>
-                  <input type="date" id="justif-deadline-date" class="input-modern w-full px-4 py-3 rounded-lg text-sm">
-               </div>
-               <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Hora</label>
-                  <input type="time" id="justif-deadline-time" class="input-modern w-full px-4 py-3 rounded-lg text-sm">
-               </div>
-               <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Fecha del Evento <span class="text-slate-400 font-normal normal-case">(opcional)</span></label>
-                  <input type="date" id="justif-fecha-evento" class="input-modern w-full px-4 py-3 rounded-lg text-sm">
-                  <p class="text-xs text-slate-400 mt-1">Si se indica, la restricción aplica por evento. Sin fecha, aplica por mes calendario.</p>
+         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 fade-in-up" style="max-height:90vh;overflow-y:auto;">
+            <h3 class="text-lg font-bold text-slate-800 mb-1">Configurar Actividad por Región</h3>
+            <p class="text-sm text-slate-500 mb-4">Define la actividad, fechas y región para habilitar justificaciones.</p>
+
+            <!-- Tabla de configuraciones existentes -->
+            <div id="justif-config-tabla-wrap" class="mb-4">
+               <p class="text-xs font-bold text-slate-500 uppercase mb-2">Regiones configuradas</p>
+               <div id="justif-config-tabla" class="space-y-2 text-xs">
+                  <p class="text-slate-400 italic">Cargando...</p>
                </div>
             </div>
 
-            <div class="flex gap-3 mt-6">
-               <button onclick="cancelJustifDeadline()" class="flex-1 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-bold text-sm hover:bg-slate-50">
-                  Cancelar
-               </button>
-               <button onclick="confirmJustifDeadline()" class="flex-1 py-2.5 rounded-lg bg-orange-600 text-white font-bold text-sm hover:bg-orange-700">
-                  Confirmar
-               </button>
+            <div class="border-t border-slate-100 pt-4 space-y-3">
+               <p class="text-xs font-bold text-slate-500 uppercase">Agregar / actualizar región</p>
+
+               <!-- Tipo de asamblea -->
+               <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo de Asamblea</label>
+                  <select id="justif-tipo-asamblea" class="input-modern w-full px-3 py-2.5 rounded-lg text-sm" onchange="actualizarNombreActividadAuto()">
+                     <option value="">Seleccione tipo...</option>
+                     <option value="Ordinaria">Ordinaria</option>
+                     <option value="Extraordinaria">Extraordinaria</option>
+                  </select>
+               </div>
+
+               <!-- Región -->
+               <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Región</label>
+                  <select id="justif-region-select" class="input-modern w-full px-3 py-2.5 rounded-lg text-sm" onchange="actualizarNombreActividadAuto()">
+                     <option value="">Seleccione región...</option>
+                     <option value="01. XV. Region de Arica y Parinacota - Arica">01. XV. Region de Arica y Parinacota - Arica</option>
+                     <option value="02. I Region de Tarapacá - Iquique">02. I Region de Tarapacá - Iquique</option>
+                     <option value="03. II. Region de Antofagasta - Antofagasta">03. II. Region de Antofagasta - Antofagasta</option>
+                     <option value="04. III Region de Atacama - Copiapó">04. III Region de Atacama - Copiapó</option>
+                     <option value="05. IV Region de Coquimbo - La Serena">05. IV Region de Coquimbo - La Serena</option>
+                     <option value="06. V Region de Valparaíso - Valparaíso.">06. V Region de Valparaíso - Valparaíso.</option>
+                     <option value="07. RM Region Metropolitana - Santiago.">07. RM Region Metropolitana - Santiago.</option>
+                     <option value="08. VI Region del Lib. Gral. Bdo. O'Higgins - Rancagua.">08. VI Region del Lib. Gral. Bdo. O'Higgins - Rancagua.</option>
+                     <option value="09. VII Region del Maule - Talca.">09. VII Region del Maule - Talca.</option>
+                     <option value="10. XVI Region del Ñuble - Chillán">10. XVI Region del Ñuble - Chillán</option>
+                     <option value="11. VIII Region del Biobío - Concepción.">11. VIII Region del Biobío - Concepción.</option>
+                     <option value="12. IX Region de Araucanía - Temuco">12. IX Region de Araucanía - Temuco</option>
+                     <option value="13. XIV Region de Los Ríos - Valdivia">13. XIV Region de Los Ríos - Valdivia</option>
+                     <option value="14. X Region de los Lagos - Puerto Montt.">14. X Region de los Lagos - Puerto Montt.</option>
+                     <option value="15. XI. Region de Aysén del General Carlos Ibáñez del Campo - Coyhaique">15. XI. Region de Aysén del General Carlos Ibáñez del Campo - Coyhaique</option>
+                     <option value="16. XII Region de Magallanes y la Antártica Chilena - Punta Arenas.">16. XII Region de Magallanes y la Antártica Chilena - Punta Arenas.</option>
+                  </select>
+               </div>
+
+               <!-- Nombre generado automáticamente (solo lectura) -->
+               <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nombre de la Actividad <span class="text-slate-400 font-normal normal-case">(generado automáticamente)</span></label>
+                  <div id="justif-nombre-actividad-preview" class="px-3 py-2.5 rounded-lg text-sm bg-slate-50 border border-slate-200 text-slate-500 italic min-h-[42px]">Seleccione tipo y región para generar el nombre.</div>
+                  <input type="hidden" id="justif-nombre-actividad">
+               </div>
+
+               <!-- Fecha del evento -->
+               <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fecha del Evento</label>
+                  <input type="date" id="justif-fecha-evento" class="input-modern w-full px-3 py-2.5 rounded-lg text-sm">
+                  <p class="text-xs text-slate-400 mt-1">Fecha en que se realizará la actividad.</p>
+               </div>
+
+               <!-- Fecha límite -->
+               <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fecha Límite de Envío</label>
+                  <input type="date" id="justif-deadline-date" class="input-modern w-full px-3 py-2.5 rounded-lg text-sm">
+               </div>
+
+               <!-- Hora límite -->
+               <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Hora Límite</label>
+                  <input type="time" id="justif-deadline-time" class="input-modern w-full px-3 py-2.5 rounded-lg text-sm">
+               </div>
+            </div>
+
+            <div class="flex gap-2 mt-5">
+               <button onclick="cancelJustifDeadline()" class="w-1/2 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50">Cancelar</button>
+               <button onclick="confirmJustifDeadline()" class="w-1/2 py-2.5 rounded-xl bg-orange-500 text-white font-bold text-sm hover:bg-orange-600 shadow-lg shadow-orange-500/30">Confirmar</button>
             </div>
          </div>
       </div>
@@ -2687,6 +2749,119 @@
                 <button onclick="document.getElementById('force-majeure-modal').classList.add('hidden')" class="w-1/2 py-2 rounded-lg border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50">Volver</button>
                 <button onclick="confirmForceMajeureSubmission()" class="w-1/2 py-2 rounded-lg bg-orange-600 text-white font-bold text-sm hover:bg-orange-700 shadow-lg shadow-orange-500/30">Continuar</button>
              </div>
+         </div>
+      </div>
+
+      <!-- Overlay global de procesando (eliminar / guardar) -->
+      <div id="global-processing-overlay" class="hidden fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+         <div class="bg-white rounded-2xl shadow-2xl px-8 py-7 text-center w-64">
+            <div class="flex justify-center mb-4">
+               <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-700"></div>
+            </div>
+            <p id="global-processing-msg" class="text-sm font-bold text-slate-700">Procesando...</p>
+            <p class="text-xs text-slate-400 mt-1">Por favor espera.</p>
+         </div>
+      </div>
+
+      <!-- Modal confirmación eliminar configuración de región -->
+      <div id="justif-eliminar-region-modal" class="hidden fixed inset-0 z-[75] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center fade-in-up">
+            <div class="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
+               <span class="material-icons-round text-2xl">delete_forever</span>
+            </div>
+            <h3 class="text-base font-bold text-slate-800 mb-2">Eliminar configuración</h3>
+            <p id="justif-eliminar-region-msg" class="text-xs text-slate-600 mb-5 leading-relaxed"></p>
+            <div class="flex gap-2">
+               <button onclick="cancelarEliminarRegion()" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50">Cancelar</button>
+               <button onclick="confirmarEliminarRegion()" class="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600">Eliminar</button>
+            </div>
+         </div>
+      </div>
+
+      <!-- Overlay de verificación de región Justificaciones -->
+      <div id="justif-verificando-overlay" class="hidden fixed inset-0 z-[65] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+         <div class="bg-white rounded-2xl shadow-2xl p-7 text-center w-72">
+            <div class="flex justify-center mb-4">
+               <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500"></div>
+            </div>
+            <p class="text-sm font-bold text-slate-700">Verificando actividad...</p>
+            <p class="text-xs text-slate-400 mt-1">Consultando configuración para tu región.</p>
+         </div>
+      </div>
+
+      <!-- Modal Justificación ya existe para esta actividad -->
+      <div id="justif-ya-existe-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center fade-in-up">
+            <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-3">
+               <span class="material-icons-round text-2xl">assignment_turned_in</span>
+            </div>
+            <h3 class="text-base font-bold text-slate-800 mb-2">Ya tienes una justificación</h3>
+            <p id="justif-ya-existe-msg" class="text-xs text-slate-600 mb-3 leading-relaxed">
+               Ya tienes una justificación registrada para esta actividad.
+            </p>
+            <p class="text-xs text-slate-400 mb-5 leading-relaxed">
+               Si necesitas modificarla, dirígete al <strong>Historial</strong>, elimina la solicitud existente y vuelve a enviarla. Solo puedes tener una justificación por actividad.
+            </p>
+            <button onclick="cerrarModalYaExisteYVerHistorial()" class="w-full py-2.5 rounded-xl bg-orange-500 text-white font-bold text-sm hover:bg-orange-600">
+               Ver mi Historial
+            </button>
+         </div>
+      </div>
+
+      <!-- Modal aviso de tiempo de envío Justificaciones -->
+      <div id="justif-upload-info-modal" class="hidden fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center fade-in-up">
+            <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+               <span class="material-icons-round text-2xl">cloud_upload</span>
+            </div>
+            <h3 class="text-base font-bold text-slate-800 mb-2">Enviando justificación</h3>
+            <p class="text-xs text-slate-600 leading-relaxed mb-5">
+               El envío puede tardar <strong>30 segundos o más</strong> dependiendo de tu conexión.<br><br>
+               Mantén la app abierta y no cierres la pantalla. Para mejores resultados, conéctate a una red WiFi o busca una zona con buena señal móvil.<br><br>
+               Si aparece un error, vuelve a intentarlo con mejor conexión.
+            </p>
+            <div class="flex justify-center mb-2">
+               <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+            </div>
+            <p class="text-[10px] text-slate-400">No cierres ni recargues la aplicación.</p>
+         </div>
+      </div>
+
+      <!-- Modal aviso de tiempo de envío Apelaciones -->
+      <div id="appeal-upload-info-modal" class="hidden fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center fade-in-up">
+            <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
+               <span class="material-icons-round text-2xl">cloud_upload</span>
+            </div>
+            <h3 class="text-base font-bold text-slate-800 mb-2">Enviando apelación</h3>
+            <p class="text-xs text-slate-600 leading-relaxed mb-5">
+               El envío puede tardar <strong>30 segundos o más</strong> dependiendo de tu conexión.<br><br>
+               Mantén la app abierta y no cierres la pantalla. Para mejores resultados, conéctate a una red WiFi o busca una zona con buena señal móvil.<br><br>
+               Si aparece un error, vuelve a intentarlo con mejor conexión.
+            </p>
+            <div class="flex justify-center mb-2">
+               <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-red-500"></div>
+            </div>
+            <p class="text-[10px] text-slate-400">No cierres ni recargues la aplicación.</p>
+         </div>
+      </div>
+
+      <!-- Modal Sin Actividad en Región del Usuario -->
+      <div id="justif-no-region-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center fade-in-up">
+            <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3">
+               <span class="material-icons-round text-2xl">location_off</span>
+            </div>
+            <h3 class="text-base font-bold text-slate-800 mb-2">Sin Actividad para tu Región</h3>
+            <p id="justif-no-region-msg" class="text-xs text-slate-600 mb-5 leading-relaxed">
+               No hay una actividad programada para tu región en este momento.
+            </p>
+            <p class="text-xs text-slate-400 mb-5 leading-relaxed">
+               Si crees que se trata de un error, comunícate con el delegado sindical de tu región.
+            </p>
+            <button onclick="cerrarModalSinRegionYVolver()" class="w-full py-2.5 rounded-xl bg-slate-800 text-white font-bold text-sm hover:bg-slate-700">
+               Volver al Inicio
+            </button>
          </div>
       </div>
 
@@ -5067,42 +5242,60 @@
       
       function confirmDeleteGeneric() { 
          document.getElementById('delete-generic-modal').classList.add('hidden'); 
-         if(!itemToDeleteId) return; 
+         if(!itemToDeleteId) return;
+         mostrarOverlayProcesando('Eliminando...');
+
          if (deleteType === 'loan') { 
-            google.script.run.withSuccessHandler(res => { 
+            google.script.run.withSuccessHandler(function(res) { 
+               ocultarOverlayProcesando();
                if(res.success) { 
                   showSuccess("Eliminado."); 
                   showLoanRecords(); 
                } else { 
                   showWarning(res.message); 
                } 
+            }).withFailureHandler(function() {
+               ocultarOverlayProcesando();
+               showWarning("Error de conexión al eliminar.");
             }).eliminarSolicitud(itemToDeleteId); 
          } else if (deleteType === 'justif') { 
-            google.script.run.withSuccessHandler(res => { 
+            google.script.run.withSuccessHandler(function(res) { 
+               ocultarOverlayProcesando();
                if(res.success) { 
                   showSuccess("Eliminado."); 
                   loadJustificationHistory(); 
                } else { 
                   showWarning(res.message); 
                } 
+            }).withFailureHandler(function() {
+               ocultarOverlayProcesando();
+               showWarning("Error de conexión al eliminar.");
             }).eliminarJustificacion(itemToDeleteId); 
          } else if (deleteType === 'appeal') {
-            google.script.run.withSuccessHandler(res => { 
+            google.script.run.withSuccessHandler(function(res) { 
+               ocultarOverlayProcesando();
                if(res.success) { 
                   showSuccess("Eliminado."); 
                   loadAppealsHistory(); 
                } else { 
                   showWarning(res.message); 
                } 
+            }).withFailureHandler(function() {
+               ocultarOverlayProcesando();
+               showWarning("Error de conexión al eliminar.");
             }).eliminarApelacion(itemToDeleteId); 
          } else if (deleteType === 'permission') {
-            google.script.run.withSuccessHandler(res => {
+            google.script.run.withSuccessHandler(function(res) {
+               ocultarOverlayProcesando();
                if(res.success) {
                   showSuccess("Solicitud anulada correctamente.");
                   loadPermissionHistory();
                } else {
                   showWarning(res.message);
                }
+            }).withFailureHandler(function() {
+               ocultarOverlayProcesando();
+               showWarning("Error de conexión al eliminar.");
             }).eliminarPermisoMedico(itemToDeleteId);
          }
       }
@@ -5133,10 +5326,12 @@
         
         btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Guardando...</span></div>';
         btn.disabled = true;
+        mostrarOverlayProcesando('Guardando cambios...');
         
-        google.script.run.withSuccessHandler(res => {
+        google.script.run.withSuccessHandler(function(res) {
           btn.innerHTML = oldHtml;
           btn.disabled = false;
+          ocultarOverlayProcesando();
           
           if (res.success) {
             document.getElementById('edit-loan-modal').classList.add('hidden');
@@ -5145,9 +5340,10 @@
           } else {
             showWarning(res.message);
           }
-        }).withFailureHandler(err => {
+        }).withFailureHandler(function(err) {
           btn.innerHTML = oldHtml;
           btn.disabled = false;
+          ocultarOverlayProcesando();
           showWarning("Error: " + err);
         }).modificarSolicitud(currentEditingLoanId, cuotas, medio);
       }
@@ -5883,67 +6079,229 @@
         }).actualizarDatoUsuario(currentRut, currentEditingField, finalValue);
       }
 
-      // === FUNCIONES JUSTIFICACIONES (CON SWITCH) ===
+      // === FUNCIONES JUSTIFICACIONES (CON SWITCH MULTI-REGIÓN) ===
       var justifModuloHabilitado = false;
       const motiveList = ["Turno Laboral en ISS", "Certificado Vacaciones", "Licencia Médica", "Fuerza Mayor"];
-      
+
       function loadJustifSwitchState() {
-         google.script.run.withSuccessHandler(res => {
-            const switchEl = document.getElementById('justif-switch');
-            switchEl.checked = res.habilitado;
-            // Cargar la fecha del evento si existe
-            const inputEvento = document.getElementById('justif-fecha-evento');
-            if (inputEvento && res.fechaEvento) {
-              // Extraer solo la parte de fecha "YYYY-MM-DD"
-              inputEvento.value = res.fechaEvento.split('T')[0];
-            }
-         }).obtenerEstadoSwitchJustificaciones();
+        google.script.run.withSuccessHandler(function(res) {
+          var switchEl = document.getElementById('justif-switch');
+          // El switch está activado si hay alguna región habilitada
+          switchEl.checked = res.habilitado;
+          // Renderizar tabla de configuraciones si el panel admin está visible
+          renderJustifConfigTabla(res.configuraciones || []);
+        }).withFailureHandler(function() {
+          // Silencioso en panel admin
+        }).obtenerEstadoSwitchJustificaciones();
       }
-      
+
+      function renderJustifConfigTabla(configuraciones) {
+        var wrap = document.getElementById('justif-config-tabla');
+        if (!wrap) return;
+        if (!configuraciones || configuraciones.length === 0) {
+          wrap.innerHTML = '<p class="text-slate-400 italic text-xs">No hay regiones configuradas aún.</p>';
+          return;
+        }
+        var html = '';
+        configuraciones.forEach(function(c) {
+          var estadoBadge = c.habilitado
+            ? '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Activa</span>'
+            : '<span class="bg-red-100 text-red-600 px-2 py-0.5 rounded-full text-[10px] font-bold">Vencida</span>';
+          var fechaEvStr = c.fechaEvento ? c.fechaEvento : 'Sin fecha evento';
+          var cierreStr = 'Sin fecha límite';
+          if (c.fechaLimite) {
+            try {
+              var lim = new Date(c.fechaLimite);
+              cierreStr = 'Cierre: ' + lim.toLocaleDateString('es-CL', {day:'2-digit', month:'2-digit', year:'numeric'}) + ' ' + lim.toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit'});
+            } catch(e) { cierreStr = c.fechaLimite; }
+          }
+          html += '<div class="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">' +
+            '<div class="flex-1 min-w-0 mr-2">' +
+              '<p class="font-bold text-slate-700 text-xs truncate">' + c.region + '</p>' +
+              '<p class="text-slate-400 text-[10px]">' + (c.nombreActividad || 'Actividad') + ' · ' + fechaEvStr + '</p>' +
+              '<p class="text-slate-500 text-[10px] font-semibold mt-0.5">' + cierreStr + '</p>' +
+            '</div>' +
+            estadoBadge +
+            '<button onclick="eliminarConfigRegionJustif(\'' + c.region.replace(/'/g, "\\'") + '\')" class="ml-2 text-red-400 hover:text-red-600" title="Eliminar">' +
+              '<span class="material-icons-round text-base">delete</span>' +
+            '</button>' +
+          '</div>';
+        });
+        // Botón para deshabilitar todas las regiones a la vez
+        html += '<button onclick="deshabilitarTodasRegionesJustif()" class="w-full mt-2 py-2 rounded-lg border border-red-200 text-red-500 text-xs font-bold hover:bg-red-50 flex items-center justify-center gap-1">' +
+          '<span class="material-icons-round text-sm">power_settings_new</span> Deshabilitar todas las regiones' +
+          '</button>';
+        wrap.innerHTML = html;
+      }
+
+      function deshabilitarTodasRegionesJustif() {
+        google.script.run.withSuccessHandler(function(res) {
+          if (res.success) {
+            showSuccess('Módulo de justificaciones deshabilitado para todas las regiones.');
+            document.getElementById('justif-switch').checked = false;
+            document.getElementById('justif-deadline-modal').classList.add('hidden');
+            loadJustifSwitchState();
+          } else {
+            showWarning(res.message || 'Error al deshabilitar.');
+          }
+        }).withFailureHandler(function() {
+          showWarning('Error de conexión.');
+        }).actualizarSwitchJustificaciones(false, '', '', null, null);
+      }
+
+      var _regionPendienteEliminar = '';
+
+      function eliminarConfigRegionJustif(region) {
+        _regionPendienteEliminar = region;
+        var msg = document.getElementById('justif-eliminar-region-msg');
+        if (msg) msg.textContent = 'Se eliminará la actividad programada para "' + region + '". Esta acción no se puede deshacer.';
+        document.getElementById('justif-eliminar-region-modal').classList.remove('hidden');
+      }
+
+      function cancelarEliminarRegion() {
+        _regionPendienteEliminar = '';
+        document.getElementById('justif-eliminar-region-modal').classList.add('hidden');
+      }
+
+      function confirmarEliminarRegion() {
+        document.getElementById('justif-eliminar-region-modal').classList.add('hidden');
+        if (!_regionPendienteEliminar) return;
+        mostrarOverlayProcesando('Eliminando configuración...');
+        google.script.run.withSuccessHandler(function(res) {
+          ocultarOverlayProcesando();
+          if (res.success) {
+            showSuccess(res.message);
+            loadJustifSwitchState();
+          } else {
+            showWarning(res.message);
+          }
+        }).withFailureHandler(function() {
+          ocultarOverlayProcesando();
+          showWarning('Error de conexión al eliminar.');
+        }).eliminarConfigRegionJustificaciones(_regionPendienteEliminar);
+        _regionPendienteEliminar = '';
+      }
+
       function handleJustifSwitch() {
-         const switchEl = document.getElementById('justif-switch');
-         const isChecked = switchEl.checked;
-         
-         if (isChecked) {
-            document.getElementById('justif-deadline-modal').classList.remove('hidden');
-         } else {
-            google.script.run.withSuccessHandler(res => {
-               if (res.success) {
-                  showSuccess("Módulo de justificaciones deshabilitado.");
-               }
-            }).actualizarSwitchJustificaciones(false, "");
-         }
+        var switchEl = document.getElementById('justif-switch');
+        var isChecked = switchEl.checked;
+
+        if (isChecked) {
+          // Abrir modal para agregar nueva configuración regional
+          loadJustifSwitchState();
+          document.getElementById('justif-deadline-modal').classList.remove('hidden');
+          limpiarFormularioJustifConfig();
+        } else {
+          // Al desactivar: abrir el modal igualmente para que el admin vea
+          // las regiones activas y pueda decidir eliminarlas individualmente,
+          // O usar el botón "Deshabilitar Todo" desde el modal.
+          loadJustifSwitchState();
+          document.getElementById('justif-deadline-modal').classList.remove('hidden');
+          limpiarFormularioJustifConfig();
+          // Volver a poner el switch en true visualmente hasta que el admin confirme desde el modal
+          switchEl.checked = true;
+        }
       }
-      
+
+      function limpiarFormularioJustifConfig() {
+        var tipoEl = document.getElementById('justif-tipo-asamblea');
+        var regionEl = document.getElementById('justif-region-select');
+        var nombreHidden = document.getElementById('justif-nombre-actividad');
+        var nombrePreview = document.getElementById('justif-nombre-actividad-preview');
+        var fechaEvEl = document.getElementById('justif-fecha-evento');
+        var fechaLimEl = document.getElementById('justif-deadline-date');
+        var horaLimEl = document.getElementById('justif-deadline-time');
+        if (tipoEl) tipoEl.value = '';
+        if (regionEl) regionEl.value = '';
+        if (nombreHidden) nombreHidden.value = '';
+        if (nombrePreview) { nombrePreview.textContent = 'Seleccione tipo y región para generar el nombre.'; nombrePreview.classList.add('italic', 'text-slate-400'); nombrePreview.classList.remove('text-slate-700', 'font-semibold'); }
+        if (fechaEvEl) fechaEvEl.value = '';
+        if (fechaLimEl) fechaLimEl.value = '';
+        if (horaLimEl) horaLimEl.value = '';
+      }
+
+      function actualizarNombreActividadAuto() {
+        var tipo = document.getElementById('justif-tipo-asamblea').value;
+        var region = document.getElementById('justif-region-select').value;
+        var preview = document.getElementById('justif-nombre-actividad-preview');
+        var hidden = document.getElementById('justif-nombre-actividad');
+
+        if (tipo && region) {
+          var nombre = 'Asamblea ' + tipo + ' - ' + region;
+          preview.textContent = nombre;
+          preview.classList.remove('italic', 'text-slate-400');
+          preview.classList.add('text-slate-700', 'font-semibold');
+          hidden.value = nombre;
+        } else {
+          preview.textContent = 'Seleccione tipo y región para generar el nombre.';
+          preview.classList.add('italic', 'text-slate-400');
+          preview.classList.remove('text-slate-700', 'font-semibold');
+          hidden.value = '';
+        }
+      }
+
+      function cerrarModalSinRegionYVolver() {
+        document.getElementById('justif-no-region-modal').classList.add('hidden');
+        switchView('dashboard-view');
+      }
+
+      function cerrarModalYaExisteYVerHistorial() {
+        document.getElementById('justif-ya-existe-modal').classList.add('hidden');
+        toggleJustifTab('list');
+      }
+
+      function mostrarOverlayProcesando(mensaje) {
+        var overlay = document.getElementById('global-processing-overlay');
+        var msg = document.getElementById('global-processing-msg');
+        if (msg) msg.textContent = mensaje || 'Procesando...';
+        if (overlay) overlay.classList.remove('hidden');
+      }
+
+      function ocultarOverlayProcesando() {
+        var overlay = document.getElementById('global-processing-overlay');
+        if (overlay) overlay.classList.add('hidden');
+      }
+
       function cancelJustifDeadline() {
-         document.getElementById('justif-deadline-modal').classList.add('hidden');
-         document.getElementById('justif-switch').checked = false;
+        document.getElementById('justif-deadline-modal').classList.add('hidden');
+        // Recargar estado real del switch
+        loadJustifSwitchState();
       }
-      
+
       function confirmJustifDeadline() {
-         const fecha = document.getElementById('justif-deadline-date').value;
-         const hora = document.getElementById('justif-deadline-time').value;
-         const fechaEventoInput = document.getElementById('justif-fecha-evento');
-         const fechaEvento = fechaEventoInput ? fechaEventoInput.value : "";
-         
-         if (!fecha || !hora) {
-            return showWarning("Debe ingresar fecha y hora límite del módulo.");
-         }
-         
-         const fechaLimite = new Date(`${fecha}T${hora}`);
-         const fechaEventoEnviar = fechaEvento ? fechaEvento : null;
-         
-         google.script.run.withSuccessHandler(res => {
-            if (res.success) {
-               document.getElementById('justif-deadline-modal').classList.add('hidden');
-               const textoEvento = fechaEventoEnviar 
-                 ? ` · Evento: ${fechaEventoEnviar}` 
-                 : " · Sin evento específico (modo mes)";
-               showSuccess(`Módulo habilitado hasta ${fechaLimite.toLocaleString('es-CL')}${textoEvento}`);
-            } else {
-               showWarning(res.message);
-            }
-         }).actualizarSwitchJustificaciones(true, fechaLimite.toISOString(), fechaEventoEnviar);
+        var region = document.getElementById('justif-region-select').value;
+        var nombreActividad = document.getElementById('justif-nombre-actividad').value.trim();
+        var fechaEvento = document.getElementById('justif-fecha-evento').value;
+        var fecha = document.getElementById('justif-deadline-date').value;
+        var hora = document.getElementById('justif-deadline-time').value;
+
+        var tipo = document.getElementById('justif-tipo-asamblea').value;
+        if (!tipo) return showWarning('Debe seleccionar el tipo de asamblea (Ordinaria / Extraordinaria).');
+        if (!region) return showWarning('Debe seleccionar una región.');
+        if (!nombreActividad) return showWarning('El nombre de la actividad no se generó. Seleccione tipo y región.');
+        if (!fechaEvento) return showWarning('Debe indicar la fecha del evento (asamblea).');
+        if (!fecha || !hora) return showWarning('Debe ingresar la fecha y hora límite de envío de justificaciones.');
+
+        var fechaLimite = new Date(fecha + 'T' + hora);
+        var fechaEventoEnviar = fechaEvento;
+
+        google.script.run.withSuccessHandler(function(res) {
+          if (res.success) {
+            showSuccess('Configuración guardada para ' + region);
+            // Recargar tabla de configs
+            loadJustifSwitchState();
+            // Limpiar campos
+            document.getElementById('justif-region-select').value = '';
+            document.getElementById('justif-nombre-actividad').value = '';
+            document.getElementById('justif-fecha-evento').value = '';
+            document.getElementById('justif-deadline-date').value = '';
+            document.getElementById('justif-deadline-time').value = '';
+          } else {
+            showWarning(res.message || 'Error al guardar.');
+          }
+        }).withFailureHandler(function() {
+          showWarning('Error de conexión al guardar configuración.');
+        }).actualizarSwitchJustificaciones(true, fechaLimite.toISOString(), fechaEventoEnviar, region, nombreActividad);
       }
       
       function showOutOfDeadlineWarning() {
@@ -5954,6 +6312,62 @@
          document.getElementById('out-of-deadline-modal').classList.add('hidden');
          toggleJustifTab('list');
          switchView('justifications-view');
+      }
+
+      function verificarAccesoJustificaciones(soloFormulario) {
+        var overlay = document.getElementById('justif-verificando-overlay');
+        if (soloFormulario && overlay) overlay.classList.remove('hidden');
+
+        google.script.run.withSuccessHandler(function(info) {
+
+          if (!info.habilitado) {
+            if (overlay) overlay.classList.add('hidden');
+            var banner = document.getElementById('justif-actividad-banner');
+            if (banner) banner.classList.add('hidden');
+            if (soloFormulario && currentUserRole && currentUserRole.toUpperCase() !== 'ADMIN' && currentUserRole.toUpperCase() !== 'DIRIGENTE') {
+              var msgEl = document.getElementById('justif-no-region-msg');
+              if (msgEl) msgEl.textContent = info.mensaje || 'No hay una actividad programada para tu región en este momento.';
+              document.getElementById('justif-no-region-modal').classList.remove('hidden');
+            }
+            return;
+          }
+
+          // Hay actividad activa: mostrar banner
+          var banner = document.getElementById('justif-actividad-banner');
+          var bannerNombre = document.getElementById('justif-banner-nombre');
+          var bannerDetalle = document.getElementById('justif-banner-detalle');
+          if (banner) {
+            bannerNombre.textContent = info.nombreActividad || 'Actividad programada';
+            var detalle = '';
+            if (info.fechaEvento) detalle += 'Fecha: ' + info.fechaEvento;
+            if (info.fechaLimite) {
+              var lim = new Date(info.fechaLimite);
+              detalle += (detalle ? ' · ' : '') + 'Plazo: ' + lim.toLocaleDateString('es-CL', {day:'2-digit', month:'2-digit', year:'numeric'}) + ' ' + lim.toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit'});
+            }
+            bannerDetalle.textContent = detalle;
+            banner.classList.remove('hidden');
+          }
+
+          // Si es formulario, verificar si ya tiene una justificación para esta actividad
+          if (soloFormulario && currentUserRole && currentUserRole.toUpperCase() !== 'ADMIN' && currentUserRole.toUpperCase() !== 'DIRIGENTE') {
+            google.script.run.withSuccessHandler(function(verif) {
+              if (overlay) overlay.classList.add('hidden');
+              if (verif.tieneJustificacion) {
+                var estadoTexto = verif.estado === 'Enviado' ? 'pendiente de revisión' : verif.estado === 'Aceptado' ? 'aceptada' : verif.estado;
+                var msgEl = document.getElementById('justif-ya-existe-msg');
+                if (msgEl) msgEl.textContent = 'Ya tienes una justificación ' + estadoTexto + ' para la actividad "' + (verif.nombreActividad || verif.codigoActividad) + '".';
+                document.getElementById('justif-ya-existe-modal').classList.remove('hidden');
+              }
+            }).withFailureHandler(function() {
+              if (overlay) overlay.classList.add('hidden');
+            }).verificarJustificacionActividad(currentRut);
+          } else {
+            if (overlay) overlay.classList.add('hidden');
+          }
+
+        }).withFailureHandler(function() {
+          if (overlay) overlay.classList.add('hidden');
+        }).obtenerInfoActividadPorRegion(currentRut);
       }
 
       // === FUNCIONES PRÉSTAMOS (CON SWITCH) ===
@@ -6019,6 +6433,7 @@
                divList.classList.add('flex');
                return;
             }
+            verificarAccesoJustificaciones(true);
             btnForm.className = "flex-1 py-2 rounded-lg text-sm font-bold transition bg-orange-100 text-orange-700"; 
             btnList.className = "flex-1 py-2 rounded-lg text-sm font-bold transition text-slate-500 hover:bg-slate-100"; 
             divForm.classList.remove('hidden'); 
@@ -6030,7 +6445,8 @@
             divForm.classList.add('hidden'); 
             divList.classList.remove('hidden'); 
             divList.classList.add('flex');
-            loadJustificationHistory(); 
+            loadJustificationHistory();
+            verificarAccesoJustificaciones(false);
          } 
       }
       
@@ -6142,12 +6558,14 @@
 
         btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Subiendo...</span></div>';
         btn.disabled = true;
+        document.getElementById('justif-upload-info-modal').classList.remove('hidden');
         
         const sendData = (fileData) => {
             google.script.run
               .withSuccessHandler(function(res) {
-                  btn.innerHTML = oldHtml; 
+                  btn.innerHTML = oldHtml;
                   btn.disabled = false;
+                  document.getElementById('justif-upload-info-modal').classList.add('hidden');
                   
                   if (res.success) {
                   // Primero mostrar el éxito
@@ -6183,8 +6601,9 @@
                 }
               })
               .withFailureHandler(function(err) {
-                  btn.innerHTML = oldHtml; 
+                  btn.innerHTML = oldHtml;
                   btn.disabled = false;
+                  document.getElementById('justif-upload-info-modal').classList.add('hidden');
                   console.error('Error en enviarJustificacion:', err); // DEBUG
                   showWarning("Error de conexión: " + err.toString());
               })
@@ -6590,10 +7009,12 @@
          
          btn.innerHTML = '<div class="flex items-center justify-center"><div class="btn-spinner mr-2"></div><span>Enviando...</span></div>';
          btn.disabled = true;
+         document.getElementById('appeal-upload-info-modal').classList.remove('hidden');
          
-         google.script.run.withSuccessHandler(res => {
+         google.script.run.withSuccessHandler(function(res) {
           btn.innerHTML = oldHtml;
           btn.disabled = false;
+          document.getElementById('appeal-upload-info-modal').classList.add('hidden');
           
           if (res.success) {
             showSuccess("Apelación enviada exitosamente.");
@@ -6625,9 +7046,10 @@
           } else {
             showWarning(res.message);
           }
-        }).withFailureHandler(err => {
+        }).withFailureHandler(function(err) {
             btn.innerHTML = oldHtml;
             btn.disabled = false;
+            document.getElementById('appeal-upload-info-modal').classList.add('hidden');
             showWarning("Error al enviar: " + err);
          }).enviarApelacion(currentRut, mes, motivo, detalle, appealFileComprobanteData, appealFileLiquidacionData, rutBeneficiario);
       }
@@ -7380,22 +7802,30 @@ divForm.classList.add('flex');
             
             const item = document.createElement('div');
             item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
+            var fechaEventoDisplay = '';
+            var nombreAsambleaDisplay = reg.asamblea || '';
+            if (reg.asamblea && reg.asamblea.indexOf('_') !== -1) {
+              var primeraParteAsamblea = reg.asamblea.split('_')[0];
+              if (/^\d{4}-\d{2}-\d{2}$/.test(primeraParteAsamblea)) {
+                var fEvento = new Date(primeraParteAsamblea + 'T12:00:00');
+                fechaEventoDisplay = fEvento.toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
+                nombreAsambleaDisplay = reg.asamblea.substring(primeraParteAsamblea.length + 1);
+              }
+            }
+
             item.innerHTML = `
-              <div class="flex justify-between items-start mb-2">
-                <div>
-                  <span class="font-bold text-slate-800 text-sm block">${reg.nombreSocio}</span>
-                  <span class="text-xs text-slate-500">${formatRut(reg.rutSocio)}</span>
+              <div class="flex justify-between items-start mb-1">
+                <div class="flex-1 mr-2">
+                  ${fechaEventoDisplay ? `<span class="text-base font-bold text-slate-800 block">${fechaEventoDisplay}</span>` : ''}
+                  <span class="font-bold text-slate-800 text-sm block mt-0.5">${reg.tipo}</span>
                 </div>
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${statusColor}">${reg.estado}</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${statusColor} flex-shrink-0">${reg.estado}</span>
               </div>
-              <div class="text-xs text-slate-600 mb-2">
-                <span class="font-semibold">${reg.tipo}</span>
-              </div>
-              <p class="text-xs text-slate-600 mb-2 line-clamp-2">${reg.motivo || 'Sin motivo'}</p>
+              ${reg.motivo ? `<p class="text-xs text-slate-500 mb-2 line-clamp-2">${reg.motivo}</p>` : ''}
+              ${nombreAsambleaDisplay ? `<div class="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-1.5 rounded flex items-center gap-1 mb-2"><span class="material-icons-round text-sm">event</span>${nombreAsambleaDisplay}</div>` : ''}
               ${reg.obs ? `<div class="text-[10px] text-amber-600 bg-amber-50 p-2 rounded mb-2"><strong>Obs:</strong> ${reg.obs}</div>` : ''}
-              ${reg.asamblea ? `<div class="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-1 rounded inline-block mb-2"><strong>Asamblea:</strong> ${reg.asamblea}</div>` : ''}
               <div class="flex justify-between items-center border-t border-slate-100 pt-2 mt-2">
-                <span class="text-[10px] text-slate-400"><strong>Ingresada:</strong> ${fechaStr}</span>
+                <span class="text-[10px] text-slate-400">${fechaStr}</span>
                 <div class="flex items-center gap-2">
                   ${linkArchivo}
                   ${deleteBtn}
