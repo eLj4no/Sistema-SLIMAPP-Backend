@@ -245,38 +245,6 @@
     #toggle-password-btn:focus {
       outline: none;
     }
-
-    /* Posicionar modal de verificación arriba */
-    #den-contacto-modal {
-      align-items: flex-start !important;
-      padding-top: 5vh;
-    }
-
-    /* Ajuste de proporciones botones de contacto */
-    .btn-proporcionado {
-      padding: 10px 16px !important;
-      min-width: 140px;
-      display: inline-flex;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
-    }
-
-    /* Posicionar modal de verificación en la parte superior (Imagen 5) */
-    #den-contacto-modal {
-      align-items: flex-start !important;
-      padding-top: 5vh;
-    }
-
-    /* Botones proporcionados */
-    .btn-proporcionado {
-      padding: 10px 18px !important;
-      min-width: 150px;
-      display: inline-flex;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
-    }
     </style>
   </head>
   <body class="text-slate-800 antialiased selection:bg-blue-200 selection:text-blue-900">
@@ -823,16 +791,6 @@
                   <span class="material-icons-round text-xl md:text-2xl">sports_esports</span>
                 </div>
                 <span class="font-bold text-slate-700 text-xs md:text-base relative z-10">SLIM Quest (beta)</span>
-              </button>
-
-              <!-- MÓDULO DENUNCIAS INTERNAS -->
-              <button id="card-mod-denuncias" onclick="navAction('Denuncias')" class="glass-card group flex flex-col items-center justify-center p-3 py-5 rounded-xl text-center hover:bg-white hover:shadow-xl hover:border-red-200 relative overflow-hidden">
-                <div id="badge-mod-denuncias" class="absolute top-1.5 right-1.5 z-20 w-5 h-5 rounded-full hidden items-center justify-center shadow-md pointer-events-none"></div>
-                <div class="absolute inset-0 bg-red-50 opacity-0 group-hover:opacity-100 transition duration-300"></div>
-                <div class="w-10 h-10 md:w-14 md:h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-300 relative z-10">
-                  <span class="material-icons-round text-xl md:text-2xl">report_problem</span>
-                </div>
-                <span class="font-bold text-slate-700 text-xs md:text-base relative z-10">Denuncias Internas</span>
               </button>
               
               <!-- BOTONES DE ROLES -->
@@ -1403,6 +1361,7 @@
                   <option value="S">S</option>
                   <option value="M">M</option>
                   <option value="L">L</option>
+                  <option value="XL">XL</option>
                   <option value="XXL">XXL</option>
                   <option value="XXXL">XXXL</option>
                 </select>
@@ -2197,411 +2156,6 @@
         </div>
       </section>
 
-      <!-- ============================================================ -->
-      <!-- VISTA: DENUNCIAS INTERNAS                                     -->
-      <!-- Insertar ANTES de: <!-- VISTA: PANEL ADMIN -->               -->
-      <!-- ============================================================ -->
-      <section id="denuncias-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4 h-[90vh]">
- 
-        <!-- HEADER -->
-        <div class="bg-gradient-to-r from-red-950 via-red-900 to-red-800 text-white px-4 py-3 flex-shrink-0 flex items-center gap-3 relative overflow-hidden">
-          <div class="absolute inset-0 opacity-10" style="background-image:repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(255,255,255,.05) 10px,rgba(255,255,255,.05) 11px)"></div>
-          <button onclick="switchView('dashboard-view')" class="z-10 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition flex-shrink-0">
-            <span class="material-icons-round text-lg">arrow_back</span>
-          </button>
-          <div class="z-10 flex-grow min-w-0">
-            <p class="text-sm font-bold leading-tight">Denuncias Internas</p>
-            <p class="text-[10px] text-red-200 leading-tight">Gestión sindical formal y confidencial</p>
-          </div>
-          <div id="denuncias-switch-container" class="hidden z-10 flex flex-col items-center gap-1">
-            <label class="toggle-switch">
-              <input type="checkbox" id="denuncias-switch" onchange="handleDenunciasSwitch()">
-              <span class="toggle-slider"></span>
-            </label>
-            <span class="text-[9px] text-white/60 font-semibold">Módulo</span>
-          </div>
-        </div>
- 
-        <!-- TABS -->
-        <div class="flex border-b border-slate-200 bg-white flex-shrink-0">
-          <button id="tab-den-form" onclick="toggleDenunciasTab('form')"
-            class="flex-1 py-2.5 text-xs font-bold transition-all duration-200 bg-red-50 text-red-800 border-b-2 border-red-700 flex items-center justify-center gap-1.5">
-            <span class="material-icons-round text-sm">add_circle_outline</span>Nueva Denuncia
-          </button>
-          <button id="tab-den-hist" onclick="toggleDenunciasTab('hist')"
-            class="flex-1 py-2.5 text-xs font-bold transition-all duration-200 text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-1.5">
-            <span class="material-icons-round text-sm">history</span>Mi Historial
-          </button>
-        </div>
- 
-        <!-- ══ MODAL: Verificación datos de contacto ══ -->
-        <div id="den-contacto-modal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" style="backdrop-filter:blur(4px)">
-          <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm p-6 fade-in-up">
-            <div class="flex items-center gap-3 mb-5">
-              <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 shadow-inner">
-                <span class="material-icons-round text-amber-600 text-2xl">contact_mail</span>
-              </div>
-              <div>
-                <h3 class="font-bold text-slate-800 text-base leading-tight">Verifica tus datos</h3>
-                <p class="text-xs text-slate-500 mt-0.5">Se usarán durante el proceso de investigación</p>
-              </div>
-            </div>
-            <div class="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-3 mb-4">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <span class="material-icons-round text-blue-600 text-sm">email</span>
-                </div>
-                <div class="min-w-0">
-                  <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wide">Correo electrónico</p>
-                  <p id="den-contacto-correo" class="text-sm font-bold text-slate-700 truncate"></p>
-                </div>
-              </div>
-              <div class="border-t border-slate-200"></div>
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-                  <span class="material-icons-round text-green-600 text-sm">phone</span>
-                </div>
-                <div>
-                  <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wide">Teléfono de contacto</p>
-                  <p id="den-contacto-telefono" class="text-sm font-bold text-slate-700"></p>
-                </div>
-              </div>
-            </div>
-            <p class="text-xs text-slate-500 leading-relaxed mb-5">Si algún dato no es correcto, presione en <strong class="text-slate-700">Actualizar datos</strong> para corregirlos antes de continuar.</p>
-              <div class="flex gap-3 justify-center">
-                <button onclick="denContactoConfirmar()" class="btn-proporcionado rounded-xl bg-gradient-to-r from-red-800 to-red-700 text-white text-sm font-bold shadow-lg">
-                  <span class="material-icons-round text-sm">check_circle</span>Datos correctos
-                </button>
-                <button onclick="switchView('profile-view'); document.getElementById('den-contacto-modal').classList.add('hidden');" class="btn-proporcionado rounded-xl bg-slate-100 text-slate-700 text-sm font-bold border border-slate-200">
-                  <span class="material-icons-round text-sm">edit</span>Actualizar datos
-                </button>
-              </div>
-          </div>
-        </div>
- 
-        <!-- ══ MODAL: Bloqueo sin contacto ══ -->
-        <div id="den-bloqueo-modal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" style="backdrop-filter:blur(4px)">
-          <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm p-6 fade-in-up text-center">
-            <div class="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-              <span class="material-icons-round text-red-600 text-3xl">block</span>
-            </div>
-            <h3 class="font-bold text-slate-800 text-base mb-2">Datos de contacto requeridos</h3>
-            <p id="den-bloqueo-mensaje" class="text-sm text-slate-500 leading-relaxed mb-5"></p>
-            <div class="flex gap-2">
-              <button onclick="navAction('Mis Datos'); document.getElementById('den-bloqueo-modal').classList.add('hidden');"
-                class="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-800 to-red-700 text-white text-sm font-bold shadow-lg shadow-red-500/20 flex items-center justify-center gap-1.5">
-                <span class="material-icons-round text-sm">manage_accounts</span>Ir a Mis Datos
-              </button>
-              <button onclick="switchView('dashboard-view'); document.getElementById('den-bloqueo-modal').classList.add('hidden');"
-                class="flex-1 py-3 rounded-xl bg-slate-100 text-slate-700 text-sm font-bold hover:bg-slate-200 transition">
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
- 
-        <!-- ══ FORMULARIO ══ -->
-        <div id="den-form-content" class="flex flex-col flex-grow overflow-y-auto bg-slate-50/50">
- 
-          <!-- Loader inicial -->
-          <div id="den-loader" class="flex flex-col items-center justify-center flex-grow gap-3 py-16">
-            <div class="loader"></div>
-            <p class="text-sm text-slate-400">Verificando datos de acceso...</p>
-          </div>
- 
-          <!-- Formulario real -->
-          <div id="den-form-real" class="hidden flex-col gap-4 p-4 pb-10">
- 
-            <!-- Banner Ley Karin -->
-            <div id="den-banner-karin" class="hidden rounded-xl overflow-hidden shadow-sm">
-              <div class="bg-gradient-to-r from-amber-600 to-amber-500 px-4 py-2 flex items-center gap-2">
-                <span class="material-icons-round text-white text-sm">gavel</span>
-                <span class="text-white text-xs font-bold uppercase tracking-wide">Ley Karin — Ley 21.643</span>
-              </div>
-              <div class="bg-amber-50 border border-amber-200 border-t-0 p-3">
-                <ul class="space-y-1">
-                  <li class="flex items-start gap-2 text-xs text-amber-800"><span class="material-icons-round text-amber-500 text-xs mt-0.5 flex-shrink-0">shield</span>Tienes derecho a medidas de resguardo inmediatas (cambio de turno o lugar de trabajo).</li>
-                  <li class="flex items-start gap-2 text-xs text-amber-800"><span class="material-icons-round text-amber-500 text-xs mt-0.5 flex-shrink-0">lock</span>Tu identidad es confidencial. Toda represalia está expresamente prohibida por ley.</li>
-                  <li class="flex items-start gap-2 text-xs text-amber-800"><span class="material-icons-round text-amber-500 text-xs mt-0.5 flex-shrink-0">schedule</span>El plazo legal de investigación es de <strong>30 días hábiles</strong> desde la recepción formal.</li>
-                </ul>
-              </div>
-            </div>
- 
-            <!-- PASO 1: RUT beneficiario (dirigente/admin) -->
-            <div id="den-paso-rut" class="hidden">
-              <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
-                <div class="flex items-center gap-2 mb-3">
-                  <div class="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0">
-                    <span class="material-icons-round text-white text-sm">admin_panel_settings</span>
-                  </div>
-                  <div>
-                    <p class="text-xs font-bold text-indigo-800">Gestión en representación de un socio</p>
-                    <p class="text-[10px] text-indigo-600">Ingresa el RUT del socio denunciante</p>
-                  </div>
-                </div>
-                <div class="flex gap-2">
-                  <input id="den-rut-beneficiario" type="text" placeholder="12.345.678-9"
-                    class="input-modern flex-1 px-3 py-2.5 rounded-lg text-sm outline-none font-medium"
-                    oninput="formatRutInput(this)" onblur="buscarSocioDenuncia()">
-                  <button onclick="buscarSocioDenuncia()"
-                    class="px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition flex items-center gap-1 shadow-md shadow-indigo-500/30">
-                    <span class="material-icons-round text-sm">search</span>
-                  </button>
-                </div>
-                <div id="den-socio-encontrado" class="hidden mt-2 bg-white rounded-lg p-3 border border-indigo-200 flex items-center gap-2">
-                  <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                    <span class="material-icons-round text-indigo-600 text-sm">person</span>
-                  </div>
-                  <div class="flex-grow min-w-0">
-                    <p class="text-xs font-bold text-indigo-700 truncate" id="den-socio-nombre"></p>
-                    <p class="text-[10px]" id="den-socio-advertencia"></p>
-                  </div>
-                </div>
-              </div>
-            </div>
- 
-            <!-- PASO 2: Categoría -->
-            <div>
-              <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2.5">Categoría de la denuncia <span class="text-red-500">*</span></p>
-              <div class="grid grid-cols-2 gap-2.5">
-                <button onclick="seleccionarCategoria('Ley Karin')" id="den-cat-karin"
-                  class="den-cat-btn glass-card p-3.5 rounded-xl text-left hover:shadow-md transition-all duration-200 group border-2 border-transparent">
-                  <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center mb-2 group-hover:scale-105 transition">
-                    <span class="material-icons-round text-red-600 text-xl">gavel</span>
-                  </div>
-                  <p class="text-xs font-bold text-slate-700 leading-tight">Ley Karin</p>
-                  <p class="text-[10px] text-slate-400 mt-0.5 leading-tight">Acoso, violencia, hostigamiento</p>
-                </button>
-                <button onclick="seleccionarCategoria('Seguridad y Prevención')" id="den-cat-seguridad"
-                  class="den-cat-btn glass-card p-3.5 rounded-xl text-left hover:shadow-md transition-all duration-200 group border-2 border-transparent">
-                  <div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center mb-2 group-hover:scale-105 transition">
-                    <span class="material-icons-round text-orange-600 text-xl">health_and_safety</span>
-                  </div>
-                  <p class="text-xs font-bold text-slate-700 leading-tight">Seguridad</p>
-                  <p class="text-[10px] text-slate-400 mt-0.5 leading-tight">EPP, infraestructura, riesgos</p>
-                </button>
-                <button onclick="seleccionarCategoria('Remuneraciones')" id="den-cat-remuneraciones"
-                  class="den-cat-btn glass-card p-3.5 rounded-xl text-left hover:shadow-md transition-all duration-200 group border-2 border-transparent">
-                  <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center mb-2 group-hover:scale-105 transition">
-                    <span class="material-icons-round text-emerald-600 text-xl">payments</span>
-                  </div>
-                  <p class="text-xs font-bold text-slate-700 leading-tight">Remuneraciones</p>
-                  <p class="text-[10px] text-slate-400 mt-0.5 leading-tight">Liquidaciones, cotizaciones, jornada</p>
-                </button>
-                <button onclick="seleccionarCategoria('Discriminación')" id="den-cat-discriminacion"
-                  class="den-cat-btn glass-card p-3.5 rounded-xl text-left hover:shadow-md transition-all duration-200 group border-2 border-transparent">
-                  <div class="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center mb-2 group-hover:scale-105 transition">
-                    <span class="material-icons-round text-purple-600 text-xl">diversity_3</span>
-                  </div>
-                  <p class="text-xs font-bold text-slate-700 leading-tight">Discriminación</p>
-                  <p class="text-[10px] text-slate-400 mt-0.5 leading-tight">Trato diferenciado injustificado</p>
-                </button>
-              </div>
-              <!-- Descripción contextual de la categoría seleccionada -->
-              <div id="den-cat-descripcion" class="hidden mt-2 bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
-                <div class="flex items-start gap-2">
-                  <span class="material-icons-round text-slate-400 text-sm mt-0.5 flex-shrink-0">info</span>
-                  <p id="den-cat-desc-texto" class="text-xs text-slate-600 leading-relaxed"></p>
-                </div>
-              </div>
-            </div>
- 
-            <!-- PASO 3: Subcategoría -->
-            <div id="den-paso-subcat" class="hidden">
-              <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Tipo específico <span class="text-red-500">*</span></p>
-              <select id="den-subcategoria" onchange="actualizarDestinatarios()"
-                class="input-modern w-full px-3 py-2.5 rounded-xl text-sm outline-none font-medium appearance-none cursor-pointer">
-                <option value="">Seleccionar...</option>
-              </select>
-            </div>
- 
-            <!-- PASO 4: Dirigido a -->
-            <div id="den-paso-dirigido" class="hidden">
-              <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">¿A quién va dirigida la denuncia? <span class="text-red-500">*</span></p>
-              <select id="den-dirigido-tipo" onchange="actualizarCampoDenunciado()"
-                class="input-modern w-full px-3 py-2.5 rounded-xl text-sm outline-none font-medium appearance-none cursor-pointer">
-                <option value="">Seleccionar...</option>
-              </select>
-              <p class="text-[10px] text-slate-400 mt-1.5 flex items-center gap-1">
-                <span class="material-icons-round text-xs">help_outline</span>
-                Indique a quién se está acusando o señalando dentro de esta denuncia.
-              </p>
-              <!-- Aviso denuncia sindical -->
-              <div id="den-aviso-sindical" class="hidden mt-2.5 bg-blue-50 border border-blue-200 rounded-xl p-3">
-                <div class="flex items-start gap-2">
-                  <span class="material-icons-round text-blue-500 text-sm flex-shrink-0 mt-0.5">info</span>
-                  <p class="text-xs text-blue-700 leading-relaxed"><strong>Nota importante:</strong> Cuando la denuncia va dirigida a un integrante del sindicato, la notificación <strong>no se envía a la empresa</strong>. Solo se notifica al directorio sindical, ya que la empresa no tiene facultad administrativa para resolver este tipo de casos.</p>
-                </div>
-              </div>
-            </div>
- 
-            <!-- PASO 5: Denunciado -->
-            <div id="den-paso-denunciado" class="hidden">
-              <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Identificación del denunciado <span class="text-red-500">*</span></p>
-              <div id="den-campo-empleador" class="hidden">
-                <div class="input-readonly px-3 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 bg-slate-100 text-slate-500 flex items-center gap-2">
-                  <span class="material-icons-round text-slate-400 text-sm">business</span>
-                  Empleador (ISS y filiales del Holding Chile)
-                </div>
-              </div>
-              <div id="den-campo-dirigente" class="hidden">
-                <select id="den-select-dirigente"
-                  class="input-modern w-full px-3 py-2.5 rounded-xl text-sm outline-none font-medium appearance-none cursor-pointer">
-                  <option value="">Cargando directorio...</option>
-                </select>
-              </div>
-              <div id="den-campo-libre" class="hidden">
-                <input id="den-nombre-denunciado" type="text" maxlength="100"
-                  placeholder="Nombre y apellido del denunciado"
-                  class="input-modern w-full px-3 py-2.5 rounded-xl text-sm outline-none font-medium">
-                <p class="text-[10px] text-slate-400 mt-1.5 flex items-center gap-1">
-                  <span class="material-icons-round text-xs">help_outline</span>
-                  Si no conoces el nombre completo, describe su cargo o función.
-                </p>
-              </div>
-            </div>
- 
-            <!-- PASO 6: Lugar -->
-            <div id="den-paso-lugar" class="hidden">
-              <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Lugar donde ocurrieron los hechos <span class="text-red-500">*</span></p>
-              <input id="den-lugar-trabajo" type="text" maxlength="150"
-                placeholder="Ej: Entel Providencia, Banco ITAU Las Condes, Falabella Maipú..."
-                class="input-modern w-full px-3 py-2.5 rounded-xl text-sm outline-none font-medium">
-              <p class="text-[10px] text-slate-400 mt-1.5 flex items-center gap-1">
-                <span class="material-icons-round text-xs">place</span>
-                Nombre del lugar físico o faena donde prestas servicios.
-              </p>
-            </div>
- 
-            <!-- PASO 7: Descripción de hechos -->
-            <div id="den-paso-hechos" class="hidden space-y-2.5">
- 
-              <!-- Banner derechos (condicional por categoría) -->
-              <div id="den-banner-derechos" class="hidden rounded-xl overflow-hidden shadow-sm">
-                <div id="den-banner-derechos-header" class="px-4 py-2 flex items-center gap-2"></div>
-                <div id="den-banner-derechos-body" class="p-3 border border-t-0"></div>
-              </div>
- 
-              <!-- Guía de descripción -->
-              <div class="rounded-xl overflow-hidden border border-blue-200">
-                <div class="bg-gradient-to-r from-blue-700 to-blue-600 px-4 py-2 flex items-center gap-2">
-                  <span class="material-icons-round text-white text-sm">edit_note</span>
-                  <span class="text-white text-xs font-bold">¿Qué debes incluir en tu relato?</span>
-                </div>
-                <div class="bg-blue-50 p-3">
-                  <div class="grid grid-cols-2 gap-1.5">
-                    <div class="flex items-start gap-1.5 text-xs text-blue-800"><span class="material-icons-round text-blue-500 text-xs mt-0.5 flex-shrink-0">event</span><span><strong>Fecha y hora</strong> de cada hecho</span></div>
-                    <div class="flex items-start gap-1.5 text-xs text-blue-800"><span class="material-icons-round text-blue-500 text-xs mt-0.5 flex-shrink-0">place</span><span><strong>Lugar exacto</strong> donde ocurrió</span></div>
-                    <div class="flex items-start gap-1.5 text-xs text-blue-800"><span class="material-icons-round text-blue-500 text-xs mt-0.5 flex-shrink-0">description</span><span><strong>Descripción detallada</strong> de los hechos</span></div>
-                    <div class="flex items-start gap-1.5 text-xs text-blue-800"><span class="material-icons-round text-blue-500 text-xs mt-0.5 flex-shrink-0">group</span><span><strong>Testigos</strong> si los hay</span></div>
-                    <div class="flex items-start gap-1.5 text-xs text-blue-800"><span class="material-icons-round text-blue-500 text-xs mt-0.5 flex-shrink-0">repeat</span><span><strong>Frecuencia</strong> (único o reiterado)</span></div>
-                    <div class="flex items-start gap-1.5 text-xs text-blue-800"><span class="material-icons-round text-blue-500 text-xs mt-0.5 flex-shrink-0">sentiment_dissatisfied</span><span><strong>Consecuencias</strong> para ti</span></div>
-                  </div>
-                </div>
-              </div>
- 
-              <!-- Aviso legal proceso -->
-              <div class="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl p-3">
-                <span class="material-icons-round text-amber-500 text-base flex-shrink-0 mt-0.5">warning_amber</span>
-                <p class="text-xs text-amber-800 leading-relaxed"><strong>Importante:</strong> Esta denuncia se enviará al área legal de Recursos Humanos y al directorio sindical activando el protocolo de investigación con <strong>plazo de 30 días hábiles</strong>. Todo lo que declares tiene respaldo sindical formal y confidencial.</p>
-              </div>
- 
-              <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Descripción de los hechos <span class="text-red-500">*</span></p>
-              <textarea id="den-descripcion-hechos" rows="9" maxlength="3000"
-                placeholder="Describe con el mayor detalle posible los hechos que deseas denunciar. Incluye fechas, lugares, personas involucradas y las consecuencias que has experimentado. Cuanto más detallada sea tu descripción, más efectiva será la investigación..."
-                class="input-modern w-full px-3 py-3 rounded-xl text-sm outline-none resize-none leading-relaxed font-medium"
-                oninput="formatearTextoFormal(this); actualizarContadorHechos()"></textarea>
-              <div class="flex justify-between items-center">
-                <p class="text-[10px] text-slate-400 flex items-center gap-1"><span class="material-icons-round text-xs">auto_fix_high</span>El texto se formatea automáticamente.</p>
-                <p id="den-contador-hechos" class="text-[10px] font-bold text-slate-400">0 / 3000</p>
-              <p id="den-aviso-relato" class="hidden text-[10px] font-bold text-amber-600 flex items-center gap-1 mt-0.5">
-                <span class="material-icons-round text-xs">warning_amber</span>
-                Mínimo 50 caracteres para continuar.
-              </p>
-              </div>
-            </div>
- 
-            <!-- PASO 8: Adjunto -->
-            <div id="den-paso-adjunto" class="hidden">
-              <div class="glass-card rounded-xl border border-slate-200 overflow-hidden">
-                <div class="flex items-center gap-3 p-4">
-                  <input type="checkbox" id="den-checkbox-adjunto" onchange="toggleCampoAdjuntoDenuncia()"
-                    class="w-4 h-4 accent-red-700 cursor-pointer flex-shrink-0">
-                  <div>
-                    <label for="den-checkbox-adjunto" class="text-sm font-bold text-slate-700 cursor-pointer block leading-tight">
-                      Tengo documentación de respaldo
-                    </label>
-                    <p class="text-xs text-slate-400 mt-0.5">Fotos, capturas, documentos, audios o videos</p>
-                  </div>
-                </div>
-                <div id="den-campo-adjunto" class="hidden border-t border-slate-100 bg-slate-50 p-4">
-                  <p class="text-xs text-slate-500 mb-3">Formatos: imágenes, PDF, Word, audio, video. <strong>Máximo 1 archivo de 50 MB.</strong></p>
-                  <label id="den-label-archivo"
-                    class="flex flex-col items-center justify-center gap-2 cursor-pointer py-6 bg-white rounded-xl border-2 border-dashed border-slate-300 hover:border-red-400 hover:bg-red-50 transition-all duration-200 group">
-                    <div class="w-12 h-12 rounded-full bg-slate-100 group-hover:bg-red-100 flex items-center justify-center transition">
-                      <span class="material-icons-round text-slate-400 group-hover:text-red-500 text-2xl transition">cloud_upload</span>
-                    </div>
-                    <span class="text-sm font-semibold text-slate-500 group-hover:text-red-600 transition">Toca para seleccionar archivo</span>
-                    <input type="file" id="den-archivo-input"
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.mp3,.mp4,.wav,.ogg,.avi,.mov,.m4a"
-                      class="hidden" onchange="validarArchivoDenuncia(this)">
-                  </label>
-                  <div id="den-archivo-nombre" class="hidden mt-2 flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl p-3">
-                    <span class="material-icons-round text-green-600 text-lg flex-shrink-0">check_circle</span>
-                    <p class="text-xs font-bold text-green-700" id="den-archivo-nombre-text"></p>
-                  </div>
-                  <div id="den-archivo-error" class="hidden mt-2 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl p-3">
-                    <span class="material-icons-round text-red-600 text-lg flex-shrink-0">error</span>
-                    <p class="text-xs font-bold text-red-700" id="den-archivo-error-text"></p>
-                  </div>
-                </div>
-              </div>
-            </div>
- 
-            <!-- PASO 9: Términos -->
-            <div id="den-paso-terminos" class="hidden">
-              <div class="glass-card rounded-xl border border-slate-200 overflow-hidden">
-                <div class="p-4 bg-slate-50">
-                  <div class="flex items-start gap-3">
-                    <input type="checkbox" id="den-checkbox-terminos" class="w-4 h-4 accent-red-700 cursor-pointer mt-0.5 flex-shrink-0" onchange="actualizarBotonEnviarDenuncia()">
-                    <label for="den-checkbox-terminos" class="text-xs text-slate-700 cursor-pointer leading-relaxed font-medium">
-                      He leído y acepto los <span onclick="event.preventDefault(); abrirModalTerminos();" class="text-indigo-600 font-bold underline">términos y condiciones</span>. Declaro que los hechos descritos son verídicos y que actúo de buena fe.
-                    </label>
-                  </div>
-                </div>
-              </div>
-              <p id="den-btn-hint" class="text-[10px] text-center mt-2 font-medium"></p>
-            </div>
- 
-            <!-- BOTÓN ENVIAR -->
-            <div id="den-paso-enviar" class="hidden pb-2">
-              <button id="btn-enviar-denuncia" onclick="enviarDenuncia()" disabled
-                class="w-full py-3.5 rounded-xl bg-slate-300 text-slate-500 font-bold text-sm transition-all duration-200 cursor-not-allowed flex items-center justify-center gap-2 shadow-none">
-                <span class="material-icons-round text-lg">send</span>
-                Enviar Denuncia Formal
-              </button>
-              <p class="text-[10px] text-slate-400 text-center mt-2">Debes aceptar los términos y condiciones para enviar.</p>
-            </div>
- 
-          </div><!-- fin den-form-real -->
-        </div><!-- fin den-form-content -->
- 
-        <!-- ══ HISTORIAL ══ -->
-        <div id="den-hist-content" class="hidden flex-col flex-grow overflow-y-auto bg-slate-50/50 p-4 gap-3">
-          <div id="den-hist-loader" class="hidden justify-center py-12"><div class="loader"></div></div>
-          <div id="den-hist-empty" class="hidden flex-col items-center justify-center py-16 text-center gap-2">
-            <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-2">
-              <span class="material-icons-round text-slate-400 text-3xl">folder_off</span>
-            </div>
-            <p class="text-sm font-bold text-slate-500">Sin denuncias registradas</p>
-            <p class="text-xs text-slate-400">Aún no has realizado ninguna denuncia formal.</p>
-          </div>
-          <div id="den-hist-lista" class="space-y-3"></div>
-        </div>
- 
-      </section>
-      <!-- FIN VISTA: DENUNCIAS INTERNAS -->
-
       <!-- VISTA: PANEL ADMIN -->
       <section id="admin-panel-view" class="hidden w-full max-w-2xl z-20 flex-col glass-panel rounded-xl shadow-2xl overflow-hidden fade-in-up my-4 h-[90vh]">
         <div class="bg-slate-900 text-white p-4 flex items-center gap-4 relative overflow-hidden flex-shrink-0">
@@ -2611,20 +2165,6 @@
         </div>
 
         <div class="flex-grow flex flex-col bg-slate-50/50 overflow-hidden p-6">
-        <!-- Switch Denuncias Internas (Admin) -->
-           <div id="denuncias-switch-container" class="hidden z-10 flex flex-col items-center gap-1 mb-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-             <div class="flex items-center gap-3 w-full justify-between">
-               <div class="flex items-center gap-2">
-                 <span class="material-icons-round text-red-600">report_problem</span>
-                 <span class="text-sm font-bold text-slate-700">Módulo Denuncias Internas</span>
-               </div>
-               <label class="toggle-switch">
-                 <input type="checkbox" id="denuncias-switch" onchange="handleDenunciasSwitch()">
-                 <span class="toggle-slider"></span>
-               </label>
-             </div>
-             <p class="text-[10px] text-slate-500 w-full mt-1">Habilita o deshabilita el acceso al módulo de Denuncias Internas para todos los socios.</p>
-           </div>
            <h3 class="text-lg font-bold text-slate-800 mb-4">Herramientas Administrativas</h3>
            
            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -2966,7 +2506,6 @@
               <button onclick="toggleManagementTab('justif')" id="tab-mgmt-justif" class="px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap text-slate-500 hover:bg-slate-100">Justificaciones</button>
               <button onclick="toggleManagementTab('apel')" id="tab-mgmt-apel" class="px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap text-slate-500 hover:bg-slate-100">Apelaciones</button>
               <button onclick="toggleManagementTab('permisos')" id="tab-mgmt-permisos" class="px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap text-slate-500 hover:bg-slate-100">Permisos</button>
-              <button onclick="toggleManagementTab('denuncias')" id="tab-mgmt-denuncias" class="px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap text-slate-500 hover:bg-slate-100">Denuncias</button>
            </div>
 
            <!-- CONTENIDO -->
@@ -2977,7 +2516,6 @@
               <div id="mgmt-justif-content" class="hidden space-y-3"></div>
               <div id="mgmt-apel-content" class="hidden space-y-3"></div>
               <div id="mgmt-permisos-content" class="hidden space-y-3"></div>
-              <div id="mgmt-denuncias-content" class="hidden space-y-3"></div>
               
               <div id="mgmt-empty" class="hidden text-center py-10 text-slate-400 text-sm">
                  <span class="material-icons-round text-4xl mb-2 block opacity-50">inbox</span>
@@ -3465,40 +3003,6 @@
       <section id="logout-view" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/95 backdrop-blur-md fade-in-up">
         <div class="text-center"><div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/30 animate-bounce"><span class="material-icons-round text-3xl text-white">check</span></div><h2 class="text-2xl font-bold text-white mb-2">¡Hasta pronto!</h2><p class="text-slate-300 text-sm">Cerrando sesión de forma segura...</p></div>
       </section>
-
-      <div id="den-terminos-modal" class="hidden fixed inset-0 bg-black/80 z-[110] flex items-center justify-center p-4" style="backdrop-filter:blur(4px)">
-        <div class="bg-white rounded-2xl max-w-md w-full p-0 shadow-2xl overflow-hidden animate-scale-in">
-          <div class="bg-slate-800 text-white px-6 py-4 flex items-center gap-2">
-            <span class="material-icons-round text-slate-300">policy</span>
-            <h3 class="font-bold text-lg">Términos y Condiciones</h3>
-          </div>
-          <div class="p-6">
-            <div class="bg-slate-50 p-4 rounded-xl text-xs text-slate-600 leading-relaxed max-h-72 overflow-y-auto mb-6 custom-scroll">
-              <p class="mb-3"><strong class="text-slate-800">1. Naturaleza de la gestión:</strong> Al enviar esta denuncia, declara que los hechos descritos son verídicos y actúa de buena fe. Esta gestión tiene respaldo formal del Sindicato de Trabajadores SLIM N°3.</p>
-              <p class="mb-3"><strong class="text-slate-800">2. Protocolo activado:</strong> Su denuncia será remitida al área legal de Recursos Humanos del empleador (salvo que sea contra un integrante del sindicato) y al directorio sindical. Se activará el protocolo de investigación con plazo de 30 días hábiles.</p>
-              <p class="mb-3"><strong class="text-slate-800">3. Confidencialidad:</strong> Su identidad será protegida en la medida que la ley lo permita. Solo las personas directamente involucradas en la investigación tendrán acceso a sus datos.</p>
-              <p class="mb-3"><strong class="text-slate-800">4. Prohibición de represalias:</strong> Queda expresamente prohibido tomar represalias contra el denunciante. Toda represalia acreditada será objeto de denuncia ante la Dirección del Trabajo.</p>
-              <p class="mb-3"><strong class="text-slate-800">5. Responsabilidad:</strong> La presentación de denuncias de mala fe o con información falsa puede tener consecuencias disciplinarias y/o legales.</p>
-              <p><strong class="text-slate-800">6. Ley Karin (Ley 21.643):</strong> Para denuncias de acoso laboral, acoso sexual o violencia, aplican los procedimientos establecidos en la normativa legal vigente.</p>
-            </div>
-            <button onclick="aceptarTerminosDesdeModal()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition-all active:scale-95">
-              He leído y acepto los términos
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div id="den-sending-modal" class="hidden fixed inset-0 bg-slate-900/95 z-[120] flex items-center justify-center p-6 text-center" style="backdrop-filter:blur(8px)">
-        <div class="flex flex-col items-center animate-scale-in">
-          <div class="loader mb-8" style="width: 60px; height: 60px; border-width: 5px;"></div>
-          <h3 class="text-2xl font-bold text-white mb-3">Generando Expediente de Denuncia</h3>
-          <p class="text-slate-300 text-sm leading-relaxed max-w-xs">
-            Estamos creando el documento PDF, asignando permisos y notificando a la directiva y al empleador.<br><br>
-            <span class="text-red-400 font-bold">⚠️ NO CIERRES LA APLICACIÓN</span><br>
-            ni desconectes tu internet. Este proceso toma unos 30 segundos.
-          </p>
-        </div>
-      </div>
 
     </main>
 
@@ -4548,10 +4052,10 @@
           return;
         }
 
-        ['login-view','dashboard-view','logout-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view','calculator-view','contrato-colectivo-view','slim-quest-view','slim-quest-quiz-view','slim-quest-leaderboard-view','admin-asistencia-qr-view','dirigentes-view','denuncias-view'].forEach(id => document.getElementById(id).classList.add('hidden'));
+        ['login-view','dashboard-view','logout-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view','calculator-view','contrato-colectivo-view','slim-quest-view','slim-quest-quiz-view','slim-quest-leaderboard-view','admin-asistencia-qr-view','dirigentes-view'].forEach(id => document.getElementById(id).classList.add('hidden'));
         const view = document.getElementById(viewId);
         view.classList.remove('hidden');
-        if (['dashboard-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view','calculator-view','contrato-colectivo-view','slim-quest-view','slim-quest-quiz-view','slim-quest-leaderboard-view','admin-asistencia-qr-view','dirigentes-view','denuncias-view'].includes(viewId)) view.classList.add('flex');
+        if (['dashboard-view','profile-view','loans-view','justifications-view','appeals-view','attendance-records-view','permission-view','admin-panel-view','management-view','id-credential-view','calculator-view','contrato-colectivo-view','slim-quest-view','slim-quest-quiz-view','slim-quest-leaderboard-view','admin-asistencia-qr-view','dirigentes-view'].includes(viewId)) view.classList.add('flex');
       }
 
       function handleLogout() {
@@ -4740,23 +4244,6 @@
               }
             }).obtenerEstadoSwitchAsistencia();
           }
-        } else if (module === 'Denuncias') {
-        if (esAdmin) {
-          var denSwContainer = document.getElementById('denuncias-switch-container');
-          if (denSwContainer) { denSwContainer.classList.remove('hidden'); denSwContainer.classList.add('flex'); }
-          loadDenunciasSwitchState();
-          cargarModuloDenuncias();
-          switchView('denuncias-view');
-        } else {
-          google.script.run.withSuccessHandler(function(res) {
-            if (res.habilitado) {
-              cargarModuloDenuncias();
-              switchView('denuncias-view');
-            } else {
-              showWarning("El módulo Denuncias Internas está temporalmente deshabilitado. Consulta con la directiva para más información.");
-            }
-          }).obtenerEstadoSwitchDenuncias();
-        }
         } else if (module === 'Dirigentes') {
           switchView('dirigentes-view');
         } else {
@@ -5301,7 +4788,6 @@
             aplicarBadge('permiso',         res.permisosMedicos);
             aplicarBadge('asistencia',      res.asistencia);
             aplicarBadge('apelaciones',     res.apelaciones);
-            aplicarBadge('denuncias',       res.denuncias);
           })
           .withFailureHandler(function() { /* silencioso */ })
           .obtenerEstadosSwitchDashboard();
@@ -7761,7 +7247,7 @@ divForm.classList.add('flex');
       }
 
       function toggleManagementTab(tab) {
-         const tabs = ['prestamos', 'justif', 'apel', 'permisos', 'denuncias'];
+         const tabs = ['prestamos', 'justif', 'apel', 'permisos'];
          currentManagementModule = tab;
          
          tabs.forEach(t => {
@@ -7777,11 +7263,7 @@ divForm.classList.add('flex');
          });
          
          document.getElementById('mgmt-empty').classList.add('hidden');
-         if (tab === 'denuncias') {
-           cargarDenunciasDirigente();
-         } else {
-           loadManagementData();
-         }
+         loadManagementData();
       }
 
       function loadManagementData() {
@@ -7797,7 +7279,6 @@ divForm.classList.add('flex');
                renderManagementJustif(data.justificaciones || []);
                renderManagementApel(data.apelaciones || []);
                renderManagementPermisos(data.permisosMedicos || []);
-               renderManagementDenuncias([]);
             } else {
                showWarning("Error cargando gestiones.");
             }
@@ -7805,72 +7286,6 @@ divForm.classList.add('flex');
       }
 
       // === ACTUALIZAR PARA GESTIÓN ADMIN (Donde salía UNDEFINED) ===
-      function cargarDenunciasDirigente() {
-        var container = document.getElementById('mgmt-denuncias-content');
-        var empty = document.getElementById('mgmt-empty');
-        container.innerHTML = '<div class="flex justify-center py-8"><div class="loader"></div></div>';
-
-        google.script.run
-          .withSuccessHandler(function(res) {
-            container.innerHTML = "";
-            if (!res.success || !res.denuncias || !res.denuncias.length) {
-              empty.classList.remove('hidden');
-              return;
-            }
-            var est = {
-              "Enviado":                  { color:"bg-blue-100 text-blue-800",   ico:"send"         },
-              "En Investigación":         { color:"bg-amber-100 text-amber-800", ico:"search"       },
-              "Respondida por Empleador": { color:"bg-green-100 text-green-700", ico:"check_circle" },
-              "Cerrado":                  { color:"bg-slate-200 text-slate-600", ico:"archive"      }
-            };
-            res.denuncias.forEach(function(d) {
-              var estInfo = est[d.estado] || { color:"bg-slate-100 text-slate-600", ico:"info" };
-              var esProp = d.tipoGestion !== "Dirigente";
-              var gBadge = esProp
-                ? '<span class="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">Gestión propia del socio</span>'
-                : '<span class="text-[9px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold">Gestionada por ti</span>';
-              var docs = [];
-              if (d.pdfUrl && d.pdfUrl.startsWith('http')) {
-                docs.push('<a href="'+d.pdfUrl+'" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-1 rounded-lg"><span class="material-icons-round" style="font-size:11px">picture_as_pdf</span>Denuncia PDF</a>');
-              }
-              if (d.urlAdjunto && d.urlAdjunto.startsWith('http')) {
-                docs.push('<a href="'+d.urlAdjunto+'" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg"><span class="material-icons-round" style="font-size:11px">attach_file</span>Respaldo</a>');
-              }
-              if (d.urlInformeEmpleador && d.urlInformeEmpleador.startsWith('http')) {
-                docs.push('<a href="'+d.urlInformeEmpleador+'" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-1 rounded-lg"><span class="material-icons-round" style="font-size:11px">fact_check</span>Informe</a>');
-              }
-              var docsHtml = docs.length ? '<div class="flex flex-wrap gap-1.5 mt-2">' + docs.join('') + '</div>' : '';
-              var item = document.createElement('div');
-              item.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm";
-              item.innerHTML =
-                '<div class="flex items-start justify-between mb-2">' +
-                '<div><p class="text-[10px] text-slate-400 font-bold uppercase">Folio</p>' +
-                '<p class="text-sm font-black text-slate-800 font-mono">'+d.folio+'</p>' +
-                '<div class="mt-0.5">'+gBadge+'</div></div>' +
-                '<span class="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-full '+estInfo.color+'"><span class="material-icons-round" style="font-size:10px">'+estInfo.ico+'</span>'+d.estado+'</span>' +
-                '</div>' +
-                '<div class="bg-slate-50 rounded-xl p-2.5 grid grid-cols-2 gap-x-3 gap-y-1 mb-2">' +
-                '<div><p class="text-[9px] font-bold text-slate-400 uppercase">Socio</p><p class="text-xs font-semibold text-slate-700">'+d.nombreDenunciante+'</p></div>' +
-                '<div><p class="text-[9px] font-bold text-slate-400 uppercase">RUT</p><p class="text-xs font-semibold text-slate-700">'+d.rutDenunciante+'</p></div>' +
-                '<div><p class="text-[9px] font-bold text-slate-400 uppercase">Categoría</p><p class="text-xs font-semibold text-slate-700">'+d.categoria+'</p></div>' +
-                '<div><p class="text-[9px] font-bold text-slate-400 uppercase">Estado</p><p class="text-xs font-semibold text-slate-700">'+d.estado+'</p></div>' +
-                '</div>' +
-                docsHtml +
-                '<p class="text-[9px] text-slate-400 mt-1.5">'+d.fecha+'</p>';
-              container.appendChild(item);
-            });
-          })
-          .withFailureHandler(function() {
-            container.innerHTML = "";
-            document.getElementById('mgmt-empty').classList.remove('hidden');
-          })
-          .obtenerDenunciasDirigente(currentRut);
-      }
-
-      function renderManagementDenuncias(registros) {
-        // Placeholder vacío — los datos se cargan por cargarDenunciasDirigente()
-      }
-
       function renderManagementPrestamos(registros) {
         const container = document.getElementById('mgmt-prestamos-content');
         const empty = document.getElementById('mgmt-empty');
@@ -9089,21 +8504,17 @@ divForm.classList.add('flex');
 
         document.getElementById('quiz-pregunta-texto').innerText = p.pregunta;
 
+        var letras  = ['A', 'B', 'C', 'D'];
         var optsDiv = document.getElementById('quiz-opciones');
         optsDiv.innerHTML = '';
-        var opciones = ['A','B','C','D']
-          .filter(function(l) { return !!p.opciones[l]; })
-          .map(function(l)    { return { letra: l, texto: p.opciones[l] }; });
-        for (var i = opciones.length - 1; i > 0; i--) {
-          var j = Math.floor(Math.random() * (i + 1));
-          var tmp = opciones[i]; opciones[i] = opciones[j]; opciones[j] = tmp;
-        }
-        opciones.forEach(function(op) {
+        letras.forEach(function(letra) {
+          var texto = p.opciones[letra];
+          if (!texto) return;
           var btn = document.createElement('button');
-          btn.id        = 'opt-' + op.letra;
+          btn.id        = 'opt-' + letra;
           btn.className = 'w-full text-left p-3 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 font-medium hover:border-purple-400 hover:bg-purple-50 active:scale-[0.98] transition';
-          btn.innerHTML = '<span class="inline-block w-6 h-6 rounded-full bg-slate-100 text-slate-600 text-xs font-bold text-center leading-6 mr-2">' + op.letra + '</span>' + op.texto;
-          btn.onclick   = (function(l) { return function() { responderPregunta(l); }; })(op.letra);
+          btn.innerHTML = '<span class="inline-block w-6 h-6 rounded-full bg-slate-100 text-slate-600 text-xs font-bold text-center leading-6 mr-2">' + letra + '</span>' + texto;
+          btn.onclick   = function() { responderPregunta(letra); };
           optsDiv.appendChild(btn);
         });
 
@@ -9532,547 +8943,6 @@ divForm.classList.add('flex');
         if (normVal) normVal.textContent = '$' + baseNorm.toLocaleString('es-CL');
         return baseNorm;
       }
-
-      // ============================================================
-      // JAVASCRIPT — MÓDULO DENUNCIAS INTERNAS (ACTUALIZADO)
-      // ============================================================
-      var denDatosContacto       = null;
-      var denCategoriaActual     = "";
-      var denDirigentesActivos   = [];
-      var denArchivoSeleccionado = null;
-
-      // 1. Subcategorías actualizadas (Incluye condición física y orientación sexual)
-      var DEN_SUBCATEGORIAS = {
-        "Ley Karin": ["Acoso Laboral (Mobbing)","Acoso Sexual","Violencia en el Trabajo","Comportamientos Incívicos"],
-        "Seguridad y Prevención": ["Falta de Elementos de Protección Personal (EPP)","Infraestructura Deficiente","Condiciones Ambientales Inadecuadas","Incumplimiento de Protocolos de Seguridad"],
-        "Remuneraciones": ["Errores en la Liquidación de Sueldo","No Pago de Cotizaciones Previsionales","Modificaciones Unilaterales del Contrato (Ius Variandi)","Exceso de Jornada sin Reconocimiento de Horas Extra"],
-        "Discriminación": ["Discriminación por Condición física, Raza, Color o Nacionalidad","Discriminación por Sexo, Género u Orientación Sexual","Discriminación por Edad","Discriminación por Religión u Opinión Política","Discriminación por Maternidad/Paternidad","Discriminación por Estado Civil"]
-      };
-
-      var DEN_DESCRIPCIONES = {
-        "Ley Karin": "La Ley Karin (Ley 21.643) obliga a las empresas a investigar conductas de acoso, hostigamiento o violencia. Desde agosto de 2024 rige un protocolo estricto con plazos y medidas de resguardo para el denunciante.",
-        "Seguridad y Prevención": "El empleador está obligado a proveer condiciones de trabajo seguras. Puedes denunciar falta de elementos de protección, instalaciones en mal estado, condiciones ambientales inadecuadas o incumplimiento de protocolos de seguridad.",
-        "Remuneraciones": "Incluye errores en liquidaciones, no pago de cotizaciones, cambios no autorizados en funciones u horarios, o trabajo en exceso sin pago de horas extraordinarias.",
-        "Discriminación": "La discriminación laboral es ilegal (Art. 2 Cód. del Trabajo). Tienes derecho a indemnización por daño moral en casos acreditados. Para esto, el caso debe judicializarse en tribunales laborales. Las acciones que parten con esta denuncia pueden servir de respaldo legal para presentarlos en instancias de denuncia superiores (Inspección del Trabajo, Tribunales Laborales, etc.)."
-      };
-
-      var DEN_DESTINATARIOS = {
-        "Ley Karin":               ["Empleador","Supervisor / Jefatura","Compañero/a de trabajo","Tercero externo","Dirigente Sindical"],
-        "Seguridad y Prevención": ["Empleador","Supervisor / Jefatura"],
-        "Remuneraciones":          ["Empleador"],
-        "Discriminación":          ["Empleador","Supervisor / Jefatura","Compañero/a de trabajo","Tercero externo","Dirigente Sindical"]
-      };
-
-      var DEN_BANNERS = {
-        "Ley Karin":              { hBg:"bg-gradient-to-r from-amber-600 to-amber-500", hIcon:"gavel", hText:"Ley Karin — Derechos que te protegen", bBg:"bg-amber-50", bBorder:"border-amber-200", texto:"Tienes derecho a medidas de resguardo inmediatas. Toda represalia está expresamente prohibida. Investigación en 30 días hábiles.", color:"text-amber-800" },
-        "Seguridad y Prevención": { hBg:"bg-gradient-to-r from-blue-700 to-blue-600",   hIcon:"health_and_safety", hText:"Seguridad y Prevención de Riesgos", bBg:"bg-blue-50", bBorder:"border-blue-200", texto:"El empleador debe corregir las condiciones de riesgo. Puedes negarte a trabajar si tu vida o salud están en peligro (Art. 184 bis Cód. del Trabajo).", color:"text-blue-800" },
-        "Remuneraciones":         { hBg:"bg-gradient-to-r from-emerald-700 to-emerald-600", hIcon:"payments", hText:"Derechos Contractuales y de Remuneración", bBg:"bg-emerald-50", bBorder:"border-emerald-200", texto:"El empleador debe subsanar el error en la próxima liquidación. Las cotizaciones previsionales son irrenunciables por ley.", color:"text-emerald-800" },
-        "Discriminación":         { hBg:"bg-gradient-to-r from-purple-700 to-purple-600",  hIcon:"diversity_3", hText:"Protección contra Discriminación", bBg:"bg-purple-50", bBorder:"border-purple-200", texto:"La discriminación laboral es ilegal (Art. 2 Cód. del Trabajo). Tienes derecho a indemnización por daño moral en casos acreditados. Para esto, el caso debe judicializarse en tribunales laborales.", color:"text-purple-800" }
-      };
-
-      /**
-       * Lógica mejorada para seleccionar categoría e inyectar cuadro informativo colapsable
-       */
-      function seleccionarCategoria(cat) {
-        denCategoriaActual = cat;
-        
-        // Estética de botones (Remover selecciones previas)
-        document.querySelectorAll('.den-cat-btn').forEach(function(b) {
-          b.classList.remove('border-red-500','bg-red-50','border-orange-500','bg-orange-50','border-emerald-500','bg-emerald-50','border-purple-500','bg-purple-50','shadow-md');
-          b.classList.add('border-transparent');
-        });
-
-        // Aplicar estilo al seleccionado
-        var btnIds = { "Ley Karin":"den-cat-karin","Seguridad y Prevención":"den-cat-seguridad","Remuneraciones":"den-cat-remuneraciones","Discriminación":"den-cat-discriminacion" };
-        var colors = { "Ley Karin":"border-red-500 bg-red-50","Seguridad y Prevención":"border-orange-500 bg-orange-50","Remuneraciones":"border-emerald-500 bg-emerald-50","Discriminación":"border-purple-500 bg-purple-50" };
-        
-        var btnEl = document.getElementById(btnIds[cat]);
-        if (btnEl) { btnEl.classList.remove('border-transparent'); btnEl.classList.add(...colors[cat].split(' '),'shadow-md'); }
-
-        // Inyectar cuadro informativo con opción de CERRAR (Imagen 3)
-        var descCont = document.getElementById('den-cat-descripcion');
-        descCont.innerHTML = `
-          <div class="flex flex-col">
-            <div class="flex items-start gap-2">
-              <span class="material-icons-round text-slate-400 text-sm mt-0.5 flex-shrink-0">info</span>
-              <p class="text-xs text-slate-600 leading-relaxed">${DEN_DESCRIPCIONES[cat]}</p>
-            </div>
-            <button onclick="document.getElementById('den-cat-descripcion').classList.add('hidden')" 
-                    class="text-[10px] font-bold text-indigo-500 mt-2 text-right hover:text-indigo-700">
-              ENTENDIDO, CERRAR CUADRO
-            </button>
-          </div>
-        `;
-        descCont.classList.remove('hidden');
-
-        // Manejo de banners específicos
-        if (cat === 'Ley Karin') document.getElementById('den-banner-karin').classList.remove('hidden');
-        else document.getElementById('den-banner-karin').classList.add('hidden');
-
-        // Cargar subcategorías en el select
-        var sel = document.getElementById('den-subcategoria');
-        sel.innerHTML = '<option value="">Seleccionar...</option>';
-        (DEN_SUBCATEGORIAS[cat]||[]).forEach(function(s){ 
-          var o = document.createElement('option'); 
-          o.value = s; 
-          o.textContent = s; 
-          sel.appendChild(o); 
-        });
-
-        document.getElementById('den-paso-subcat').classList.remove('hidden');
-        
-        // Resetear pasos siguientes
-        ['den-paso-dirigido','den-paso-denunciado','den-paso-lugar','den-paso-hechos','den-paso-adjunto','den-paso-terminos','den-paso-enviar'].forEach(function(id){ 
-          document.getElementById(id).classList.add('hidden'); 
-        });
-        
-        actualizarBotonEnviarDenuncia();
-      }
-
-      // ── Funciones de inicialización y carga ────────────────────────
-      function cargarModuloDenuncias() {
-        denDatosContacto = null; denCategoriaActual = ""; denArchivoSeleccionado = null;
-        resetFormularioDenuncia();
-        toggleDenunciasTab('form');
-        document.getElementById('den-loader').classList.remove('hidden');
-        document.getElementById('den-loader').classList.add('flex');
-        document.getElementById('den-form-real').classList.add('hidden');
-        document.getElementById('den-form-real').classList.remove('flex');
-
-        google.script.run
-          .withSuccessHandler(function(r){ if(r.success) denDirigentesActivos = r.dirigentes||[]; })
-          .withFailureHandler(function(){ denDirigentesActivos=[]; })
-          .obtenerDirigentesActivos();
-
-        google.script.run
-          .withSuccessHandler(function(res) {
-            document.getElementById('den-loader').classList.add('hidden');
-            document.getElementById('den-loader').classList.remove('flex');
-            if (!res.success) { document.getElementById('den-bloqueo-mensaje').innerText = res.message||"Error al verificar datos."; document.getElementById('den-bloqueo-modal').classList.remove('hidden'); return; }
-            if (!res.correoValido) { document.getElementById('den-bloqueo-mensaje').innerText = "Necesitas tener un correo electrónico válido registrado para realizar esta gestión. Actualiza tus datos en 'Mis Datos'."; document.getElementById('den-bloqueo-modal').classList.remove('hidden'); return; }
-            if (!res.telefonoValido) { document.getElementById('den-bloqueo-mensaje').innerText = "Necesitas tener un número de teléfono registrado para realizar esta gestión. Actualiza tus datos en 'Mis Datos'."; document.getElementById('den-bloqueo-modal').classList.remove('hidden'); return; }
-            denDatosContacto = res;
-            document.getElementById('den-contacto-correo').innerText = res.correo;
-            document.getElementById('den-contacto-telefono').innerText = res.telefono;
-            document.getElementById('den-contacto-modal').classList.remove('hidden');
-          })
-          .withFailureHandler(function(){ document.getElementById('den-loader').classList.add('hidden'); showWarning("Error al verificar datos de contacto."); })
-          .obtenerDatosDenunciante(currentRut);
-      }
-
-      function denContactoConfirmar() {
-        document.getElementById('den-contacto-modal').classList.add('hidden');
-        var f = document.getElementById('den-form-real');
-        f.classList.remove('hidden'); f.classList.add('flex');
-        var role = (currentUserRole||"").toUpperCase();
-        if (role==='ADMIN'||role==='DIRIGENTE') document.getElementById('den-paso-rut').classList.remove('hidden');
-      }
- 
-      // ── Buscar socio ──────────────────────────────────────────────
-      function buscarSocioDenuncia() {
-        var rut = document.getElementById('den-rut-beneficiario').value;
-        if (!rut||rut.trim().length<7) return;
-        google.script.run
-          .withSuccessHandler(function(res) {
-            var box = document.getElementById('den-socio-encontrado');
-            var nom = document.getElementById('den-socio-nombre');
-            var adv = document.getElementById('den-socio-advertencia');
-            if (!res.success) { box.classList.add('hidden'); showWarning("RUT no encontrado."); return; }
-            nom.innerText = res.nombre + " — " + res.rut;
-            var adv_arr = [];
-            if (!res.correoValido)   adv_arr.push("sin correo válido");
-            if (!res.telefonoValido) adv_arr.push("sin teléfono");
-            if (adv_arr.length) { adv.innerText = "⚠️ " + adv_arr.join(" | "); adv.className="text-[10px] text-amber-600 font-semibold"; }
-            else { adv.innerText = "✅ Datos de contacto completos"; adv.className="text-[10px] text-green-600 font-semibold"; }
-            box.classList.remove('hidden');
-          })
-          .withFailureHandler(function(){ showWarning("Error al buscar socio."); })
-          .obtenerDatosDenunciante(rut);
-      }
- 
-      // ── Seleccionar categoría ─────────────────────────────────────
-      var DEN_CAT_COLORS = {
-        "Ley Karin":              { border:"border-red-500",    bg:"bg-red-50"    },
-        "Seguridad y Prevención": { border:"border-orange-500", bg:"bg-orange-50" },
-        "Remuneraciones":         { border:"border-emerald-500",bg:"bg-emerald-50"},
-        "Discriminación":         { border:"border-purple-500", bg:"bg-purple-50" }
-      };
-      var DEN_CAT_IDS = { "Ley Karin":"den-cat-karin","Seguridad y Prevención":"den-cat-seguridad","Remuneraciones":"den-cat-remuneraciones","Discriminación":"den-cat-discriminacion" };
- 
-      function seleccionarCategoria(cat) {
-        denCategoriaActual = cat;
-        document.querySelectorAll('.den-cat-btn').forEach(function(b) {
-          b.classList.remove('border-red-500','bg-red-50','border-orange-500','bg-orange-50','border-emerald-500','bg-emerald-50','border-purple-500','bg-purple-50','shadow-md');
-          b.classList.add('border-transparent');
-        });
-        var c = DEN_CAT_COLORS[cat]; var btnEl = document.getElementById(DEN_CAT_IDS[cat]);
-        if (btnEl&&c) { btnEl.classList.remove('border-transparent'); btnEl.classList.add(c.border,c.bg,'shadow-md'); }
-        document.getElementById('den-cat-desc-texto').innerText = DEN_DESCRIPCIONES[cat]||"";
-        document.getElementById('den-cat-descripcion').classList.remove('hidden');
-        if (cat==='Ley Karin') document.getElementById('den-banner-karin').classList.remove('hidden');
-        else document.getElementById('den-banner-karin').classList.add('hidden');
-        var sel = document.getElementById('den-subcategoria');
-        sel.innerHTML = '<option value="">Seleccionar...</option>';
-        (DEN_SUBCATEGORIAS[cat]||[]).forEach(function(s){ var o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); });
-        document.getElementById('den-paso-subcat').classList.remove('hidden');
-        ['den-paso-dirigido','den-paso-denunciado','den-paso-lugar','den-paso-hechos','den-paso-adjunto','den-paso-terminos','den-paso-enviar'].forEach(function(id){ document.getElementById(id).classList.add('hidden'); });
-        actualizarBotonEnviarDenuncia();
-      }
- 
-      function actualizarDestinatarios() {
-        if (!document.getElementById('den-subcategoria').value) return;
-        var sel = document.getElementById('den-dirigido-tipo');
-        sel.innerHTML = '<option value="">Seleccionar...</option>';
-        (DEN_DESTINATARIOS[denCategoriaActual]||["Empleador"]).forEach(function(d){ var o=document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o); });
-        document.getElementById('den-paso-dirigido').classList.remove('hidden');
-        ['den-paso-denunciado','den-paso-lugar','den-paso-hechos','den-paso-adjunto','den-paso-terminos','den-paso-enviar'].forEach(function(id){ document.getElementById(id).classList.add('hidden'); });
-      }
- 
-      function actualizarCampoDenunciado() {
-        var tipo = document.getElementById('den-dirigido-tipo').value;
-        if (!tipo) return;
-        document.getElementById('den-aviso-sindical').classList.toggle('hidden', tipo!=='Dirigente Sindical');
-        ['den-campo-empleador','den-campo-dirigente','den-campo-libre'].forEach(function(id){ document.getElementById(id).classList.add('hidden'); });
-        if (tipo==='Empleador') { document.getElementById('den-campo-empleador').classList.remove('hidden'); }
-        else if (tipo==='Dirigente Sindical') {
-          var s = document.getElementById('den-select-dirigente');
-          s.innerHTML = '<option value="">Seleccionar dirigente...</option>';
-          if (!denDirigentesActivos.length) { s.innerHTML+='<option value="" disabled>Sin datos en directorio</option>'; }
-          else { denDirigentesActivos.forEach(function(d){ var o=document.createElement('option'); o.value=d.nombre+" ("+d.cargo+")"; o.textContent=d.nombre+" — "+d.cargo; s.appendChild(o); }); }
-          document.getElementById('den-campo-dirigente').classList.remove('hidden');
-        } else { document.getElementById('den-campo-libre').classList.remove('hidden'); }
-        document.getElementById('den-paso-denunciado').classList.remove('hidden');
-        document.getElementById('den-paso-lugar').classList.remove('hidden');
-        // Banner derechos
-        var info = DEN_BANNERS[denCategoriaActual];
-        if (info) {
-          var h = document.getElementById('den-banner-derechos-header');
-          var b = document.getElementById('den-banner-derechos-body');
-          h.className = "px-4 py-2 flex items-center gap-2 " + info.hBg;
-          h.innerHTML = '<span class="material-icons-round text-white text-sm">'+info.hIcon+'</span><span class="text-white text-xs font-bold">'+info.hText+'</span>';
-          b.className = "p-3 border border-t-0 " + info.bBg + " " + info.bBorder;
-          b.innerHTML = '<p class="text-xs '+info.color+' leading-relaxed">'+info.texto+'</p>';
-          document.getElementById('den-banner-derechos').classList.remove('hidden');
-        }
-        document.getElementById('den-paso-hechos').classList.remove('hidden');
-        document.getElementById('den-paso-adjunto').classList.remove('hidden');
-        document.getElementById('den-paso-terminos').classList.remove('hidden');
-        document.getElementById('den-paso-enviar').classList.remove('hidden');
-        actualizarBotonEnviarDenuncia();
-      }
- 
-      function formatearTextoFormal(ta) {
-        var pos = ta.selectionStart; var val = ta.value;
-        var fmt = val.replace(/([.!?]\s+)([a-záéíóúüñ])/g,function(m,p1,p2){ return p1+p2.toUpperCase(); });
-        if (fmt.length>0) fmt = fmt.charAt(0).toUpperCase()+fmt.slice(1);
-        if (fmt!==val) { ta.value=fmt; ta.selectionStart=ta.selectionEnd=pos; }
-      }
- 
-      function actualizarContadorHechos() {
-        var l = document.getElementById('den-descripcion-hechos').value.length;
-        var c = document.getElementById('den-contador-hechos');
-        var aviso = document.getElementById('den-aviso-relato');
-        c.innerText = l+" / 3000";
-        c.className = l>2700 ? "text-[10px] font-bold text-red-500" : "text-[10px] font-bold text-slate-400";
-        if (aviso) {
-          if (l > 0 && l < 50) {
-            aviso.classList.remove('hidden');
-          } else {
-            aviso.classList.add('hidden');
-          }
-        }
-        actualizarBotonEnviarDenuncia();
-      }
- 
-      function toggleCampoAdjuntoDenuncia() {
-        var ok = document.getElementById('den-checkbox-adjunto').checked;
-        var el = document.getElementById('den-campo-adjunto');
-        if (ok) el.classList.remove('hidden'); else { el.classList.add('hidden'); denArchivoSeleccionado=null; }
-      }
- 
-      function validarArchivoDenuncia(inp) {
-        var nEl = document.getElementById('den-archivo-nombre'); var eEl = document.getElementById('den-archivo-error');
-        nEl.classList.add('hidden'); eEl.classList.add('hidden'); denArchivoSeleccionado=null;
-        if (!inp.files||!inp.files[0]) return;
-        var f = inp.files[0];
-        if (f.size>50*1024*1024) {
-          document.getElementById('den-archivo-error-text').innerText="El archivo supera el límite de 50 MB.";
-          eEl.classList.remove('hidden'); inp.value=""; return;
-        }
-        denArchivoSeleccionado=f;
-        document.getElementById('den-archivo-nombre-text').innerText=f.name+" ("+(f.size/1024/1024).toFixed(2)+" MB)";
-        nEl.classList.remove('hidden');
-      }
- 
-      function actualizarBotonEnviarDenuncia() {
-        var cb = document.getElementById('den-checkbox-terminos');
-        var btn = document.getElementById('btn-enviar-denuncia');
-        var hint = document.getElementById('den-btn-hint');
-        
-        if (!cb || !btn) return;
-
-        var faltantes = [];
-        if (!denCategoriaActual) faltantes.push("Categoría");
-        if (!document.getElementById('den-subcategoria').value) faltantes.push("Tipo específico");
-        if (!document.getElementById('den-dirigido-tipo').value) faltantes.push("Destinatario");
-        if (document.getElementById('den-lugar-trabajo').value.trim().length < 3) faltantes.push("Lugar");
-        if (document.getElementById('den-descripcion-hechos').value.trim().length < 50) faltantes.push("Relato (mín. 50 letras)");
-        if (!cb.checked) faltantes.push("Aceptar términos");
-
-        if (faltantes.length === 0) {
-          btn.disabled = false;
-          btn.className = "w-full py-3.5 rounded-xl bg-gradient-to-r from-red-900 to-red-700 text-white font-bold text-sm shadow-lg hover:from-red-950 transition-all";
-          if(hint) hint.innerHTML = "<span class='text-green-600 font-bold'>✓ Formulario completo. Listo para enviar.</span>";
-        } else {
-          btn.disabled = true;
-          btn.className = "w-full py-3.5 rounded-xl bg-slate-200 text-slate-400 font-bold text-sm cursor-not-allowed shadow-none";
-          if(hint) hint.innerHTML = "<span class='text-red-500 font-bold'>Falta:</span> " + faltantes.join(", ");
-        }
-      }
- 
-      function enviarDenuncia() {
-        var btn = document.getElementById('btn-enviar-denuncia');
-        var tipo = document.getElementById('den-dirigido-tipo').value;
-        var nombreDenunciado = "";
-        if (tipo==='Empleador') nombreDenunciado="Empleador (Representante legal - Holding ISS Chile)";
-        else if (tipo==='Dirigente Sindical') nombreDenunciado=document.getElementById('den-select-dirigente').value;
-        else nombreDenunciado=(document.getElementById('den-nombre-denunciado').value||"").trim();
-        if (!nombreDenunciado) { showWarning("Debes identificar al denunciado para continuar."); return; }
-        var descripcion=(document.getElementById('den-descripcion-hechos').value||"").trim();
-        if (descripcion.length<50) { showWarning("La descripción es muy breve. Agrega más detalles."); return; }
-        var lugar=(document.getElementById('den-lugar-trabajo').value||"").trim();
-        if (!lugar) { showWarning("Debes indicar el lugar donde ocurrieron los hechos."); return; }
-        var role=(currentUserRole||"").toUpperCase();
-        var rutBen=currentRut;
-        if (role==='ADMIN'||role==='DIRIGENTE') { var i=document.getElementById('den-rut-beneficiario'); if(i&&i.value.trim()) rutBen=i.value.trim(); }
-        btn.disabled=true;
-        btn.innerHTML='<div class="btn-spinner"></div><span>Enviando denuncia...</span>';
-        var payload = { rutGestor:currentRut, rutBeneficiario:rutBen, categoria:denCategoriaActual, subcategoria:document.getElementById('den-subcategoria').value, dirigidoATipo:tipo, nombreDenunciado:nombreDenunciado, lugarTrabajo:lugar, descripcionHechos:descripcion, archivoData:null };
-        if (denArchivoSeleccionado) {
-          var rd=new FileReader();
-          rd.onload=function(e){ payload.archivoData={base64:e.target.result.split(',')[1],mimeType:denArchivoSeleccionado.type,nombre:denArchivoSeleccionado.name}; enviarPayloadDenuncia(payload,btn); };
-          rd.readAsDataURL(denArchivoSeleccionado);
-        } else { enviarPayloadDenuncia(payload,btn); }
-      }
- 
-      function enviarPayloadDenuncia(payload,btn) {
-        google.script.run
-          .withSuccessHandler(function(res) {
-            btn.disabled=false; btn.innerHTML='<span class="material-icons-round text-lg">send</span>Enviar Denuncia Formal';
-            if (res.success) {
-              SLIMSound.play('success');
-              showSuccess("✅ Denuncia registrada con folio: "+res.folio);
-              resetFormularioDenuncia(); toggleDenunciasTab('hist'); cargarHistorialDenuncias();
-            } else { showWarning(res.message||"Error al enviar."); actualizarBotonEnviarDenuncia(); }
-          })
-          .withFailureHandler(function(){ btn.disabled=false; btn.innerHTML='<span class="material-icons-round text-lg">send</span>Enviar Denuncia Formal'; showWarning("Error de conexión."); actualizarBotonEnviarDenuncia(); })
-          .registrarDenuncia(payload);
-      }
- 
-      function cargarHistorialDenuncias() {
-        var lista=document.getElementById('den-hist-lista'); var loader=document.getElementById('den-hist-loader');
-        var empty=document.getElementById('den-hist-empty');
-        lista.innerHTML=""; empty.classList.add('hidden'); empty.classList.remove('flex');
-        loader.classList.remove('hidden'); loader.classList.add('flex');
-
-        google.script.run
-          .withSuccessHandler(function(res) {
-            loader.classList.add('hidden'); loader.classList.remove('flex');
-            if (!res.success||!res.denuncias||!res.denuncias.length) { empty.classList.remove('hidden'); empty.classList.add('flex'); return; }
-
-            var est = {
-              "Enviado":                   { color:"bg-blue-100 text-blue-800",   ico:"send"         },
-              "En Investigación":          { color:"bg-amber-100 text-amber-800", ico:"search"       },
-              "Respondida por Empleador":  { color:"bg-green-100 text-green-700", ico:"check_circle" },
-              "Cerrado":                   { color:"bg-slate-200 text-slate-600", ico:"archive"      },
-              "Archivado":                 { color:"bg-slate-100 text-slate-500", ico:"folder"       }
-            };
-
-            res.denuncias.forEach(function(d) {
-              var estInfo = est[d.estado] || { color:"bg-slate-100 text-slate-600", ico:"info" };
-
-              var gBadge = d.tipoGestion==="Dirigente"
-                ? '<span class="inline-flex items-center gap-1 text-[9px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold"><span class="material-icons-round" style="font-size:9px">admin_panel_settings</span>'+d.nombreGestor+'</span>'
-                : '';
-
-              // Documentos disponibles
-              var docs = [];
-              if (d.pdfUrl && d.pdfUrl.startsWith('http')) {
-                docs.push('<a href="'+d.pdfUrl+'" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-red-700 hover:text-red-900 transition bg-red-50 border border-red-200 px-2 py-1 rounded-lg"><span class="material-icons-round" style="font-size:11px">picture_as_pdf</span>Denuncia formal</a>');
-              }
-              if (d.urlAdjunto && d.urlAdjunto.startsWith('http')) {
-                docs.push('<a href="'+d.urlAdjunto+'" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 hover:text-blue-900 transition bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg"><span class="material-icons-round" style="font-size:11px">attach_file</span>Respaldo adjunto</a>');
-              }
-              if (d.urlInformeEmpleador && d.urlInformeEmpleador.startsWith('http')) {
-                docs.push('<a href="'+d.urlInformeEmpleador+'" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 hover:text-green-900 transition bg-green-50 border border-green-200 px-2 py-1 rounded-lg"><span class="material-icons-round" style="font-size:11px">fact_check</span>Informe empleador</a>');
-              }
-              var docsHtml = docs.length
-                ? '<div class="flex flex-wrap gap-1.5 mt-2.5">' + docs.join('') + '</div>'
-                : '';
-
-              // Resultado de investigación (si existe)
-              var resultadoHtml = "";
-              if (d.resultadoInv && d.resultadoInv.trim() && d.resultadoInv !== "Sin informe adjunto") {
-                var texto = d.resultadoInv.length > 200 ? d.resultadoInv.substring(0,200)+"..." : d.resultadoInv;
-                resultadoHtml = '<div class="mt-2.5 bg-green-50 border border-green-200 rounded-xl p-3">' +
-                  '<p class="text-[9px] font-bold text-green-600 uppercase tracking-wide mb-1">Resultado de la investigación</p>' +
-                  '<p class="text-xs text-green-800 leading-relaxed">'+texto+'</p>' +
-                  (d.fechaRespuesta ? '<p class="text-[9px] text-green-500 mt-1">Respondida el: '+d.fechaRespuesta+'</p>' : '') +
-                  '</div>';
-              }
-
-              lista.innerHTML += '<div class="glass-card rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200">' +
-                '<div class="flex items-start justify-between mb-3">' +
-                '<div class="min-w-0 flex-grow">' +
-                '<p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Folio de seguimiento</p>' +
-                '<p class="text-base font-black text-slate-800 font-mono tracking-wide">'+d.folio+'</p>' +
-                (gBadge ? '<div class="mt-0.5">'+gBadge+'</div>' : '') +
-                '</div>' +
-                '<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full flex-shrink-0 ml-2 '+estInfo.color+'"><span class="material-icons-round" style="font-size:11px">'+estInfo.ico+'</span>'+d.estado+'</span>' +
-                '</div>' +
-                '<div class="bg-slate-50 rounded-xl p-3 grid grid-cols-2 gap-x-4 gap-y-1.5 mb-2">' +
-                '<div><p class="text-[9px] font-bold text-slate-400 uppercase">Categoría</p><p class="text-xs font-semibold text-slate-700">'+d.categoria+'</p></div>' +
-                '<div><p class="text-[9px] font-bold text-slate-400 uppercase">Subcategoría</p><p class="text-xs font-semibold text-slate-700">'+d.subcategoria+'</p></div>' +
-                '<div><p class="text-[9px] font-bold text-slate-400 uppercase">Dirigida a</p><p class="text-xs font-semibold text-slate-700">'+d.dirigidoA+'</p></div>' +
-                '<div><p class="text-[9px] font-bold text-slate-400 uppercase">Lugar</p><p class="text-xs font-semibold text-slate-700 truncate">'+d.lugarTrabajo+'</p></div>' +
-                '</div>' +
-                docsHtml +
-                resultadoHtml +
-                '<p class="text-[10px] text-slate-400 flex items-center gap-1 mt-2"><span class="material-icons-round" style="font-size:11px">schedule</span>'+d.fecha+'</p>' +
-                '</div>';
-            });
-          })
-          .withFailureHandler(function(){ loader.classList.add('hidden'); loader.classList.remove('flex'); empty.classList.remove('hidden'); empty.classList.add('flex'); })
-          .obtenerMisDenuncias(currentRut);
-      }
- 
-      function toggleDenunciasTab(tab) {
-        var isForm = tab==='form';
-        document.getElementById('den-form-content').classList.toggle('hidden',!isForm);
-        document.getElementById('den-hist-content').classList.toggle('hidden',isForm);
-        var activeClass = "flex-1 py-2.5 text-xs font-bold transition-all duration-200 bg-red-50 text-red-800 border-b-2 border-red-700 flex items-center justify-center gap-1.5";
-        var inactiveClass = "flex-1 py-2.5 text-xs font-bold transition-all duration-200 text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-1.5";
-        document.getElementById('tab-den-form').className = isForm ? activeClass : inactiveClass;
-        document.getElementById('tab-den-hist').className = !isForm ? activeClass : inactiveClass;
-        if (!isForm) cargarHistorialDenuncias();
-      }
- 
-      function resetFormularioDenuncia() {
-        denCategoriaActual=""; denArchivoSeleccionado=null;
-        ['den-rut-beneficiario','den-lugar-trabajo','den-descripcion-hechos','den-nombre-denunciado'].forEach(function(id){ var e=document.getElementById(id); if(e) e.value=""; });
-        ['den-checkbox-adjunto','den-checkbox-terminos'].forEach(function(id){ var e=document.getElementById(id); if(e) e.checked=false; });
-        ['den-paso-subcat','den-paso-dirigido','den-paso-denunciado','den-paso-lugar','den-paso-hechos','den-paso-adjunto','den-paso-terminos','den-paso-enviar','den-campo-adjunto','den-aviso-sindical','den-banner-karin','den-cat-descripcion','den-banner-derechos','den-socio-encontrado','den-archivo-nombre','den-archivo-error'].forEach(function(id){ var e=document.getElementById(id); if(e) e.classList.add('hidden'); });
-        document.querySelectorAll('.den-cat-btn').forEach(function(b){ b.classList.remove('border-red-500','bg-red-50','border-orange-500','bg-orange-50','border-emerald-500','bg-emerald-50','border-purple-500','bg-purple-50','shadow-md'); b.classList.add('border-transparent'); });
-        actualizarBotonEnviarDenuncia();
-      }
- 
-      function loadDenunciasSwitchState() {
-        google.script.run.withSuccessHandler(function(r){ var e=document.getElementById('denuncias-switch'); if(e) e.checked=r.habilitado; }).obtenerEstadoSwitchDenuncias();
-      }
- 
-      function handleDenunciasSwitch() {
-        var e=document.getElementById('denuncias-switch'); var st=e.checked;
-        google.script.run
-          .withSuccessHandler(function(r){ if(r.success) showSuccess(st?"Módulo Denuncias habilitado.":"Módulo Denuncias pausado."); else { showWarning("Error al actualizar."); e.checked=!st; } })
-          .withFailureHandler(function(){ showWarning("Error de conexión."); e.checked=!st; })
-          .toggleSwitchDenuncias(st);
-      }
-
-      // --- Lógica de Términos y Condiciones ---
-      function abrirModalTerminos() {
-        document.getElementById('den-terminos-modal').classList.remove('hidden');
-      }
-
-      function aceptarTerminosDesdeModal() {
-        const checkbox = document.getElementById('den-checkbox-terminos');
-        if (checkbox) checkbox.checked = true;
-        document.getElementById('den-terminos-modal').classList.add('hidden');
-        actualizarBotonEnviarDenuncia();
-      }
-
-      // --- Modificación de la función de envío para mostrar el loader de 30s ---
-      // REEMPLAZA tu función enviarDenuncia() actual por esta:
-
-      function enviarDenuncia() {
-        var btn = document.getElementById('btn-enviar-denuncia');
-        var tipo = document.getElementById('den-dirigido-tipo').value;
-        var nombreDenunciado = "";
-        
-        if (tipo === 'Empleador') nombreDenunciado = "Empleador (Representante legal - Holding ISS Chile)";
-        else if (tipo === 'Dirigente Sindical') nombreDenunciado = document.getElementById('den-select-dirigente').value;
-        else nombreDenunciado = (document.getElementById('den-nombre-denunciado').value || "").trim();
-
-        if (!nombreDenunciado) { showWarning("Debes identificar al denunciado."); return; }
-        
-        var descripcion = (document.getElementById('den-descripcion-hechos').value || "").trim();
-        if (descripcion.length < 50 && descripcion.length > 0) faltantes.push("Relato incompleto");
-        if (descripcion.length === 0) faltantes.push("Relato requerido");
-        
-        var lugar = (document.getElementById('den-lugar-trabajo').value || "").trim();
-        if (!lugar) { showWarning("Debes indicar el lugar."); return; }
-
-        // 1. Mostrar ventana de "Procesando" (Bloqueo total por 30s)
-        document.getElementById('den-sending-modal').classList.remove('hidden');
-        btn.disabled = true;
-
-        var role = (currentUserRole || "").toUpperCase();
-        var rutBen = currentRut;
-        if (role === 'ADMIN' || role === 'DIRIGENTE') { 
-          var i = document.getElementById('den-rut-beneficiario'); 
-          if(i && i.value.trim()) rutBen = i.value.trim(); 
-        }
-
-        var payload = { 
-          rutGestor: currentRut, 
-          rutBeneficiario: rutBen, 
-          categoria: denCategoriaActual, 
-          subcategoria: document.getElementById('den-subcategoria').value, 
-          dirigidoATipo: tipo, 
-          nombreDenunciado: nombreDenunciado, 
-          lugarTrabajo: lugar, 
-          descripcionHechos: descripcion, 
-          archivoData: null 
-        };
-
-        if (denArchivoSeleccionado) {
-          var rd = new FileReader();
-          rd.onload = function(e) { 
-            payload.archivoData = { base64: e.target.result.split(',')[1], mimeType: denArchivoSeleccionado.type, nombre: denArchivoSeleccionado.name }; 
-            enviarPayloadDenuncia(payload, btn); 
-          };
-          rd.readAsDataURL(denArchivoSeleccionado);
-        } else { 
-          enviarPayloadDenuncia(payload, btn); 
-        }
-      }
-
-      // Y asegúrate de ocultar el modal de envío en la función de respuesta:
-      function enviarPayloadDenuncia(payload, btn) {
-        google.script.run
-          .withSuccessHandler(function(res) {
-            // 2. Ocultar ventana de "Procesando" al recibir respuesta
-            document.getElementById('den-sending-modal').classList.add('hidden');
-            btn.disabled = false;
-            
-            if (res.success) {
-              SLIMSound.play('success');
-              showSuccess("✅ Denuncia registrada con éxito.");
-              resetFormularioDenuncia(); 
-              toggleDenunciasTab('hist'); 
-              cargarHistorialDenuncias();
-            } else { 
-              showWarning(res.message || "Error al enviar."); 
-              actualizarBotonEnviarDenuncia(); 
-            }
-          })
-          .withFailureHandler(function() { 
-            document.getElementById('den-sending-modal').classList.add('hidden');
-            btn.disabled = false; 
-            showWarning("Error de conexión crítica."); 
-          })
-          .registrarDenuncia(payload);
-      }
-      // FIN JAVASCRIPT DENUNCIAS INTERNAS
 
     </script>
   </body>
